@@ -150,7 +150,7 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
     menuLateralBoxArea: {
       backgroundColor: 'var(--surface)',
       backdropFilter: 'blur(5px)',
-      width: isOpen ? '200px' : '45px',
+      width: isOpen ? '160px' : '45px',
       height: '100vh',
       position: 'fixed',
       zIndex: 5,

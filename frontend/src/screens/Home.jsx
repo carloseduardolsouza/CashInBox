@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+//icones
+import { FaSun } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Target, 
+import { FaMoon } from "react-icons/fa";
+
+import {
+  TrendingUp,
+  DollarSign,
+  Target,
   AlertTriangle,
   Activity,
   ShoppingBasket,
   Users,
-  Package
+  Package,
 } from "lucide-react";
 import {
   LineChart,
@@ -45,9 +49,9 @@ const MOCK_METRICS = {
 };
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   }).format(value);
 };
 
@@ -56,11 +60,31 @@ function Dashboard() {
   const [periodFilter, setPeriodFilter] = useState("semestre");
   const [isLoading, setIsLoading] = useState(true);
 
+  const [theme, setTheme] = useState("light");
+
   useEffect(() => {
+    //pega o tema atua no localStorage
+    const saved = localStorage.getItem("theme");
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+
     // Simular carregamento
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  const toggleTheme = () => {
+    const html = document.documentElement;
+    const now = html.getAttribute("data-theme");
+    const next = now === "dark" ? "light" : "dark";
+
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+
+    setTheme(next);
+  };
 
   const metricas = useMemo(() => {
     const variacao = MOCK_METRICS.variacao;
@@ -112,7 +136,23 @@ function Dashboard() {
             style={styles.controlBtn}
             title={mostrarInfo ? "Ocultar valores" : "Mostrar valores"}
           >
-            {mostrarInfo ? <FaEye style={{color: "var(--text-primary)"}}/> : <FaEyeSlash style={{color: "var(--text-primary)"}}/>}
+            {mostrarInfo ? (
+              <FaEye style={{ color: "var(--text-primary)" }} />
+            ) : (
+              <FaEyeSlash style={{ color: "var(--text-primary)" }} />
+            )}
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            style={styles.controlBtn}
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          >
+            {theme === "dark" ? (
+              <FaSun style={{ color: "var(--text-primary)" }} />
+            ) : (
+              <FaMoon style={{ color: "var(--text-primary)" }} />
+            )}
           </button>
         </div>
       </header>
@@ -139,9 +179,19 @@ function Dashboard() {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={MOCK_CHART_DATA} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
-                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} />
+              <LineChart
+                data={MOCK_CHART_DATA}
+                margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--surface-border)"
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke="var(--text-muted)"
+                  fontSize={11}
+                />
                 <YAxis stroke="var(--text-muted)" fontSize={11} width={40} />
                 <Tooltip
                   contentStyle={{
@@ -152,9 +202,24 @@ function Dashboard() {
                   }}
                   formatter={(value) => formatCurrency(value)}
                 />
-                <Line type="monotone" dataKey="Receitas" stroke="var(--chart-green)" strokeWidth={2} />
-                <Line type="monotone" dataKey="Despesas" stroke="var(--chart-red)" strokeWidth={2} />
-                <Line type="monotone" dataKey="Vendas" stroke="var(--chart-orange)" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="Receitas"
+                  stroke="var(--chart-green)"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Despesas"
+                  stroke="var(--chart-red)"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Vendas"
+                  stroke="var(--chart-orange)"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -166,17 +231,37 @@ function Dashboard() {
             icon={<AlertTriangle size={16} />}
             title="Alertas"
             items={[
-              { count: MOCK_METRICS.crediariosAtrasados, text: "Pagamentos vencidos", color: "var(--error-500)" },
-              { count: MOCK_METRICS.produtosEstoqueMinimo, text: "Estoque baixo", color: "var(--warning-500)" },
-              { count: MOCK_METRICS.clientesNovosMes, text: "Clientes novos", color: "var(--info-500)" },
+              {
+                count: MOCK_METRICS.crediariosAtrasados,
+                text: "Pagamentos vencidos",
+                color: "var(--error-500)",
+              },
+              {
+                count: MOCK_METRICS.produtosEstoqueMinimo,
+                text: "Estoque baixo",
+                color: "var(--warning-500)",
+              },
+              {
+                count: MOCK_METRICS.clientesNovosMes,
+                text: "Clientes novos",
+                color: "var(--info-500)",
+              },
             ]}
           />
           <InfoPanel
             icon={<Activity size={16} />}
             title="Performance"
             items={[
-              { label: "Produtos Vendidos", value: MOCK_METRICS.vendasHoje * 2 },
-              { label: "Valor em Estoque", value: mostrarInfo ? formatCurrency(MOCK_METRICS.valorEmEstoque) : "••••••" },
+              {
+                label: "Produtos Vendidos",
+                value: MOCK_METRICS.vendasHoje * 2,
+              },
+              {
+                label: "Valor em Estoque",
+                value: mostrarInfo
+                  ? formatCurrency(MOCK_METRICS.valorEmEstoque)
+                  : "••••••",
+              },
             ]}
           />
         </div>
@@ -186,15 +271,25 @@ function Dashboard() {
       <div style={styles.metricsGrid}>
         <MetricCard
           icon={<TrendingUp size={20} />}
-          value={mostrarInfo ? formatCurrency(metricas.faturamento.atual) : "••••••"}
+          value={
+            mostrarInfo ? formatCurrency(metricas.faturamento.atual) : "••••••"
+          }
           label={`Faturamento ${periodFilter}`}
-          change={`${metricas.faturamento.isPositive ? "↑" : "↓"} ${metricas.faturamento.variacao}% vs Período Ant.`}
-          changeColor={metricas.faturamento.isPositive ? "var(--success-500)" : "var(--error-500)"}
+          change={`${metricas.faturamento.isPositive ? "↑" : "↓"} ${
+            metricas.faturamento.variacao
+          }% vs Período Ant.`}
+          changeColor={
+            metricas.faturamento.isPositive
+              ? "var(--success-500)"
+              : "var(--error-500)"
+          }
           accentColor="var(--primary-color)"
         />
         <MetricCard
           icon={<DollarSign size={20} />}
-          value={mostrarInfo ? formatCurrency(MOCK_METRICS.faturamentoDia) : "••••••"}
+          value={
+            mostrarInfo ? formatCurrency(MOCK_METRICS.faturamentoDia) : "••••••"
+          }
           label="Vendas Hoje"
           change={`${metricas.vendas.hoje} vendas realizadas`}
           accentColor="var(--chart-green)"
@@ -208,7 +303,9 @@ function Dashboard() {
         />
         <MetricCard
           icon={<AlertTriangle size={20} />}
-          value={mostrarInfo ? formatCurrency(MOCK_METRICS.dividasAtivas) : "••••"}
+          value={
+            mostrarInfo ? formatCurrency(MOCK_METRICS.dividasAtivas) : "••••"
+          }
           label="Dívidas Ativas"
           change="Valor de dívidas"
           accentColor="var(--error-500)"
@@ -249,7 +346,9 @@ function InfoPanel({ icon, title, items }) {
           <div key={i} style={styles.infoItem}>
             {item.count !== undefined ? (
               <>
-                <span style={{ ...styles.infoCount, backgroundColor: item.color }}>
+                <span
+                  style={{ ...styles.infoCount, backgroundColor: item.color }}
+                >
                   {item.count}
                 </span>
                 <span style={styles.infoText}>{item.text}</span>
@@ -269,14 +368,27 @@ function InfoPanel({ icon, title, items }) {
 
 function MetricCard({ icon, value, label, change, changeColor, accentColor }) {
   return (
-    <div style={{ ...styles.metricCard, borderLeft: `3px solid ${accentColor}` }}>
-      <div style={{ ...styles.metricIcon, backgroundColor: `${accentColor}20`, color: accentColor }}>
+    <div
+      style={{ ...styles.metricCard, borderLeft: `3px solid ${accentColor}` }}
+    >
+      <div
+        style={{
+          ...styles.metricIcon,
+          backgroundColor: `${accentColor}20`,
+          color: accentColor,
+        }}
+      >
         {icon}
       </div>
       <div style={styles.metricContent}>
         <div style={styles.metricValue}>{value}</div>
         <div style={styles.metricLabel}>{label}</div>
-        <div style={{ ...styles.metricChange, color: changeColor || "var(--text-muted)" }}>
+        <div
+          style={{
+            ...styles.metricChange,
+            color: changeColor || "var(--text-muted)",
+          }}
+        >
           {change}
         </div>
       </div>
@@ -288,11 +400,23 @@ function LoadingSkeleton() {
   return (
     <div style={styles.dashboard}>
       <div style={styles.skeleton}>
-        <div style={{ ...styles.skeletonBar, width: "200px", height: "32px" }}></div>
-        <div style={{ ...styles.skeletonBar, width: "100%", height: "300px", marginTop: "20px" }}></div>
+        <div
+          style={{ ...styles.skeletonBar, width: "200px", height: "32px" }}
+        ></div>
+        <div
+          style={{
+            ...styles.skeletonBar,
+            width: "100%",
+            height: "300px",
+            marginTop: "20px",
+          }}
+        ></div>
         <div style={styles.skeletonMetrics}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ ...styles.skeletonBar, width: "100%", height: "100px" }}></div>
+            <div
+              key={i}
+              style={{ ...styles.skeletonBar, width: "100%", height: "100px" }}
+            ></div>
           ))}
         </div>
       </div>
