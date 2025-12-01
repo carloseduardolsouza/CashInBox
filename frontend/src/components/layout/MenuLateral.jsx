@@ -125,11 +125,12 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconFilled: MdInsertChart,
       iconOutline: MdInsertChartOutlined,
       subcategories: [
+        { path: "/relatorios/geral", label: "Geral" },
         { path: "/relatorios/vendas", label: "Vendas" },
         { path: "/relatorios/fluxo", label: "Fluxo de Caixa" },
         { path: "/relatorios/estoque", label: "Estoque" },
         { path: "/relatorios/despesas", label: "Despesas" },
-        { path: "/relatorios/clientes", label: "Clientes" }
+        { path: "/relatorios/clientes", label: "Clientes" },
       ]
     },
   ];
