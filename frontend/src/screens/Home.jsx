@@ -304,9 +304,7 @@ function LoadingSkeleton() {
 const styles = {
   dashboard: {
     marginLeft: "40px",
-    paddingTop: "0px",
-    paddingBottom: "0px",
-    padding: "16px",
+    padding: "0 16px",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     display: "flex",
     flexDirection: "column",
