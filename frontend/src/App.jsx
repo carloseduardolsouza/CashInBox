@@ -10,8 +10,9 @@ import { useState } from "react";
 
 //imports de telas
 import Home from "./screens/Home";
-import Avisos from "./components/layout/Avisos";
-import ApiDesconectada from "./components/shared/ApiDesconectada";
+import HistoricoVendas from "./screens/Vendas/Historico";
+import OrcamentosVendas from "./screens/Vendas/Orcamento";
+import CrediariosVendas from "./screens/Vendas/Crediario";
 
 function App() {
   return (
@@ -36,17 +37,14 @@ function MainLayout() {
         <Route path="/" element={<Home />} />
 
         <Route path="/vendas" element={<h1>Vendas</h1>} />
-        <Route
-          path="/vendas/historico"
-          element={<h1>Histórico de Vendas</h1>}
-        />
+        <Route path="/vendas/historico" element={<HistoricoVendas />} />
         <Route
           path="/vendas/orcamentos"
-          element={<h1>Histórico de Vendas</h1>}
+          element={<OrcamentosVendas/>}
         />
         <Route
           path="/vendas/crediarios"
-          element={<h1>Histórico de Vendas</h1>}
+          element={<CrediariosVendas/>}
         />
 
         <Route path="/clientes" element={<h1>Clientes</h1>} />

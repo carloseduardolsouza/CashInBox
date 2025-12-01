@@ -56,8 +56,8 @@
   --text-muted: #9b9b9b;
   --text-inverse: #000000;
 
-  --primary-color: #4da8ff;
-  --primary-hover: #1a73e8;
+  --primary-color: #005aae;
+  --primary-hover: #003c75;
 
   --background: #121212;
   --background-soft: #1a1a1a;
@@ -66,8 +66,8 @@
   --surface-border: #333333;
 
   --success-100: #0f3d23;
-  --success-500: #28d17c;
-  --success-700: #1a9a59;
+  --success-500: #117a46;
+  --success-700: #096336;
 
   --error-100: #3d0f11;
   --error-500: #ff6b6b;
