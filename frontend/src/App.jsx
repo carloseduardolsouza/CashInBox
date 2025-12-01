@@ -6,13 +6,18 @@ import {
   useLocation,
 } from "react-router-dom";
 import MenuLateral from "./components/layout/MenuLateral";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 //imports de telas
 import Home from "./screens/Home";
+
+//Vendas
 import HistoricoVendas from "./screens/Vendas/Historico";
 import OrcamentosVendas from "./screens/Vendas/Orcamento";
 import CrediariosVendas from "./screens/Vendas/Crediario";
+
+//Clientes
+import ListaClientes from "./screens/Clientes/Lista";
 
 function App() {
   return (
@@ -26,6 +31,17 @@ function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    //pega o tema atua no localStorage
+    const saved = localStorage.getItem("theme");
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+  }, []);
+
   return (
     <>
       <MenuLateral
@@ -34,21 +50,15 @@ function MainLayout() {
       />
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home theme={theme} setTheme={setTheme}/>} />
 
         <Route path="/vendas" element={<h1>Vendas</h1>} />
         <Route path="/vendas/historico" element={<HistoricoVendas />} />
-        <Route
-          path="/vendas/orcamentos"
-          element={<OrcamentosVendas/>}
-        />
-        <Route
-          path="/vendas/crediarios"
-          element={<CrediariosVendas/>}
-        />
+        <Route path="/vendas/orcamentos" element={<OrcamentosVendas />} />
+        <Route path="/vendas/crediarios" element={<CrediariosVendas />} />
 
         <Route path="/clientes" element={<h1>Clientes</h1>} />
-        <Route path="/clientes/lista" element={<h1>Clientes</h1>} />
+        <Route path="/clientes/lista" element={<ListaClientes />} />
         <Route path="/clientes/aniversariantes" element={<h1>Clientes</h1>} />
         <Route path="/clientes/mensagens" element={<h1>Clientes</h1>} />
 

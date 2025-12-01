@@ -55,21 +55,12 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-function Dashboard() {
+function Dashboard({theme , setTheme}) {
   const [mostrarInfo, setMostrarInfo] = useState(true);
   const [periodFilter, setPeriodFilter] = useState("semestre");
   const [isLoading, setIsLoading] = useState(true);
 
-  const [theme, setTheme] = useState("light");
-
   useEffect(() => {
-    //pega o tema atua no localStorage
-    const saved = localStorage.getItem("theme");
-    if (saved) {
-      setTheme(saved);
-      document.documentElement.setAttribute("data-theme", saved);
-    }
-
     // Simular carregamento
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
