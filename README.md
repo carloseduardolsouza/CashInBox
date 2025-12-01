@@ -76,9 +76,28 @@ npm run dev
 
 ---
 
-## 📊 Prévia da Aplicação
+## 📊 **Prévia da Aplicação**
 
-> 
+Uma visão rápida das principais telas do **CashInBox**, mostrando como o sistema já tá ficando robusto, bonito e pronto pra escalar:
+
+### 🏠 **Dashboard**
+
+![Dashboard – visão geral do sistema](./assets/images/DashBoard.png)
+
+### 🛒 **Produtos**
+
+*Catálogo completo e organizado, pronto pra agilizar as vendas.*
+![Produtos – catálogo de produtos](./assets/images/Produtos.png)
+
+### 💸 **Vendas**
+
+*Histórico detalhado pra acompanhar tudo que entra e sai.*
+![Vendas – histórico de vendas](./assets/images/Vendas.png)
+
+### 📦 **Caixa**
+
+*Fluxo de caixa claro, direto, sem enrolação.*
+![Caixa – controle financeiro](./assets/images/Caixa.png)
 
 ---
 
@@ -96,7 +115,3 @@ Desenvolvedor • Empreendedor • Apaixonado por tecnologia
 
 Este projeto está licenciado sob a **MIT License**.
 Consulte o arquivo **LICENSE** para mais detalhes.
-
----
-
-```
