@@ -26,6 +26,7 @@ function ListaClientes() {
       padding: "8px",
       width: "260px",
       border: "2px solid var(--neutral-600)",
+      backgroundColor: "var(--background-soft)",
       fontSize: "15px",
     },
     buttonAdicionarCliente: {
@@ -88,7 +89,7 @@ function ListaClientes() {
 
   const actions = [
     {
-      label: "Detalhes",
+      label: "Informações",
       type: "details",
       onClick: (row, index) => {
         console.log(`Exibir detalhes:`, row);

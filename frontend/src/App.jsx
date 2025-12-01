@@ -19,6 +19,9 @@ import CrediariosVendas from "./screens/Vendas/Crediario";
 //Clientes
 import ListaClientes from "./screens/Clientes/Lista";
 
+//Produtos
+import ListaProdutos from "./screens/Produtos/Lista";
+
 function App() {
   return (
     <BrowserRouter>
@@ -63,7 +66,7 @@ function MainLayout() {
         <Route path="/clientes/mensagens" element={<h1>Clientes</h1>} />
 
         <Route path="/produtos" element={<h1>Produtos</h1>} />
-        <Route path="/produtos/lista" element={<h1>Produtos</h1>} />
+        <Route path="/produtos/lista" element={<ListaProdutos/>} />
         <Route path="/produtos/categorias" element={<h1>Produtos</h1>} />
         <Route path="/produtos/promocoes" element={<h1>Produtos</h1>} />
 

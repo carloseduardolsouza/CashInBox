@@ -7,12 +7,14 @@ function Table({ columns, data, actions }) {
       overflowX: "auto",
       borderRadius: "8px",
       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+      border: "1px solid var(--surface-border)"
     },
     table: {
       width: "100%",
       borderCollapse: "collapse",
       textAlign: "center",
       backgroundColor: "var(--background-soft)",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
     },
     thead: {
       backgroundColor: "var(--background-soft)",
