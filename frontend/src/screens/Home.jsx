@@ -112,7 +112,7 @@ function Dashboard() {
             style={styles.controlBtn}
             title={mostrarInfo ? "Ocultar valores" : "Mostrar valores"}
           >
-            {mostrarInfo ? <FaEye /> : <FaEyeSlash />}
+            {mostrarInfo ? <FaEye style={{color: "var(--text-primary)"}}/> : <FaEyeSlash style={{color: "var(--text-primary)"}}/>}
           </button>
         </div>
       </header>
@@ -305,11 +305,10 @@ const styles = {
   dashboard: {
     marginLeft: "40px",
     padding: "0 16px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     display: "flex",
     flexDirection: "column",
     gap: "16px",
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     minHeight: "100vh",
   },
   header: {
@@ -342,7 +341,7 @@ const styles = {
     padding: "8px 12px",
     borderRadius: "8px",
     border: "1px solid var(--surface-border)",
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     color: "var(--text-primary)",
     fontSize: "14px",
     cursor: "pointer",
@@ -352,7 +351,7 @@ const styles = {
     height: "36px",
     borderRadius: "8px",
     border: "1px solid var(--surface-border)",
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     cursor: "pointer",
     fontSize: "16px",
   },
@@ -371,7 +370,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     padding: "16px",
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     border: "1px solid var(--surface-border)",
     borderRadius: "10px",
     cursor: "pointer",
@@ -388,7 +387,7 @@ const styles = {
     display: "flex",
   },
   chartPanel: {
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     borderRadius: "12px",
     padding: "20px",
     border: "1px solid var(--surface-border)",
@@ -431,7 +430,7 @@ const styles = {
     gap: "16px",
   },
   infoPanel: {
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     borderRadius: "12px",
     padding: "16px",
     border: "1px solid var(--surface-border)",
@@ -495,7 +494,7 @@ const styles = {
     gap: "16px",
   },
   metricCard: {
-    backgroundColor: "var(--background)",
+    backgroundColor: "var(--background-color)",
     borderRadius: "12px",
     padding: "16px",
     border: "1px solid var(--surface-border)",

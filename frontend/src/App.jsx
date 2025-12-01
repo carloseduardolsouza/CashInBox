@@ -1,8 +1,17 @@
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import MenuLateral from "./components/layout/MenuLateral";
+import { useState } from "react";
 
 //imports de telas
-import Home from "./screens/Home"
+import Home from "./screens/Home";
+import Avisos from "./components/layout/Avisos";
+import ApiDesconectada from "./components/shared/ApiDesconectada";
 
 function App() {
   return (
@@ -14,22 +23,31 @@ function App() {
 
 function MainLayout() {
   const navigate = useNavigate();
-  const location = useLocation();   // <- pega o path atual
+  const location = useLocation();
 
   return (
     <>
       <MenuLateral
         onNavigate={(path) => navigate(path)}
-        currentPath={location.pathname}   // <- envia pro menu
+        currentPath={location.pathname}
       />
 
       <Routes>
-        <Route path="/" element={<Home/>} />
+        <Route path="/" element={<Home />} />
 
         <Route path="/vendas" element={<h1>Vendas</h1>} />
-        <Route path="/vendas/historico" element={<h1>Histórico de Vendas</h1>} />
-        <Route path="/vendas/orcamentos" element={<h1>Histórico de Vendas</h1>} />
-        <Route path="/vendas/crediarios" element={<h1>Histórico de Vendas</h1>} />
+        <Route
+          path="/vendas/historico"
+          element={<h1>Histórico de Vendas</h1>}
+        />
+        <Route
+          path="/vendas/orcamentos"
+          element={<h1>Histórico de Vendas</h1>}
+        />
+        <Route
+          path="/vendas/crediarios"
+          element={<h1>Histórico de Vendas</h1>}
+        />
 
         <Route path="/clientes" element={<h1>Clientes</h1>} />
         <Route path="/clientes/lista" element={<h1>Clientes</h1>} />
@@ -61,6 +79,8 @@ function MainLayout() {
         <Route path="/relatorios/despesas" element={<h1>Produtos</h1>} />
         <Route path="/relatorios/clientes" element={<h1>Produtos</h1>} />
 
+        <Route path="/funcionarios" element={<h1>Produtos</h1>} />
+        <Route path="/funcionarios/lista" element={<h1>Produtos</h1>} />
       </Routes>
     </>
   );

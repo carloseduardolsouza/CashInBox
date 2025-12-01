@@ -12,6 +12,7 @@ import { FaMoneyBill1 } from "react-icons/fa6";
 import { FaRegMoneyBillAlt } from "react-icons/fa";
 import { PiCashRegisterFill, PiCashRegisterLight } from "react-icons/pi";
 import { MdInsertChartOutlined, MdInsertChart } from "react-icons/md";
+import { MdWork , MdWorkOutline } from "react-icons/md";
 
 const MenuLateral = ({ currentPath = "/", onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -117,6 +118,15 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconOutline: PiCashRegisterLight,
       subcategories: [
         { path: "/fluxoDeCaixa/movimentacoes", label: "Movimentações" }
+      ]
+    },
+    {
+      path: "/funcionarios",
+      label: "Funcionarios",
+      iconFilled: MdWork,
+      iconOutline: MdWorkOutline,
+      subcategories: [
+        { path: "/funcionarios/lista", label: "lista de funcionarios" }
       ]
     },
     {
