@@ -12,6 +12,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
+import format from "../../../utils/formatters";
 
 const styles = {
   mainCard: {
@@ -22,7 +23,8 @@ const styles = {
     overflow: "hidden",
   },
   header: {
-    background: "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%)",
+    background:
+      "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%)",
     padding: "40px 30px",
     color: "var(--text-secondary)",
     position: "relative",
@@ -186,55 +188,12 @@ const styles = {
   btnHover: {
     transform: "translateY(-2px)",
   },
-  btnPrimary: {
-    background: "linear-gradient(135deg, #1a8fff 0%, #006edc 100%)",
-    color: "#ffffff",
-    boxShadow: "0 4px 12px rgba(26, 143, 255, 0.4)",
-  },
-  btnPrimaryHover: {
-    background: "linear-gradient(135deg, #1a8fff 0%, #006edc 100%)",
-    color: "#ffffff",
-    boxShadow: "0 6px 16px rgba(26, 143, 255, 0.5)",
-    transform: "translateY(-2px)",
-  },
-  btnSuccess: {
-    background: "linear-gradient(135deg, #28a745 0%, #1d7a34 100%)",
-    color: "#ffffff",
-    boxShadow: "0 4px 12px rgba(40, 167, 69, 0.4)",
-  },
-  btnSuccessHover: {
-    background: "linear-gradient(135deg, #28a745 0%, #1d7a34 100%)",
-    color: "#ffffff",
-    boxShadow: "0 6px 16px rgba(40, 167, 69, 0.5)",
-    transform: "translateY(-2px)",
-  },
-  btnOutline: {
-    background: "#ffffff",
-    color: "#e63946",
-    border: "2px solid #e63946",
-  },
-  btnOutlineHover: {
-    background: "#e63946",
-    color: "#ffffff",
-    boxShadow: "0 4px 12px rgba(230, 57, 70, 0.4)",
-    transform: "translateY(-2px)",
-  },
-  btnSecondary: {
-    background: "#e2e2e2",
-    color: "#3a3a3a",
-  },
-  btnSecondaryHover: {
-    background: "#d3d3d3",
-    transform: "translateY(-2px)",
-  },
 };
 
-const InformacoesGerais = ({dados}) => {
+const InformacoesGerais = ({ dados }) => {
   const [editar, setEditar] = useState(false);
   const [cliente, setCliente] = useState(dados);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
-  const [hoveredButton, setHoveredButton] = useState(null);
   const [focusedInput, setFocusedInput] = useState(null);
 
   const handleChange = (field, value) => {
@@ -248,38 +207,9 @@ const InformacoesGerais = ({dados}) => {
     }));
   };
 
-  const formatarCPF = (cpf) => {
-    if (!cpf) return "";
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-  };
-
-  const formatarTelefone = (tel) => {
-    if (!tel) return "";
-    return tel.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-  };
-
-  const formatarCEP = (cep) => {
-    if (!cep) return "";
-    return cep.replace(/(\d{5})(\d{3})/, "$1-$2");
-  };
-
-  const formatarData = (data) => {
-    if (!data) return "";
-    const [ano, mes, dia] = data.split("-");
-    return `${dia}/${mes}/${ano}`;
-  };
-
   const editarCliente = () => {
-    const dados = {
-      ...cliente,
-      nome:
-        cliente.nome.charAt(0).toUpperCase() +
-        cliente.nome.slice(1).toLowerCase(),
-    };
     setCliente(dados);
     setEditar(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const cancelarEdicao = () => {
@@ -288,14 +218,25 @@ const InformacoesGerais = ({dados}) => {
   };
 
   const deletarCliente = () => {
-    if (window.confirm("Tem certeza que deseja excluir este cliente?")) {
-      alert("Cliente excluído com sucesso!");
-    }
+    return
   };
 
-  const InfoCard = ({ icon: Icon, label, value, field, enderecoField, type = "text", options, cardId }) => (
+  const InfoCard = ({
+    icon: Icon,
+    label,
+    value,
+    field,
+    enderecoField,
+    type = "text",
+    options,
+    cardId,
+  }) => (
     <div
-      style={hoveredCard === cardId && !editar ? styles.infoCardHover : styles.infoCard}
+      style={
+        hoveredCard === cardId && !editar
+          ? styles.infoCardHover
+          : styles.infoCard
+      }
       onMouseEnter={() => setHoveredCard(cardId)}
       onMouseLeave={() => setHoveredCard(null)}
     >
@@ -340,7 +281,13 @@ const InformacoesGerais = ({dados}) => {
             }
             onFocus={() => setFocusedInput(cardId)}
             onBlur={() => setFocusedInput(null)}
-            maxLength={type === "tel" ? "11" : type === "text" && field === "cpf_cnpj" ? "11" : undefined}
+            maxLength={
+              type === "tel"
+                ? "11"
+                : type === "text" && field === "cpf_cnpj"
+                ? "11"
+                : undefined
+            }
           />
         )
       ) : (
@@ -360,17 +307,12 @@ const InformacoesGerais = ({dados}) => {
             </div>
             <div style={styles.headerText}>
               <h1 style={styles.headerTitle}>{cliente.nome}</h1>
-              <p style={styles.headerSubtitle}>{formatarCPF(cliente.cpf_cnpj)}</p>
+              <p style={styles.headerSubtitle}>
+                {format.formatCPF(cliente.cpf_cnpj)}
+              </p>
             </div>
           </div>
         </div>
-
-        {showSuccess && (
-          <div style={styles.successBanner}>
-            <FaCheckCircle />
-            Dados do cliente atualizados com sucesso!
-          </div>
-        )}
 
         <div style={styles.content}>
           <div style={styles.section}>
@@ -385,14 +327,20 @@ const InformacoesGerais = ({dados}) => {
               <InfoCard
                 icon={FaIdCard}
                 label="CPF"
-                value={editar ? cliente.cpf_cnpj : formatarCPF(cliente.cpf_cnpj)}
+                value={
+                  editar ? cliente.cpf_cnpj : format.formatCPF(cliente.cpf_cnpj)
+                }
                 field="cpf_cnpj"
                 cardId="cpf"
               />
               <InfoCard
                 icon={FaBirthdayCake}
                 label="Data de Nascimento"
-                value={editar ? cliente.data_nascimento : formatarData(cliente.data_nascimento)}
+                value={
+                  editar
+                    ? cliente.data_nascimento
+                    : format.formatDate(cliente.data_nascimento)
+                }
                 field="data_nascimento"
                 type="date"
                 cardId="nascimento"
@@ -402,7 +350,12 @@ const InformacoesGerais = ({dados}) => {
                 label="Gênero"
                 value={cliente.genero}
                 field="genero"
-                options={["Masculino", "Feminino", "Outro", "Prefiro não informar"]}
+                options={[
+                  "Masculino",
+                  "Feminino",
+                  "Outro",
+                  "Prefiro não informar",
+                ]}
                 cardId="genero"
               />
             </div>
@@ -417,7 +370,11 @@ const InformacoesGerais = ({dados}) => {
               <InfoCard
                 icon={FaPhone}
                 label="Telefone"
-                value={editar ? cliente.telefone : formatarTelefone(cliente.telefone)}
+                value={
+                  editar
+                    ? cliente.telefone
+                    : format.formatarTelefone(cliente.telefone)
+                }
                 field="telefone"
                 type="tel"
                 cardId="telefone"
@@ -442,7 +399,11 @@ const InformacoesGerais = ({dados}) => {
               <InfoCard
                 icon={FaMapMarkerAlt}
                 label="CEP"
-                value={editar ? cliente.endereco.cep : formatarCEP(cliente.endereco.cep)}
+                value={
+                  editar
+                    ? cliente.endereco.cep
+                    : format.formatarCEP(cliente.endereco.cep)
+                }
                 enderecoField="cep"
                 cardId="cep"
               />
@@ -488,27 +449,15 @@ const InformacoesGerais = ({dados}) => {
             {editar ? (
               <>
                 <button
-                  style={
-                    hoveredButton === "salvar"
-                      ? styles.btnSuccessHover
-                      : { ...styles.btn, ...styles.btnSuccess }
-                  }
+                  style={{ ...styles.btn, ...styles.btnSuccess }}
                   onClick={editarCliente}
-                  onMouseEnter={() => setHoveredButton("salvar")}
-                  onMouseLeave={() => setHoveredButton(null)}
                 >
                   <FaCheckCircle />
                   Salvar Alterações
                 </button>
                 <button
-                  style={
-                    hoveredButton === "cancelar"
-                      ? styles.btnSecondaryHover
-                      : { ...styles.btn, ...styles.btnSecondary }
-                  }
+                  style={{ ...styles.btn, ...styles.btnSecondary }}
                   onClick={cancelarEdicao}
-                  onMouseEnter={() => setHoveredButton("cancelar")}
-                  onMouseLeave={() => setHoveredButton(null)}
                 >
                   <FaTimes />
                   Cancelar
@@ -517,27 +466,15 @@ const InformacoesGerais = ({dados}) => {
             ) : (
               <>
                 <button
-                  style={
-                    hoveredButton === "editar"
-                      ? styles.btnPrimaryHover
-                      : { ...styles.btn, ...styles.btnPrimary }
-                  }
+                  style={{ ...styles.btn, ...styles.btnPrimary }}
                   onClick={() => setEditar(true)}
-                  onMouseEnter={() => setHoveredButton("editar")}
-                  onMouseLeave={() => setHoveredButton(null)}
                 >
                   <FaEdit />
                   Editar Informações
                 </button>
                 <button
-                  style={
-                    hoveredButton === "delete"
-                      ? styles.btnOutlineHover
-                      : { ...styles.btn, ...styles.btnOutline }
-                  }
+                  style={{ ...styles.btn, ...styles.btnOutline }}
                   onClick={deletarCliente}
-                  onMouseEnter={() => setHoveredButton("delete")}
-                  onMouseLeave={() => setHoveredButton(null)}
                 >
                   <MdDeleteOutline />
                   Excluir Cliente
