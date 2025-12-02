@@ -23,6 +23,7 @@ import CrediariosVendas from "./screens/Vendas/Crediario";
 //Clientes
 import ListaClientes from "./screens/Clientes/Lista";
 import CadastroCliente from "./screens/Clientes/CadastroCliente";
+import DetalhesCliente from "./screens/Clientes/DetalhesCliente";
 
 //Produtos
 import ListaProdutos from "./screens/Produtos/Lista";
@@ -70,6 +71,7 @@ function MainLayout() {
         <Route path="/clientes/aniversariantes" element={<h1>Clientes</h1>} />
         <Route path="/clientes/mensagens" element={<h1>Clientes</h1>} />
         <Route path="/clientes/cadastro" element={<CadastroCliente/>} />
+        <Route path="/clientes/detalhes/:id" element={<DetalhesCliente/>} />
 
         <Route path="/produtos" element={<h1>Produtos</h1>} />
         <Route path="/produtos/lista" element={<ListaProdutos />} />

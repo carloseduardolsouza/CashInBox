@@ -57,7 +57,6 @@ function Table({ columns, data, actions }) {
       borderRadius: "4px",
       cursor: "pointer",
       fontSize: "13px",
-      fontWeight: "500",
       transition: "all 0.2s",
       outline: "none",
       fontWeight: "bold"

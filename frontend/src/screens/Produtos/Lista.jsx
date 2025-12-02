@@ -73,7 +73,6 @@ function ListaProdutos() {
       minWidth: "200px",
       minHeight: "200px",
 
-      backgroundSize: "cover",
       backgroundPosition: "center",
       marginRight: "10px",
       cursor: "pointer",
@@ -81,9 +80,6 @@ function ListaProdutos() {
 
       fontSize: "14px",
       backgroundSize: "cover",
-      backgroundPosition: "center",
-      borderRadius: "8px",
-      cursor: "pointer",
       backgroundColor: "var(--surface-strong)",
       display: "flex",
       alignItems: "center",

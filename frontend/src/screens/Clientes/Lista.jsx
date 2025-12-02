@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 //Icones
 import { FaSearch } from "react-icons/fa";
@@ -33,8 +34,6 @@ function ListaClientes() {
       backgroundColor: "var(--primary-color)",
       border: "none",
       height: "35px",
-      fontSize: "20px",
-      borderRadius: "50%",
       color: "var(--text-inverse)",
       cursor: "pointer",
       fontWeight: "bold",
@@ -44,7 +43,6 @@ function ListaClientes() {
       fontSize: "15px",
     },
     buttonSearch: {
-        backgroundColor: "none",
         border: "none",
         fontSize: "17px",
         cursor: "pointer",
@@ -68,6 +66,7 @@ function ListaClientes() {
 
   const data = [
     {
+      id: 1,
       nome: "João Silva",
       telefone : "",
       endereco: "",
@@ -75,6 +74,7 @@ function ListaClientes() {
       totalCompras: 150,
     },
     {
+      id: 2,
       nome: "Maria Santos",
       telefone : "",
       endereco: "",
@@ -82,6 +82,7 @@ function ListaClientes() {
       totalCompras: 230,
     },
     {
+      id: 3,
       nome: "Pedro Costa",
       telefone : "",
       endereco: "",
@@ -90,12 +91,14 @@ function ListaClientes() {
     },
   ];
 
+  const navigate = useNavigate();
+
   const actions = [
     {
       label: "Informações",
       type: "details",
       onClick: (row, index) => {
-        console.log(`Exibir detalhes:`, row);
+        navigate(`/clientes/detalhes/${row.id}`);
       },
     },
   ];

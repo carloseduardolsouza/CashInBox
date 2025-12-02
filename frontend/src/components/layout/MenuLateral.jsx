@@ -182,7 +182,6 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       background: 'transparent',
       width: '100%',
       border: 'none',
-      borderBottom: '2px solid black',
     },
     menuText: {
       marginLeft: '5px',
