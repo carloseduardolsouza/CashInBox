@@ -20,6 +20,7 @@ import HistoricoVendas from "./screens/Vendas/Historico";
 import OrcamentosVendas from "./screens/Vendas/Orcamento";
 import CrediariosVendas from "./screens/Vendas/Crediario";
 import DetalhesVenda from "./screens/Vendas/Detalhes";
+import PontoDeVenda from "./screens/Vendas/Pdv"
 
 //Clientes
 import ListaClientes from "./screens/Clientes/Lista";
@@ -66,6 +67,7 @@ function MainLayout() {
         <Route path="/vendas/orcamentos" element={<OrcamentosVendas />} />
         <Route path="/vendas/crediarios" element={<CrediariosVendas />} />
         <Route path="/vendas/detalhes/:id" element={<DetalhesVenda />} />
+        <Route path="/vendas/pdv" element={<PontoDeVenda />} />
 
         <Route path="/clientes/lista" element={<ListaClientes />} />
         <Route path="/clientes/cadastro" element={<CadastroCliente/>} />

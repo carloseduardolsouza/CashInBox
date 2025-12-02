@@ -1,0 +1,536 @@
+import { useState, useEffect } from "react";
+import { FaTrash, FaSearch, FaShoppingCart } from "react-icons/fa";
+import format from "../../utils/formatters";
+
+//Biblioteca
+import Select from "react-select";
+
+const styles = {
+  container: {
+    marginLeft: "40px",
+    minHeight: "95vh",
+    padding: "15px",
+  },
+  header: {
+    backgroundColor: "var(--surface)",
+    padding: "10px 20px",
+    borderRadius: "12px",
+    marginBottom: "10px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerTitle: {
+    margin: 0,
+    fontSize: "28px",
+    fontWeight: "600",
+    color: "var(--text-secondary)",
+  },
+  headerDate: {
+    margin: 0,
+    fontSize: "16px",
+    color: "var(--text-secondary)",
+  },
+  mainContent: {
+    display: "grid",
+    gridTemplateColumns: "580px 1fr",
+    gap: "10px",
+    height: "calc(100vh - 180px)",
+  },
+  leftPanel: {
+    backgroundColor: "var(--surface)",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    display: "flex",
+    flexDirection: "column",
+  },
+  searchWrapper: {
+    position: "relative",
+    marginBottom: "15px",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--text-muted)",
+    fontSize: "18px",
+  },
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "15px",
+    marginBottom: "10px",
+    padding: "15px",
+    backgroundColor: "var(--surface-strong)",
+    borderRadius: "8px",
+  },
+  infoItem: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  infoLabel: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "var(--text-muted)",
+    marginBottom: "5px",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  infoValue: {
+    fontSize: "16px",
+    color: "var(--text-secondary)",
+    fontWeight: "500",
+  },
+  formGroup: {
+    marginBottom: "10px",
+  },
+  input: {
+    width: "80%",
+    padding: "12px",
+    fontSize: "15px",
+    border: "2px solid var(--surface-border)",
+    backgroundColor: "var(--surface)",
+    color: "var(--text-secondary)",
+    textAlign: "center",
+    fontWeight: "bold",
+    borderRadius: "8px",
+    transition: "border-color 0.2s",
+    outline: "none",
+  },
+  addButton: {
+    width: "100%",
+    padding: "14px",
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#fff",
+    backgroundColor: "var(--primary-color)",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    marginTop: "10px",
+  },
+  totalSection: {
+    marginTop: "auto",
+    padding: "10px",
+    borderRadius: "8px",
+    textAlign: "center",
+  },
+  totalLabel: {
+    fontSize: "14px",
+    color: "var(--text-muted)",
+    fontWeight: "600",
+  },
+  totalValue: {
+    fontSize: "32px",
+    fontWeight: "700",
+    color: "var(--success-700)",
+    margin: 0,
+  },
+  rightPanel: {
+    backgroundColor: "var(--surface)",
+    padding: "25px",
+    borderRadius: "12px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+  },
+  tableWrapper: {
+    flex: 1,
+    overflowY: "auto",
+    marginBottom: "20px",
+    maxHeight: "380px",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  th: {
+    textAlign: "left",
+    padding: "12px 8px",
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "var(--text-muted)",
+    borderBottom: "2px solid var(--surface-border)",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  td: {
+    padding: "15px 8px",
+    fontSize: "15px",
+    color: "var(--text-secondary)",
+    borderBottom: "1px solid var(--surface-border)",
+  },
+  deleteButton: {
+    backgroundColor: "transparent",
+    border: "none",
+    color: "var(--error-700)",
+    cursor: "pointer",
+    fontSize: "18px",
+    padding: "5px 10px",
+    transition: "color 0.2s",
+  },
+  faturarButton: {
+    width: "100%",
+    padding: "16px",
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#fff",
+    backgroundColor: "var(--success-700)",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "60px 20px",
+    color: "var(--text-secondary)",
+  },
+  emptyIcon: {
+    fontSize: "64px",
+    marginBottom: "20px",
+    opacity: 0.3,
+  },
+  emptyText: {
+    fontSize: "18px",
+    fontWeight: "500",
+  },
+  modal: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+};
+
+function Pdv() {
+  // Dados simulados de produtos
+  const produtosSimulados = [
+    {
+      id: 1,
+      nome: "Notebook Dell Inspiron",
+      preco_venda: 3499.9,
+      estoque_atual: 15,
+    },
+    {
+      id: 2,
+      nome: "Mouse Logitech MX Master",
+      preco_venda: 449.9,
+      estoque_atual: 42,
+    },
+    {
+      id: 3,
+      nome: "Teclado Mecânico Keychron",
+      preco_venda: 599.9,
+      estoque_atual: 28,
+    },
+    { id: 4, nome: 'Monitor LG 27" 4K', preco_venda: 1899.9, estoque_atual: 8 },
+    {
+      id: 5,
+      nome: "Webcam Logitech C920",
+      preco_venda: 399.9,
+      estoque_atual: 35,
+    },
+    {
+      id: 6,
+      nome: "Headset HyperX Cloud II",
+      preco_venda: 499.9,
+      estoque_atual: 22,
+    },
+    { id: 7, nome: "SSD Samsung 1TB", preco_venda: 699.9, estoque_atual: 50 },
+    {
+      id: 8,
+      nome: "Impressora HP LaserJet",
+      preco_venda: 1299.9,
+      estoque_atual: 12,
+    },
+  ];
+
+  const Data = new Date();
+  const log = `${String(Data.getDate()).padStart(2, "0")}/${String(
+    Data.getMonth() + 1
+  ).padStart(2, "0")}/${Data.getFullYear()}`;
+
+  const [resultadoProdutos] = useState(produtosSimulados);
+  const [faturado, setFaturado] = useState(false);
+  const [produto, setProduto] = useState("Selecione um produto");
+  const [precovenda, setPreçovenda] = useState(0);
+  const [emestoque, setEmestoque] = useState(0);
+  const [quantidadeProduto, setQuantidadeProduto] = useState(1);
+  const [id_produto, setId_produto] = useState("");
+  const [arrayVenda, setArrayVenda] = useState([]);
+  const [valorTotal, setValorTotal] = useState(0);
+
+  const renderInfoProduto = (e) => {
+    const selectedId = parseInt(e.value);
+    const produtoSelecionado = resultadoProdutos.find(
+      (p) => p.id === selectedId
+    );
+
+    if (produtoSelecionado) {
+      setProduto(produtoSelecionado.nome);
+      setId_produto(produtoSelecionado.id);
+      setEmestoque(produtoSelecionado.estoque_atual);
+      setPreçovenda(produtoSelecionado.preco_venda);
+    }
+  };
+
+  const adidiconarArrayDeVenda = (e) => {
+    e.preventDefault();
+
+    if (
+      !id_produto ||
+      isNaN(precovenda) ||
+      isNaN(quantidadeProduto) ||
+      quantidadeProduto <= 0
+    ) {
+      alert("Por favor, selecione um produto e informe uma quantidade válida.");
+      return;
+    }
+
+    if (quantidadeProduto > emestoque) {
+      alert("Quantidade solicitada maior que o estoque disponível.");
+      return;
+    }
+
+    const index = arrayVenda.findIndex(
+      (item) => item.produto_id === id_produto
+    );
+
+    if (index !== -1) {
+      const novaArrayVenda = [...arrayVenda];
+      novaArrayVenda[index].quantidade += Number(quantidadeProduto);
+      novaArrayVenda[index].valor_total =
+        novaArrayVenda[index].quantidade * novaArrayVenda[index].preco_unitario;
+      setArrayVenda(novaArrayVenda);
+    } else {
+      const objetoDaVenda = {
+        produto_id: id_produto,
+        produto_nome: produto,
+        quantidade: quantidadeProduto,
+        preco_unitario: precovenda,
+        valor_total: precovenda * quantidadeProduto,
+      };
+      setArrayVenda([...arrayVenda, objetoDaVenda]);
+    }
+
+    setValorTotal(
+      (prevValorTotal) => prevValorTotal + precovenda * quantidadeProduto
+    );
+    setQuantidadeProduto(1);
+  };
+
+  const deleteItem = (idIndex, valorMenos) => {
+    const novaVenda = [...arrayVenda];
+    novaVenda.splice(idIndex, 1);
+    setArrayVenda(novaVenda);
+    setValorTotal((prevValorTotal) => prevValorTotal - valorMenos);
+  };
+
+  const finalizarVenda = () => {
+    alert(
+      `Venda finalizada com sucesso!\nTotal: ${formatarCurrency(
+        valorTotal
+      )}\nItens: ${arrayVenda.length}`
+    );
+    setArrayVenda([]);
+    setValorTotal(0);
+    setFaturado(false);
+    setProduto("Selecione um produto");
+    setId_produto("");
+    setPreçovenda(0);
+    setEmestoque(0);
+  };
+
+  const optionsProdutos = [];
+
+  resultadoProdutos.map((resultProdutos, index) => {
+    optionsProdutos.push({
+      value: resultProdutos.id,
+      label: resultProdutos.nome,
+    });
+  });
+
+  const customStyles = {
+  control: (base) => ({
+    ...base,
+    backgroundColor: "var(--surface-strong)",
+    borderColor: "var(--surface-border)",
+    padding: "6px",
+    borderRadius: "12px",
+    boxShadow: "none",
+    ":hover": {
+      borderColor: "var(--surface-border)",
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    background: "var(--surface-strong)",
+    borderRadius: "10px",
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isFocused ? "var(--surface-strong)" : "transparent",
+    color: "var(--text-primary)",
+    cursor: "pointer",
+  }),
+};
+
+  return (
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <h2 style={styles.headerTitle}>Nova Venda</h2>
+        <p style={styles.headerDate}>{log}</p>
+      </header>
+
+      <div style={styles.mainContent}>
+        <div style={styles.leftPanel}>
+          <div style={styles.searchWrapper}>
+            <FaSearch style={styles.searchIcon} />
+            <Select
+              styles={customStyles}
+              placeholder="Produto"
+              options={optionsProdutos}
+              onChange={(e) => renderInfoProduto(e)}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "var(--primary-color)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "var(--surface-border)")
+              }
+            />
+          </div>
+
+          <div style={styles.infoGrid}>
+            <div style={styles.infoItem}>
+              <span style={styles.infoLabel}>Produto</span>
+              <span style={styles.infoValue}>{produto}</span>
+            </div>
+            <div style={styles.infoItem}>
+              <span style={styles.infoLabel}>Preço</span>
+              <span style={styles.infoValue}>
+                {format.formatarCurrency(precovenda)}
+              </span>
+            </div>
+            <div style={styles.infoItem}>
+              <span style={styles.infoLabel}>Em Estoque</span>
+              <span style={styles.infoValue}>{emestoque} un.</span>
+            </div>
+            <div style={styles.infoItem}>
+              <span style={styles.infoLabel}>Quantidade</span>
+              <input
+                type="number"
+                min={1}
+                step="1"
+                value={quantidadeProduto}
+                onChange={(e) => setQuantidadeProduto(Number(e.target.value))}
+                style={styles.input}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "var(--primary-hover)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "var(--surface-border)")
+                }
+              />
+            </div>
+          </div>
+
+          <button
+            style={styles.addButton}
+            onClick={adidiconarArrayDeVenda}
+            onMouseOver={(e) =>
+              (e.target.style.backgroundColor = "var(--primary-hover)")
+            }
+            onMouseOut={(e) =>
+              (e.target.style.backgroundColor = "var(--primary-color)")
+            }
+          >
+            Adicionar Item
+          </button>
+
+          <div style={styles.totalSection}>
+            <div style={styles.totalLabel}>TOTAL DA VENDA</div>
+            <h1 style={styles.totalValue}>
+              {format.formatarCurrency(valorTotal)}
+            </h1>
+          </div>
+        </div>
+
+        <div style={styles.rightPanel}>
+          <div style={styles.tableWrapper}>
+            {arrayVenda.length === 0 ? (
+              <div style={styles.emptyState}>
+                <FaShoppingCart style={styles.emptyIcon} />
+                <p style={styles.emptyText}>Nenhum item adicionado à venda</p>
+              </div>
+            ) : (
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Produto</th>
+                    <th style={styles.th}>Preço Unit.</th>
+                    <th style={styles.th}>Qtd.</th>
+                    <th style={styles.th}>Total</th>
+                    <th style={styles.th}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {arrayVenda.map((venda, index) => (
+                    <tr key={index}>
+                      <td style={styles.td}>{venda.produto_nome}</td>
+                      <td style={styles.td}>
+                        {format.formatarCurrency(venda.preco_unitario)}
+                      </td>
+                      <td style={styles.td}>{venda.quantidade}</td>
+                      <td style={styles.td}>
+                        {format.formatarCurrency(venda.valor_total)}
+                      </td>
+                      <td style={styles.td}>
+                        <button
+                          style={styles.deleteButton}
+                          onClick={() => deleteItem(index, venda.valor_total)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <button
+            style={{
+              ...styles.faturarButton,
+              opacity: arrayVenda.length === 0 ? 0.5 : 1,
+              cursor: arrayVenda.length === 0 ? "not-allowed" : "pointer",
+            }}
+            onClick={() => arrayVenda.length > 0 && setFaturado(true)}
+            disabled={arrayVenda.length === 0}
+          >
+            <FaShoppingCart />
+            <span>Faturar Venda (F2)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Pdv;

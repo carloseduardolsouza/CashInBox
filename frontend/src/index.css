@@ -102,3 +102,7 @@
   border: none;
   padding: 0px;
 }
+
+body {
+  background-color: var(--background-color);
+}

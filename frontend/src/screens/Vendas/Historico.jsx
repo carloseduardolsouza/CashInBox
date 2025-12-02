@@ -89,7 +89,7 @@ function HistoricoVendas() {
     <div style={styles.Vendas}>
       <h2 style={styles.titleHeader}>Histórico de vendas</h2>
 
-      <Link to={"/"} style={styles.buttonNovaVenda}>
+      <Link to={"/vendas/pdv"} style={styles.buttonNovaVenda}>
         <FaComputer /> Nova Venda
       </Link>
 
