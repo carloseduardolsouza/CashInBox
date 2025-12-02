@@ -1,7 +1,15 @@
 import React from "react";
 import { FaTimes } from "react-icons/fa";
 
-const ModalVariacao = ({ isOpen, onClose, onSave, data, onChange, isEditing }) => {
+const ModalVariacao = ({
+  isOpen,
+  onClose,
+  onSave,
+  data,
+  onChange,
+  isEditing,
+  images,
+}) => {
   if (!isOpen) return null;
 
   const styles = {
@@ -181,6 +189,49 @@ const ModalVariacao = ({ isOpen, onClose, onSave, data, onChange, isEditing }) =
               value={data.cod_barras}
               onChange={(e) => handleChange("cod_barras", e.target.value)}
             />
+          </div>
+
+          <div style={{ ...styles.formGroup, ...styles.fullWidth }}>
+            <label style={styles.formLabel}>Imagem Associada</label>
+            <select
+              style={styles.formInput}
+              value={data.imagemIndex ?? ""}
+              onChange={(e) =>
+                handleChange(
+                  "imagemIndex",
+                  e.target.value === "" ? null : parseInt(e.target.value)
+                )
+              }
+            >
+              <option value="">Nenhuma imagem</option>
+              {images.map((img, index) => (
+                <option key={index} value={index}>
+                  Imagem {index + 1}
+                </option>
+              ))}
+            </select>
+
+            {data.imagemIndex !== null && images[data.imagemIndex] && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  border: "2px solid var(--surface-border)",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  maxWidth: "200px",
+                }}
+              >
+                <img
+                  src={images[data.imagemIndex]}
+                  alt="Preview"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div style={styles.formGroup}>

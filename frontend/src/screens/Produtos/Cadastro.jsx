@@ -66,6 +66,7 @@ const CadastrarProduto = () => {
     cod_barras: "",
     estoque: "",
     estoque_minimo: "",
+    imagemIndex: null,
   });
 
   const [novaCategoria, setNovaCategoria] = useState("");
@@ -685,6 +686,7 @@ const CadastrarProduto = () => {
       cod_barras: "",
       estoque: "",
       estoque_minimo: "",
+      imagemIndex: null,
     });
     setState((prev) => ({
       ...prev,
@@ -773,6 +775,21 @@ const CadastrarProduto = () => {
       label: categoria.nome,
     });
   });
+
+  const handleSaveCategoria = (value) => {
+    if (value.trim()) {
+      const newCat = {
+        id: state.categorias.length + 1,
+        nome: value,
+      };
+      setState((prev) => ({
+        ...prev,
+        categorias: [...prev.categorias, newCat],
+        showModal: false,
+      }));
+      setNovaCategoria("");
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -946,6 +963,29 @@ const CadastrarProduto = () => {
                 <div>
                   {variacoes.map((variacao, index) => (
                     <div key={index} style={styles.variacaoCard}>
+                      {variacao.imagemIndex !== null &&
+                        state.images[variacao.imagemIndex] && (
+                          <div
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              marginRight: "12px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <img
+                              src={state.images[variacao.imagemIndex]}
+                              alt={variacao.nome}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          </div>
+                        )}
                       <div style={styles.variacaoInfo}>
                         <div style={styles.variacaoNome}>{variacao.nome}</div>
                         <div style={styles.variacaoDetalhes}>
@@ -1117,11 +1157,11 @@ const CadastrarProduto = () => {
       {/* Modal de Categoria */}
       {state.showModal && (
         <ModalCategoria
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          onSave={handleSave}
-          value={nomeCategoria}
-          onChange={setNomeCategoria}
+          isOpen={state.showModal}
+          onClose={() => setState((prev) => ({ ...prev, showModal: false }))}
+          onSave={handleSaveCategoria}
+          value={novaCategoria}
+          onChange={setNovaCategoria}
         />
       )}
 
@@ -1129,11 +1169,12 @@ const CadastrarProduto = () => {
       {state.showVariacaoModal && (
         <ModalVariacao
           isOpen={state.showVariacaoModal}
-          onClose={() => state.showVariacaoModal(false)}
-          onSave={handleSave}
-          data={variacaoData}
-          onChange={setVariacaoData}
-          isEditing={isEditing}
+          onClose={closeVariacaoModal}
+          onSave={handleSaveVariacao}
+          data={variacaoForm}
+          onChange={setVariacaoForm}
+          isEditing={state.editingVariacaoIndex !== null}
+          images={state.images}
         />
       )}
     </div>
