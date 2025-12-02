@@ -34,6 +34,9 @@ import ListaProdutos from "./screens/Produtos/Lista";
 import Inventario from "./screens/Estoque/Inventario";
 import CadastrarProduto from "./screens/Estoque/Cadastro";
 
+//Configuracoes
+import Boletos from "./screens/Configuracoes/Boletos";
+
 function App() {
   return (
     <BrowserRouter>
@@ -100,6 +103,8 @@ function MainLayout() {
 
         <Route path="/funcionarios" element={<h1>Produtos</h1>} />
         <Route path="/funcionarios/lista" element={<h1>Produtos</h1>} />
+
+        <Route path="/configuracoes/boletos" element={<Boletos/>} />
       </Routes>
     </>
   );

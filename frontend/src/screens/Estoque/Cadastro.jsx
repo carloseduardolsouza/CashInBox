@@ -73,9 +73,8 @@ const CadastrarProduto = () => {
 
   const styles = {
     container: {
-      marginLeft: "44px",
       maxWidth: "1400px",
-      margin: "0 auto",
+      margin: "0px auto 0px 44px",
       padding: "32px 24px",
       background: "var(--background-color)",
       minHeight: "100vh",

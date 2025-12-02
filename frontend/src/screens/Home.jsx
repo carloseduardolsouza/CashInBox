@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 //icones
 import { FaSun } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -152,10 +153,10 @@ function Dashboard({theme , setTheme}) {
       <div style={styles.grid}>
         {/* Navegação */}
         <div style={styles.gridLeft}>
-          <NavButton icon={<Users size={24} />} label="Funcionários" />
-          <NavButton icon={<Package size={24} />} label="Planos" />
-          <NavButton icon={<DollarSign size={24} />} label="Fluxo" />
-          <NavButton icon={<ShoppingBasket size={24} />} label="PDV" />
+          <NavButton icon={<Users size={24} />} label="Funcionários" to={"/"}/>
+          <NavButton icon={<Package size={24} />} label="Planos" to={"/configuracoes/boletos"}/>
+          <NavButton icon={<DollarSign size={24} />} label="Fluxo" to={"/"}/>
+          <NavButton icon={<ShoppingBasket size={24} />} label="PDV" to={"/vendas/pdv"}/>
         </div>
 
         {/* Gráfico */}
@@ -306,10 +307,12 @@ function Dashboard({theme , setTheme}) {
   );
 }
 
+
 // Componentes auxiliares
-function NavButton({ icon, label }) {
+function NavButton({ icon, label , to }) {
+  const navigate = useNavigate();
   return (
-    <button style={styles.navBtn}>
+    <button style={styles.navBtn} onClick={() => navigate(to)}>
       {icon}
       <span style={styles.navBtnLabel}>{label}</span>
     </button>
