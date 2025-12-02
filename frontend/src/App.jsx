@@ -8,6 +8,10 @@ import {
 import MenuLateral from "./components/layout/MenuLateral";
 import { useState, useEffect } from "react";
 
+//import de components
+import ApiDesconectada from "./components/shared/ApiDesconectada";
+import AssinaturaVencida from "./components/shared/AssinaturaVencida";
+
 //imports de telas
 import Home from "./screens/Home";
 
@@ -18,6 +22,7 @@ import CrediariosVendas from "./screens/Vendas/Crediario";
 
 //Clientes
 import ListaClientes from "./screens/Clientes/Lista";
+import CadastroCliente from "./screens/Clientes/CadastroCliente";
 
 //Produtos
 import ListaProdutos from "./screens/Produtos/Lista";
@@ -53,7 +58,7 @@ function MainLayout() {
       />
 
       <Routes>
-        <Route path="/" element={<Home theme={theme} setTheme={setTheme}/>} />
+        <Route path="/" element={<Home theme={theme} setTheme={setTheme} />} />
 
         <Route path="/vendas" element={<h1>Vendas</h1>} />
         <Route path="/vendas/historico" element={<HistoricoVendas />} />
@@ -64,9 +69,10 @@ function MainLayout() {
         <Route path="/clientes/lista" element={<ListaClientes />} />
         <Route path="/clientes/aniversariantes" element={<h1>Clientes</h1>} />
         <Route path="/clientes/mensagens" element={<h1>Clientes</h1>} />
+        <Route path="/clientes/cadastro" element={<CadastroCliente/>} />
 
         <Route path="/produtos" element={<h1>Produtos</h1>} />
-        <Route path="/produtos/lista" element={<ListaProdutos/>} />
+        <Route path="/produtos/lista" element={<ListaProdutos />} />
         <Route path="/produtos/categorias" element={<h1>Produtos</h1>} />
         <Route path="/produtos/promocoes" element={<h1>Produtos</h1>} />
 

@@ -32,13 +32,16 @@ function ListaClientes() {
     buttonAdicionarCliente: {
       backgroundColor: "var(--primary-color)",
       border: "none",
-      width: "35px",
       height: "35px",
       fontSize: "20px",
       borderRadius: "50%",
       color: "var(--text-inverse)",
       cursor: "pointer",
       fontWeight: "bold",
+      padding: "10px 20px",
+      borderRadius: "20px",
+      textDecoration: "none",
+      fontSize: "15px",
     },
     buttonSearch: {
         backgroundColor: "none",
@@ -103,9 +106,9 @@ function ListaClientes() {
 
       <div>
         <form>
-          <button style={styles.buttonAdicionarCliente} type="button">
+          <Link to={"/clientes/cadastro"} style={styles.buttonAdicionarCliente} type="button">
             +
-          </button>
+          </Link>
           <input
             type="text"
             style={styles.inputSearch}

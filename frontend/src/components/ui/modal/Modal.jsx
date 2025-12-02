@@ -29,7 +29,7 @@ const styles = {
   },
 
   modal: {
-    background: "#fff",
+    background: "var(--background-soft)",
     padding: "20px",
     borderRadius: "10px",
     maxWidth: "90vw",

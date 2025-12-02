@@ -52,7 +52,6 @@ function AssinaturaVencida() {
     },
     actions: {
       margin: "0.75rem 1rem",
-      backgroundColor: "var(--error-100)",
     },
     desactivate: {
       display: "inline-flex",
