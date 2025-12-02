@@ -29,7 +29,10 @@ import DetalhesCliente from "./screens/Clientes/DetalhesCliente";
 
 //Produtos
 import ListaProdutos from "./screens/Produtos/Lista";
-import CadastrarProduto from "./screens/Produtos/Cadastro";
+
+//Estoque
+import Inventario from "./screens/Estoque/Inventario";
+import CadastrarProduto from "./screens/Estoque/Cadastro";
 
 function App() {
   return (
@@ -76,9 +79,9 @@ function MainLayout() {
 
         <Route path="/produtos/lista" element={<ListaProdutos />} />
         <Route path="/produtos/categorias" element={<h1>Produtos</h1>} />
-        <Route path="/produtos/cadastro" element={<CadastrarProduto/>} />
 
-        <Route path="/estoque/inventario" element={<h1>Produtos</h1>} />
+        <Route path="/estoque/inventario" element={<Inventario/>} />
+        <Route path="/estoque/cadastro" element={<CadastrarProduto/>} />
         <Route path="/estoque/minimo" element={<h1>Produtos</h1>} />
 
         <Route path="/contasPagar/lista" element={<h1>Produtos</h1>} />
