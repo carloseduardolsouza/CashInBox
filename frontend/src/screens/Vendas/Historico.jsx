@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 //icones
 import { FaComputer } from "react-icons/fa6";
@@ -44,6 +45,7 @@ function HistoricoVendas() {
 
   const data = [
     {
+      id: 2,
       cliente: "João Silva",
       desconto: 10,
       acrescimos: 5,
@@ -52,6 +54,7 @@ function HistoricoVendas() {
       data: "2025-12-01",
     },
     {
+      id: 2,
       cliente: "Maria Santos",
       desconto: 0,
       acrescimos: 0,
@@ -60,6 +63,7 @@ function HistoricoVendas() {
       data: "2025-12-02",
     },
     {
+      id: 2,
       cliente: "Pedro Costa",
       desconto: 15,
       acrescimos: 0,
@@ -69,13 +73,15 @@ function HistoricoVendas() {
     },
   ];
 
+  const navigate = useNavigate();
+
   const actions = [
   {
     label: "Detalhes",
     type: "details",
     onClick: (row, index) => {
-      console.log(`Exibir detalhes:`, row);
-    },
+        navigate(`/vendas/detalhes/${row.id}`);
+      },
   }
 ];
 

@@ -19,6 +19,7 @@ import Home from "./screens/Home";
 import HistoricoVendas from "./screens/Vendas/Historico";
 import OrcamentosVendas from "./screens/Vendas/Orcamento";
 import CrediariosVendas from "./screens/Vendas/Crediario";
+import DetalhesVenda from "./screens/Vendas/Detalhes";
 
 //Clientes
 import ListaClientes from "./screens/Clientes/Lista";
@@ -61,33 +62,25 @@ function MainLayout() {
       <Routes>
         <Route path="/" element={<Home theme={theme} setTheme={setTheme} />} />
 
-        <Route path="/vendas" element={<h1>Vendas</h1>} />
         <Route path="/vendas/historico" element={<HistoricoVendas />} />
         <Route path="/vendas/orcamentos" element={<OrcamentosVendas />} />
         <Route path="/vendas/crediarios" element={<CrediariosVendas />} />
+        <Route path="/vendas/detalhes/:id" element={<DetalhesVenda />} />
 
-        <Route path="/clientes" element={<h1>Clientes</h1>} />
         <Route path="/clientes/lista" element={<ListaClientes />} />
-        <Route path="/clientes/aniversariantes" element={<h1>Clientes</h1>} />
-        <Route path="/clientes/mensagens" element={<h1>Clientes</h1>} />
         <Route path="/clientes/cadastro" element={<CadastroCliente/>} />
         <Route path="/clientes/detalhes/:id" element={<DetalhesCliente/>} />
 
-        <Route path="/produtos" element={<h1>Produtos</h1>} />
         <Route path="/produtos/lista" element={<ListaProdutos />} />
         <Route path="/produtos/categorias" element={<h1>Produtos</h1>} />
-        <Route path="/produtos/promocoes" element={<h1>Produtos</h1>} />
 
-        <Route path="/estoque" element={<h1>Produtos</h1>} />
         <Route path="/estoque/inventario" element={<h1>Produtos</h1>} />
         <Route path="/estoque/minimo" element={<h1>Produtos</h1>} />
 
-        <Route path="/contasPagar" element={<h1>Produtos</h1>} />
         <Route path="/contasPagar/lista" element={<h1>Produtos</h1>} />
         <Route path="/contasPagar/pagas" element={<h1>Produtos</h1>} />
         <Route path="/contasPagar/categorias" element={<h1>Produtos</h1>} />
 
-        <Route path="/fluxoDeCaixa" element={<h1>Produtos</h1>} />
         <Route path="/fluxoDeCaixa/movimentacoes" element={<h1>Produtos</h1>} />
 
         <Route path="/relatorios" element={<h1>Produtos</h1>} />

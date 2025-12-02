@@ -75,8 +75,6 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconOutline: FaRegUser,
       subcategories: [
         { path: "/clientes/lista", label: "Lista de clientes" },
-        { path: "/clientes/aniversariantes", label: "Aniversariantes do Dia/Mês" },
-        { path: "/clientes/mensagens", label: "Mensagens Automáticas" }
       ]
     },
     {
@@ -87,7 +85,6 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       subcategories: [
         { path: "/produtos/lista", label: "Lista de Produtos" },
         { path: "/produtos/categorias", label: "Categorias" },
-        { path: "/produtos/promocoes", label: "Promoções" }
       ]
     },
     {

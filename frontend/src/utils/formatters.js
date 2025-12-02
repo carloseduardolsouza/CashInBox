@@ -25,10 +25,26 @@ const formatarCEP = (cep) => {
   return cep.replace(/(\d{5})(\d{3})/, "$1-$2");
 };
 
+const formatarCurrency = (valor) => {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(valor);
+};
+
+const formatarHora = (data) => {
+  return new Date(data).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 export default {
   formatDate,
   formatCPF,
   formatCNPJ,
   formatarTelefone,
-  formatarCEP
+  formatarCEP,
+  formatarCurrency,
+  formatarHora
 };
