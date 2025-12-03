@@ -51,7 +51,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    fontWeight: "500",
   },
   searchContainer: {
     display: "flex",

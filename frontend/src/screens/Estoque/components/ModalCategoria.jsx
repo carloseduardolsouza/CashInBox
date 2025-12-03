@@ -1,29 +1,17 @@
 import React from "react";
 import { FaTimes } from "react-icons/fa";
 
+import Modal from "../../../components/ui/modal/Modal"
+
 const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
   if (!isOpen) return null;
 
   const styles = {
-    modalOverlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-    },
     modal: {
-      background: "var(--background)",
       borderRadius: "16px",
       padding: "32px",
       maxWidth: "500px",
       width: "90%",
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
     },
     modalHeader: {
       display: "flex",
@@ -108,8 +96,7 @@ const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
   };
 
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} style={styles.modal}>
         <div style={styles.modalHeader}>
           <h3 style={styles.modalTitle}>Nova Categoria</h3>
           <button style={styles.closeButton} onClick={onClose}>
@@ -125,7 +112,6 @@ const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
             placeholder="Digite o nome da categoria..."
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSave()}
           />
         </div>
 
@@ -137,8 +123,7 @@ const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
             Salvar
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 };
 
