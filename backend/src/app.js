@@ -3,7 +3,11 @@ const path = require("path");
 const os = require("os");
 
 // Importa todas as rotas da aplicação
-// const caixaRoute = require("./routers/caixaRoute");
+const clientesRoutes = require("./routers/clientesRoutes");
+const produtoRoutes = require("./routers/produtoRoutes");
+const vendaRoutes = require("./routers/vendaRoutes");
+const contaRoutes = require("./routers/contaRoutes");
+const caixaRoutes = require("./routers/caixaRoutes");
 
 // Inicializa o app Express
 const app = express();
@@ -38,6 +42,10 @@ app.use(express.json());
 
 // 🔁 Rotas da API
 
-// app.use("/caixa", authOffMiddleware , caixaRoute);
+app.use("/cliente", clientesRoutes);
+app.use("/produto", produtoRoutes);
+app.use("/venda", vendaRoutes);
+app.use("/conta", contaRoutes);
+app.use("/caixa", caixaRoutes);
 
 module.exports = app;
