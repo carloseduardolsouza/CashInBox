@@ -15,6 +15,9 @@ import AssinaturaVencida from "./components/shared/AssinaturaVencida";
 //imports de telas
 import Home from "./screens/Home";
 
+//Funcionarios
+import ListaFuncionarios from "./screens/Funcionarios/Lista";
+
 //Vendas
 import HistoricoVendas from "./screens/Vendas/Historico";
 import OrcamentosVendas from "./screens/Vendas/Orcamento";
@@ -91,6 +94,8 @@ function MainLayout() {
 
       <Routes>
         <Route path="/" element={<Home theme={theme} setTheme={setTheme} />} />
+
+        <Route path="/funcionarios/lista" element={<ListaFuncionarios/>} />
 
         <Route path="/vendas/historico" element={<HistoricoVendas />} />
         <Route path="/vendas/orcamentos" element={<OrcamentosVendas />} />
