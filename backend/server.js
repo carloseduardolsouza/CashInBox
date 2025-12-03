@@ -3,14 +3,34 @@ const app = require("./src/app");
 const { initializeDatabase, closeDatabase } = require("./src/config/database");
 const { validateAndFix } = require("./src/config/schemaValidator");
 
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
+const userDataPath = path.join(os.homedir(), "AppData", "Roaming", "CashInBox");
+const userDataPathDev = path.join(userDataPath, "Desenvolvimento");
+
+function ensureDirectories() {
+  if (!fs.existsSync(userDataPath)) {
+    fs.mkdirSync(userDataPath, { recursive: true });
+  }
+
+  if (!fs.existsSync(userDataPathDev)) {
+    fs.mkdirSync(userDataPathDev, { recursive: true });
+  }
+}
+
 const PORT = process.env.PORT || 1122;
 
 const startServer = async () => {
   try {
-    // 1. Inicializa o banco de dados primeiro
+    // 👉 PRIMEIRA COISA: criar as pastas
+    ensureDirectories();
+
+    // 1. Inicializa o banco de dados
     await initializeDatabase();
 
-    // 2. Valida e corrige o schema automaticamente
+    // 2. Valida e corrige o schema
     const validation = await validateAndFix();
     
     if (!validation.valid) {
@@ -21,43 +41,28 @@ const startServer = async () => {
 
     // 3. Inicia o servidor Express
     const server = app.listen(PORT, () => {
-      console.log('\n🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉');
-      console.log(`🔥 Servidor rodando na porta ${PORT}`);
-      console.log(`📍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🌐 URL: http://localhost:${PORT}`);
-      console.log('🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉\n');
+      console.log('\n🔥 Servidor rodando na porta ' + PORT);
     });
 
-    // 4. Tratamento de erros do servidor
     server.on("error", (error) => {
       if (error.code === "EADDRINUSE") {
-        console.error(
-          `❌ Porta ${PORT} já está em uso. Tente outra porta ou feche o processo existente.`
-        );
+        console.error(`❌ Porta ${PORT} já está em uso.`);
       } else {
         console.error("❌ Erro ao iniciar o servidor:", error);
       }
       process.exit(1);
     });
 
-    // 5. Tratamento gracioso de encerramento (Ctrl+C)
+    // Encerramento gracioso
     const gracefulShutdown = async (signal) => {
-      console.log(`\n👋 Recebido sinal ${signal}. Encerrando servidor...`);
-      
-      // Fecha o servidor HTTP (não aceita novas conexões)
+      console.log(`\n👋 Encerrando servidor (${signal})...`);
       server.close(async () => {
         console.log('🔌 Servidor HTTP encerrado.');
-        
-        // Fecha a conexão com o banco de dados
         await closeDatabase();
-        
-        console.log('✅ Aplicação encerrada com sucesso!');
         process.exit(0);
       });
-
-      // Se não fechar em 10 segundos, força o encerramento
       setTimeout(() => {
-        console.error('❌ Forçando encerramento após timeout');
+        console.error('❌ Timeout forçando encerramento');
         process.exit(1);
       }, 10000);
     };
