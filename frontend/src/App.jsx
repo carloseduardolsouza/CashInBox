@@ -27,6 +27,12 @@ import ListaClientes from "./screens/Clientes/Lista";
 import CadastroCliente from "./screens/Clientes/CadastroCliente";
 import DetalhesCliente from "./screens/Clientes/DetalhesCliente";
 
+//Caixa
+import FluxoCaixa from "./screens/FluxoCaixa"
+
+//Contas
+import ListaContas from "./screens/Contas/Lista"
+
 //Produtos
 import ListaProdutos from "./screens/Produtos/Lista";
 
@@ -87,11 +93,11 @@ function MainLayout() {
         <Route path="/estoque/cadastro" element={<CadastrarProduto/>} />
         <Route path="/estoque/minimo" element={<h1>Produtos</h1>} />
 
-        <Route path="/contasPagar/lista" element={<h1>Produtos</h1>} />
+        <Route path="/contasPagar/lista" element={<ListaContas/>} />
         <Route path="/contasPagar/pagas" element={<h1>Produtos</h1>} />
         <Route path="/contasPagar/categorias" element={<h1>Produtos</h1>} />
 
-        <Route path="/fluxoDeCaixa/movimentacoes" element={<h1>Produtos</h1>} />
+        <Route path="/fluxoDeCaixa/movimentacoes" element={<FluxoCaixa/>} />
 
         <Route path="/relatorios" element={<h1>Produtos</h1>} />
         <Route path="/relatorios/geral" element={<h1>Produtos</h1>} />
