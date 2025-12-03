@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FaSun } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FaMoon } from "react-icons/fa";
+import { ScanBarcode } from "lucide-react";
 
 import {
   TrendingUp,
@@ -13,7 +14,6 @@ import {
   Activity,
   ShoppingBasket,
   Users,
-  Package,
 } from "lucide-react";
 import {
   LineChart,
@@ -154,7 +154,7 @@ function Dashboard({theme , setTheme}) {
         {/* Navegação */}
         <div style={styles.gridLeft}>
           <NavButton icon={<Users size={24} />} label="Funcionários" to={"/"}/>
-          <NavButton icon={<Package size={24} />} label="Planos" to={"/configuracoes/boletos"}/>
+          <NavButton icon={<ScanBarcode size={24} />} label="Boleto" to={"/configuracoes/boletos"}/>
           <NavButton icon={<DollarSign size={24} />} label="Fluxo" to={"/fluxoDeCaixa/movimentacoes"}/>
           <NavButton icon={<ShoppingBasket size={24} />} label="PDV" to={"/vendas/pdv"}/>
         </div>

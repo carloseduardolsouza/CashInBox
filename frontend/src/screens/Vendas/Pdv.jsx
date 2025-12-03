@@ -216,48 +216,189 @@ const styles = {
     justifyContent: "center",
     zIndex: 1000,
   },
+
+  variacoesContainer: {
+    marginBottom: "24px",
+    background: "var(--surface-strong)",
+    padding: "16px",
+    borderRadius: "12px",
+  },
+  variacoesTitle: {
+    fontSize: "12px",
+    color: "var(--text-muted)",
+    marginBottom: "12px",
+    textTransform: "uppercase",
+    fontWeight: "600",
+  },
+  variacoesGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+    gap: "8px",
+  },
+  variacaoButton: {
+    padding: "12px",
+    background: "var(--background-soft)",
+    borderRadius: "8px",
+    color: "#ffffff",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "all 0.3s",
+    textAlign: "center",
+  },
+  variacaoButtonActive: {
+    background: "var(--primary-hover)",
+  },
+  modal: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.8)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    background: "#16162a",
+    borderRadius: "16px",
+    padding: "32px",
+    maxWidth: "600px",
+    width: "90%",
+    maxHeight: "80vh",
+    overflowY: "auto",
+  },
+  modalTitle: {
+    fontSize: "24px",
+    marginBottom: "24px",
+    color: "#ffffff",
+  },
+  modalSection: {
+    marginBottom: "24px",
+  },
+  modalLabel: {
+    display: "block",
+    fontSize: "14px",
+    color: "#8e8ea0",
+    marginBottom: "8px",
+    fontWeight: "600",
+  },
+  modalInput: {
+    width: "100%",
+    padding: "12px",
+    background: "#1a1a2e",
+    border: "1px solid #2d2d44",
+    borderRadius: "8px",
+    color: "#ffffff",
+    fontSize: "16px",
+    outline: "none",
+  },
+  modalButtons: {
+    display: "flex",
+    gap: "12px",
+    marginTop: "24px",
+  },
+  modalButton: {
+    flex: 1,
+    padding: "16px",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "16px",
+    fontWeight: "700",
+    cursor: "pointer",
+    transition: "all 0.3s",
+  },
+  tipoToggle: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "12px",
+  },
+  tipoButton: {
+    flex: 1,
+    padding: "8px",
+    background: "#1a1a2e",
+    border: "1px solid #2d2d44",
+    borderRadius: "8px",
+    color: "#ffffff",
+    cursor: "pointer",
+    transition: "all 0.3s",
+  },
+  tipoButtonActive: {
+    background: "#6c5ce7",
+    borderColor: "#6c5ce7",
+  },
 };
 
 function Pdv() {
-  // Dados simulados de produtos
+  // Dados simulados de produtos com variações
   const produtosSimulados = [
     {
       id: 1,
       nome: "Notebook Dell Inspiron",
       preco_venda: 3499.9,
       estoque_atual: 15,
+      variacoes: null,
     },
     {
       id: 2,
       nome: "Mouse Logitech MX Master",
       preco_venda: 449.9,
       estoque_atual: 42,
+      variacoes: null,
     },
     {
       id: 3,
-      nome: "Teclado Mecânico Keychron",
-      preco_venda: 599.9,
-      estoque_atual: 28,
+      nome: "Camiseta Básica",
+      preco_venda: 59.9,
+      estoque_atual: 100,
+      variacoes: [
+        { id: 1, tipo: "cor", valor: "Preta", tamanho: "P", estoque: 20 },
+        { id: 2, tipo: "cor", valor: "Preta", tamanho: "M", estoque: 25 },
+        { id: 3, tipo: "cor", valor: "Preta", tamanho: "G", estoque: 15 },
+        { id: 4, tipo: "cor", valor: "Branca", tamanho: "P", estoque: 18 },
+        { id: 5, tipo: "cor", valor: "Branca", tamanho: "M", estoque: 22 },
+        { id: 6, tipo: "cor", valor: "Branca", tamanho: "G", estoque: 10 },
+      ],
     },
-    { id: 4, nome: 'Monitor LG 27" 4K', preco_venda: 1899.9, estoque_atual: 8 },
+    {
+      id: 4,
+      nome: 'Monitor LG 27" 4K',
+      preco_venda: 1899.9,
+      estoque_atual: 8,
+      variacoes: null,
+    },
     {
       id: 5,
-      nome: "Webcam Logitech C920",
-      preco_venda: 399.9,
-      estoque_atual: 35,
+      nome: "Tênis Esportivo",
+      preco_venda: 299.9,
+      estoque_atual: 60,
+      variacoes: [
+        { id: 7, tipo: "cor", valor: "Azul", tamanho: "38", estoque: 10 },
+        { id: 8, tipo: "cor", valor: "Azul", tamanho: "40", estoque: 15 },
+        { id: 9, tipo: "cor", valor: "Azul", tamanho: "42", estoque: 8 },
+        { id: 10, tipo: "cor", valor: "Preto", tamanho: "38", estoque: 12 },
+        { id: 11, tipo: "cor", valor: "Preto", tamanho: "40", estoque: 10 },
+        { id: 12, tipo: "cor", valor: "Preto", tamanho: "42", estoque: 5 },
+      ],
     },
     {
       id: 6,
-      nome: "Headset HyperX Cloud II",
-      preco_venda: 499.9,
-      estoque_atual: 22,
+      nome: "Suco Natural",
+      preco_venda: 12.9,
+      estoque_atual: 80,
+      variacoes: [
+        { id: 13, tipo: "sabor", valor: "Laranja", estoque: 30 },
+        { id: 14, tipo: "sabor", valor: "Uva", estoque: 25 },
+        { id: 15, tipo: "sabor", valor: "Morango", estoque: 25 },
+      ],
     },
-    { id: 7, nome: "SSD Samsung 1TB", preco_venda: 699.9, estoque_atual: 50 },
     {
-      id: 8,
-      nome: "Impressora HP LaserJet",
-      preco_venda: 1299.9,
-      estoque_atual: 12,
+      id: 7,
+      nome: "SSD Samsung 1TB",
+      preco_venda: 699.9,
+      estoque_atual: 50,
+      variacoes: null,
     },
   ];
 
@@ -267,7 +408,6 @@ function Pdv() {
   ).padStart(2, "0")}/${Data.getFullYear()}`;
 
   const [resultadoProdutos] = useState(produtosSimulados);
-  const [faturado, setFaturado] = useState(false);
   const [produto, setProduto] = useState("Selecione um produto");
   const [precovenda, setPreçovenda] = useState(0);
   const [emestoque, setEmestoque] = useState(0);
@@ -275,6 +415,18 @@ function Pdv() {
   const [id_produto, setId_produto] = useState("");
   const [arrayVenda, setArrayVenda] = useState([]);
   const [valorTotal, setValorTotal] = useState(0);
+
+  // Novos estados para variações
+  const [variacoesProduto, setVariacoesProduto] = useState([]);
+  const [variacaoSelecionada, setVariacaoSelecionada] = useState(null);
+  const [mostrarVariacoes, setMostrarVariacoes] = useState(false);
+
+  // Estados para finalização
+  const [mostrarModalFinalizar, setMostrarModalFinalizar] = useState(false);
+  const [desconto, setDesconto] = useState({ tipo: "real", valor: 0 });
+  const [acrescimo, setAcrescimo] = useState({ tipo: "real", valor: 0 });
+  const [formaPagamento, setFormaPagamento] = useState("dinheiro");
+  const [valorPagamento, setValorPagamento] = useState(0);
 
   const renderInfoProduto = (e) => {
     const selectedId = parseInt(e.value);
@@ -287,7 +439,26 @@ function Pdv() {
       setId_produto(produtoSelecionado.id);
       setEmestoque(produtoSelecionado.estoque_atual);
       setPreçovenda(produtoSelecionado.preco_venda);
+
+      // Verificar se o produto tem variações
+      if (
+        produtoSelecionado.variacoes &&
+        produtoSelecionado.variacoes.length > 0
+      ) {
+        setVariacoesProduto(produtoSelecionado.variacoes);
+        setMostrarVariacoes(true);
+        setVariacaoSelecionada(null);
+      } else {
+        setVariacoesProduto([]);
+        setMostrarVariacoes(false);
+        setVariacaoSelecionada(null);
+      }
     }
+  };
+
+  const selecionarVariacao = (variacao) => {
+    setVariacaoSelecionada(variacao);
+    setEmestoque(variacao.estoque);
   };
 
   const adidiconarArrayDeVenda = (e) => {
@@ -303,28 +474,46 @@ function Pdv() {
       return;
     }
 
+    // Verificar se precisa de variação
+    if (mostrarVariacoes && !variacaoSelecionada) {
+      alert("Por favor, selecione uma variação do produto.");
+      return;
+    }
+
     if (quantidadeProduto > emestoque) {
       alert("Quantidade solicitada maior que o estoque disponível.");
       return;
     }
 
-    const index = arrayVenda.findIndex(
-      (item) => item.produto_id === id_produto
-    );
+    const chaveItem = variacaoSelecionada
+      ? `${id_produto}-${variacaoSelecionada.id}`
+      : `${id_produto}`;
+
+    const index = arrayVenda.findIndex((item) => item.chave === chaveItem);
 
     if (index !== -1) {
       const novaArrayVenda = [...arrayVenda];
       novaArrayVenda[index].quantidade += Number(quantidadeProduto);
-      novaArrayVenda[index].valor_total =
+      novaArrayVenda[index].subtotal =
         novaArrayVenda[index].quantidade * novaArrayVenda[index].preco_unitario;
       setArrayVenda(novaArrayVenda);
     } else {
+      const descricaoVariacao = variacaoSelecionada
+        ? ` - ${variacaoSelecionada.valor}${
+            variacaoSelecionada.tamanho
+              ? ` (${variacaoSelecionada.tamanho})`
+              : ""
+          }`
+        : "";
+
       const objetoDaVenda = {
-        produto_id: id_produto,
-        produto_nome: produto,
+        chave: chaveItem,
+        id_produto: id_produto,
+        id_variacao: variacaoSelecionada ? variacaoSelecionada.id : null,
+        produto_nome: produto + descricaoVariacao,
         quantidade: quantidadeProduto,
         preco_unitario: precovenda,
-        valor_total: precovenda * quantidadeProduto,
+        subtotal: precovenda * quantidadeProduto,
       };
       setArrayVenda([...arrayVenda, objetoDaVenda]);
     }
@@ -333,6 +522,7 @@ function Pdv() {
       (prevValorTotal) => prevValorTotal + precovenda * quantidadeProduto
     );
     setQuantidadeProduto(1);
+    setVariacaoSelecionada(null);
   };
 
   const deleteItem = (idIndex, valorMenos) => {
@@ -342,54 +532,120 @@ function Pdv() {
     setValorTotal((prevValorTotal) => prevValorTotal - valorMenos);
   };
 
+  const calcularValorFinal = () => {
+    let valorFinal = valorTotal;
+
+    // Aplicar desconto
+    if (desconto.valor > 0) {
+      if (desconto.tipo === "porcentagem") {
+        valorFinal -= (valorTotal * desconto.valor) / 100;
+      } else {
+        valorFinal -= desconto.valor;
+      }
+    }
+
+    // Aplicar acréscimo
+    if (acrescimo.valor > 0) {
+      if (acrescimo.tipo === "porcentagem") {
+        valorFinal += (valorTotal * acrescimo.valor) / 100;
+      } else {
+        valorFinal += acrescimo.valor;
+      }
+    }
+
+    return Math.max(0, valorFinal);
+  };
+
   const finalizarVenda = () => {
-    alert(
-      `Venda finalizada com sucesso!\nTotal: ${formatarCurrency(
-        valorTotal
-      )}\nItens: ${arrayVenda.length}`
-    );
+    const valorLiquido = calcularValorFinal();
+
+    const vendaData = {
+      data: new Date().toISOString(),
+      valor_bruto: valorTotal,
+      valor_liquido: valorLiquido,
+      status: "finalizada",
+      desconto_real:
+        desconto.tipo === "real"
+          ? desconto.valor
+          : (valorTotal * desconto.valor) / 100,
+      desconto_porcentagem:
+        desconto.tipo === "porcentagem" ? desconto.valor : 0,
+      acrescimo_real:
+        acrescimo.tipo === "real"
+          ? acrescimo.valor
+          : (valorTotal * acrescimo.valor) / 100,
+      acrescimo_porcentagem:
+        acrescimo.tipo === "porcentagem" ? acrescimo.valor : 0,
+      id_usuario: 1, // Simulado
+      id_funcionario: 1, // Simulado
+      pagamento: [
+        {
+          forma: formaPagamento,
+          valor: valorPagamento || valorLiquido,
+          data_pagamento: new Date().toISOString(),
+        },
+      ],
+      produtos: arrayVenda.map((item) => ({
+        id_produto: item.id_produto,
+        id_variacao: item.id_variacao,
+        quantidade: item.quantidade,
+        preco_unitario: item.preco_unitario,
+        subtotal: item.subtotal,
+      })),
+    };
+
+    console.log("Venda Finalizada:", JSON.stringify(vendaData, null, 2));
+
+    // Resetar tudo
     setArrayVenda([]);
     setValorTotal(0);
-    setFaturado(false);
+    setMostrarModalFinalizar(false);
     setProduto("Selecione um produto");
     setId_produto("");
     setPreçovenda(0);
     setEmestoque(0);
+    setDesconto({ tipo: "real", valor: 0 });
+    setAcrescimo({ tipo: "real", valor: 0 });
+    setFormaPagamento("dinheiro");
+    setValorPagamento(0);
   };
 
-  const optionsProdutos = [];
-
-  resultadoProdutos.map((resultProdutos, index) => {
-    optionsProdutos.push({
-      value: resultProdutos.id,
-      label: resultProdutos.nome,
-    });
-  });
+  const optionsProdutos = resultadoProdutos.map((resultProdutos) => ({
+    value: resultProdutos.id,
+    label: resultProdutos.nome,
+  }));
 
   const customStyles = {
-  control: (base) => ({
-    ...base,
-    backgroundColor: "var(--surface-strong)",
-    borderColor: "var(--surface-border)",
-    padding: "6px",
-    borderRadius: "12px",
-    boxShadow: "none",
-    ":hover": {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "var(--surface-strong)",
       borderColor: "var(--surface-border)",
-    },
-  }),
-  menu: (base) => ({
-    ...base,
-    background: "var(--surface-strong)",
-    borderRadius: "10px",
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isFocused ? "var(--surface-strong)" : "transparent",
-    color: "var(--text-primary)",
-    cursor: "pointer",
-  }),
-};
+      padding: "6px",
+      borderRadius: "12px",
+      boxShadow: "none",
+      ":hover": {
+        borderColor: "var(--surface-border)",
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      background: "var(--surface-strong)",
+      borderRadius: "10px",
+    }),
+    singleValue: (base, state) => ({
+      ...base,
+      color: "var(--text-primary)",
+      fontWeight: 600, 
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused
+        ? "var(--surface-strong)"
+        : "transparent",
+      color: "var(--text-primary)",
+      cursor: "pointer",
+    }),
+  };
 
   return (
     <div style={styles.container}>
@@ -407,14 +663,44 @@ function Pdv() {
               placeholder="Produto"
               options={optionsProdutos}
               onChange={(e) => renderInfoProduto(e)}
-              onFocus={(e) =>
-                (e.target.style.borderColor = "var(--primary-color)")
-              }
-              onBlur={(e) =>
-                (e.target.style.borderColor = "var(--surface-border)")
-              }
             />
           </div>
+
+          {mostrarVariacoes && (
+            <div style={styles.variacoesContainer}>
+              <div style={styles.variacoesTitle}>Selecione a Variação</div>
+              <div style={styles.variacoesGrid}>
+                {variacoesProduto.map((variacao) => (
+                  <button
+                    key={variacao.id}
+                    style={{
+                      ...styles.variacaoButton,
+                      ...(variacaoSelecionada?.id === variacao.id
+                        ? styles.variacaoButtonActive
+                        : {}),
+                    }}
+                    onClick={() => selecionarVariacao(variacao)}
+                  >
+                    <div>{variacao.valor}</div>
+                    {variacao.tamanho && (
+                      <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                        {variacao.tamanho}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--text-muted)",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Estoque: {variacao.estoque}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={styles.infoGrid}>
             <div style={styles.infoItem}>
@@ -440,26 +726,11 @@ function Pdv() {
                 value={quantidadeProduto}
                 onChange={(e) => setQuantidadeProduto(Number(e.target.value))}
                 style={styles.input}
-                onFocus={(e) =>
-                  (e.target.style.borderColor = "var(--primary-hover)")
-                }
-                onBlur={(e) =>
-                  (e.target.style.borderColor = "var(--surface-border)")
-                }
               />
             </div>
           </div>
 
-          <button
-            style={styles.addButton}
-            onClick={adidiconarArrayDeVenda}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = "var(--primary-hover)")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.backgroundColor = "var(--primary-color)")
-            }
-          >
+          <button style={styles.addButton} onClick={adidiconarArrayDeVenda}>
             Adicionar Item
           </button>
 
@@ -498,12 +769,12 @@ function Pdv() {
                       </td>
                       <td style={styles.td}>{venda.quantidade}</td>
                       <td style={styles.td}>
-                        {format.formatarCurrency(venda.valor_total)}
+                        {format.formatarCurrency(venda.subtotal)}
                       </td>
                       <td style={styles.td}>
                         <button
                           style={styles.deleteButton}
-                          onClick={() => deleteItem(index, venda.valor_total)}
+                          onClick={() => deleteItem(index, venda.subtotal)}
                         >
                           <FaTrash />
                         </button>
@@ -521,7 +792,7 @@ function Pdv() {
               opacity: arrayVenda.length === 0 ? 0.5 : 1,
               cursor: arrayVenda.length === 0 ? "not-allowed" : "pointer",
             }}
-            onClick={() => arrayVenda.length > 0 && setFaturado(true)}
+            onClick={() => finalizarVenda()}
             disabled={arrayVenda.length === 0}
           >
             <FaShoppingCart />

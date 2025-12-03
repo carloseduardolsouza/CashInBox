@@ -208,7 +208,24 @@ function CadastrarCliente() {
 
   const cadastrarCliente = () => {
     console.log("Dados do cliente:", form);
-    return;
+    //json para enviar para cadastro do cliente
+    const clienteData = {
+      nome: form.nome,
+      telefone: form.numero,
+      email: form.email,
+      cpfCNPJ: form.cpf,
+      data_nascimento: form.nascimento,
+      genero: form.genero,
+      endereco: {
+        pais: form.pais,
+        estado: form.estado,
+        cidade: form.cidade,
+        bairro: form.bairro,
+        rua: form.rua,
+        cep: form.cep,
+        complemento: form.complemento,
+      },
+    };
   };
 
   return (
@@ -305,7 +322,9 @@ function CadastrarCliente() {
                         name="email"
                         style={{
                           ...styles.input,
-                          ...(focusedField === "email" ? styles.inputFocus : {}),
+                          ...(focusedField === "email"
+                            ? styles.inputFocus
+                            : {}),
                         }}
                         value={form.email}
                         onChange={handleChange}

@@ -237,19 +237,23 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       fontSize: '13px',
       cursor: 'pointer',
       textDecoration: 'none',
-      position: 'absolute',
-      bottom: '10px',
+      position: 'sticky',
+      bottom: 0,
       border: 'none',
-      background: 'transparent',
+      background: 'var(--surface)',
       width: '100%',
       textAlign: 'left',
+      borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+      paddingTop: '10px',
     },
     nav: {
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 30px)',
+      height: 'calc(100vh - 50px)',
       overflowY: 'auto',
+      overflowX: 'hidden',
       position: 'relative',
+      paddingRight: '3px',
     },
     mainIconContainer: {
       display: 'flex',
@@ -258,70 +262,100 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
     },
   };
 
+  // CSS customizado para a scrollbar
+  const scrollbarStyles = `
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      transition: background 0.2s ease;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+  `;
+
   return (
-    <aside style={styles.menuLateralBoxArea}>
-      {/* Menu Toggle Button */}
-      <button
-        onClick={toggleMenu}
-        style={styles.menuLateralBoxOutline}
-        aria-label="Toggle menu"
-      >
-        <RiMenu2Fill style={styles.iconsMenuLateral} />
-      </button>
-
-      {/* Menu Items */}
-      <nav style={styles.nav}>
-        <div style={{ flex: 1 }}>
-          {menuItems.map((item) => {
-            const categoryActive = isCategoryActive(item);
-            const IconComponent = categoryActive ? item.iconFilled : item.iconOutline;
-            const hasSubcategories = item.subcategories && item.subcategories.length > 0;
-
-            return (
-              <div key={item.path}>
-                <button
-                  onClick={() => handleClick(item)}
-                  style={styles.menuLateralBox}
-                >
-                  <div style={styles.mainIconContainer}>
-                    <IconComponent style={styles.iconsMenuLateral} />
-                    <p style={styles.menuText}>{item.label}</p>
-                  </div>
-                </button>
-
-                {/* Subcategories - aparecem automaticamente quando a categoria está ativa */}
-                {hasSubcategories && categoryActive && isOpen && (
-                  <div style={styles.subcategoryContainer}>
-                    {item.subcategories.map((sub) => (
-                      <button
-                        key={sub.path}
-                        onClick={() => onNavigate && onNavigate(sub.path)}
-                        style={isActive(sub.path) ? styles.subcategoryButtonActive : styles.subcategoryButton}
-                      >
-                        {sub.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Settings Button (Fixed at Bottom) */}
+    <>
+      <style>{scrollbarStyles}</style>
+      <aside style={styles.menuLateralBoxArea}>
+        {/* Menu Toggle Button */}
         <button
-          onClick={() => onNavigate && onNavigate("/configuracoes")}
-          style={styles.preferencias}
+          onClick={toggleMenu}
+          style={styles.menuLateralBoxOutline}
+          aria-label="Toggle menu"
         >
-          {isActive("/configuracoes") ? (
-            <BsGearFill style={styles.iconsMenuLateral} />
-          ) : (
-            <BsGear style={styles.iconsMenuLateral} />
-          )}
-          <p style={styles.menuText}>Preferências</p>
+          <RiMenu2Fill style={styles.iconsMenuLateral} />
         </button>
-      </nav>
-    </aside>
+
+        {/* Menu Items */}
+        <nav style={styles.nav} className="custom-scrollbar">
+          <div style={{ flex: 1 }}>
+            {menuItems.map((item) => {
+              const categoryActive = isCategoryActive(item);
+              const IconComponent = categoryActive ? item.iconFilled : item.iconOutline;
+              const hasSubcategories = item.subcategories && item.subcategories.length > 0;
+
+              return (
+                <div key={item.path}>
+                  <button
+                    onClick={() => handleClick(item)}
+                    style={styles.menuLateralBox}
+                  >
+                    <div style={styles.mainIconContainer}>
+                      <IconComponent style={styles.iconsMenuLateral} />
+                      <p style={styles.menuText}>{item.label}</p>
+                    </div>
+                  </button>
+
+                  {/* Subcategories - aparecem automaticamente quando a categoria está ativa */}
+                  {hasSubcategories && categoryActive && isOpen && (
+                    <div style={styles.subcategoryContainer}>
+                      {item.subcategories.map((sub) => (
+                        <button
+                          key={sub.path}
+                          onClick={() => onNavigate && onNavigate(sub.path)}
+                          style={isActive(sub.path) ? styles.subcategoryButtonActive : styles.subcategoryButton}
+                        >
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Settings Button (Fixed at Bottom) */}
+          <button
+            onClick={() => onNavigate && onNavigate("/configuracoes")}
+            style={styles.preferencias}
+          >
+            {isActive("/configuracoes") ? (
+              <BsGearFill style={styles.iconsMenuLateral} />
+            ) : (
+              <BsGear style={styles.iconsMenuLateral} />
+            )}
+            <p style={styles.menuText}>Preferências</p>
+          </button>
+        </nav>
+      </aside>
+    </>
   );
 };
 

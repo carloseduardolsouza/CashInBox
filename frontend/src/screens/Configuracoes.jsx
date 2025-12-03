@@ -10,6 +10,11 @@ import {
   FaExclamationTriangle,
   FaSave,
   FaImage,
+  FaGlobe,
+  FaCity,
+  FaHome,
+  FaRoad,
+  FaMailBulk,
 } from "react-icons/fa";
 import { MdAddPhotoAlternate } from "react-icons/md";
 
@@ -155,6 +160,11 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '20px',
   },
+  addressSection: {
+    marginTop: '24px',
+    paddingTop: '24px',
+    borderTop: '1px solid var(--surface-border)',
+  },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
@@ -282,8 +292,14 @@ const FORM_FIELDS = {
   NOME_ESTABELECIMENTO: "nomeEstabelecimento",
   CNPJ: "cnpj",
   TELEFONE: "telefone",
-  ENDERECO: "endereco",
   INSCRICAO_ESTADUAL: "inscricaoEstadual",
+  PAIS: "pais",
+  ESTADO: "estado",
+  CIDADE: "cidade",
+  BAIRRO: "bairro",
+  RUA: "rua",
+  COMPLEMENTO: "complemento",
+  CEP: "cep",
 };
 
 const FIELD_CONFIG = {
@@ -294,6 +310,7 @@ const FIELD_CONFIG = {
     maxLength: 100,
     minLength: 3,
     type: "text",
+    required: true,
   },
   [FORM_FIELDS.TELEFONE]: {
     label: "Telefone",
@@ -302,6 +319,7 @@ const FIELD_CONFIG = {
     maxLength: 15,
     minLength: 10,
     type: "tel",
+    required: true,
   },
   [FORM_FIELDS.CNPJ]: {
     label: "CNPJ",
@@ -310,14 +328,7 @@ const FIELD_CONFIG = {
     maxLength: 18,
     minLength: 14,
     type: "text",
-  },
-  [FORM_FIELDS.ENDERECO]: {
-    label: "Endereço da Loja",
-    icon: FaMapMarkerAlt,
-    placeholder: "Digite o endereço completo",
-    maxLength: 200,
-    minLength: 10,
-    type: "text",
+    required: true,
   },
   [FORM_FIELDS.INSCRICAO_ESTADUAL]: {
     label: "Inscrição Estadual",
@@ -326,6 +337,70 @@ const FIELD_CONFIG = {
     maxLength: 20,
     minLength: 5,
     type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.PAIS]: {
+    label: "País",
+    icon: FaGlobe,
+    placeholder: "Digite o país",
+    maxLength: 50,
+    minLength: 2,
+    type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.ESTADO]: {
+    label: "Estado",
+    icon: FaMapMarkerAlt,
+    placeholder: "Digite o estado",
+    maxLength: 50,
+    minLength: 2,
+    type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.CIDADE]: {
+    label: "Cidade",
+    icon: FaCity,
+    placeholder: "Digite a cidade",
+    maxLength: 100,
+    minLength: 2,
+    type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.BAIRRO]: {
+    label: "Bairro",
+    icon: FaHome,
+    placeholder: "Digite o bairro",
+    maxLength: 100,
+    minLength: 2,
+    type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.RUA]: {
+    label: "Rua",
+    icon: FaRoad,
+    placeholder: "Digite a rua e número",
+    maxLength: 200,
+    minLength: 3,
+    type: "text",
+    required: true,
+  },
+  [FORM_FIELDS.COMPLEMENTO]: {
+    label: "Complemento",
+    icon: FaHome,
+    placeholder: "Apto, bloco, etc (opcional)",
+    maxLength: 100,
+    minLength: 0,
+    type: "text",
+    required: false,
+  },
+  [FORM_FIELDS.CEP]: {
+    label: "CEP",
+    icon: FaMailBulk,
+    placeholder: "00000-000",
+    maxLength: 9,
+    minLength: 8,
+    type: "text",
+    required: true,
   },
 };
 
@@ -342,15 +417,27 @@ const Configuracoes = () => {
       [FORM_FIELDS.NOME_ESTABELECIMENTO]: "Minha Empresa LTDA",
       [FORM_FIELDS.CNPJ]: "12345678000190",
       [FORM_FIELDS.TELEFONE]: "11987654321",
-      [FORM_FIELDS.ENDERECO]: "Rua Exemplo, 123 - Centro",
       [FORM_FIELDS.INSCRICAO_ESTADUAL]: "123456789",
+      [FORM_FIELDS.PAIS]: "Brasil",
+      [FORM_FIELDS.ESTADO]: "São Paulo",
+      [FORM_FIELDS.CIDADE]: "São Paulo",
+      [FORM_FIELDS.BAIRRO]: "Centro",
+      [FORM_FIELDS.RUA]: "Rua Exemplo, 123",
+      [FORM_FIELDS.COMPLEMENTO]: "Sala 101",
+      [FORM_FIELDS.CEP]: "01000000",
     },
     companyData: {
       [FORM_FIELDS.NOME_ESTABELECIMENTO]: "Minha Empresa LTDA",
       [FORM_FIELDS.CNPJ]: "12345678000190",
       [FORM_FIELDS.TELEFONE]: "11987654321",
-      [FORM_FIELDS.ENDERECO]: "Rua Exemplo, 123 - Centro",
       [FORM_FIELDS.INSCRICAO_ESTADUAL]: "123456789",
+      [FORM_FIELDS.PAIS]: "Brasil",
+      [FORM_FIELDS.ESTADO]: "São Paulo",
+      [FORM_FIELDS.CIDADE]: "São Paulo",
+      [FORM_FIELDS.BAIRRO]: "Centro",
+      [FORM_FIELDS.RUA]: "Rua Exemplo, 123",
+      [FORM_FIELDS.COMPLEMENTO]: "Sala 101",
+      [FORM_FIELDS.CEP]: "01000000",
     },
   });
 
@@ -371,6 +458,10 @@ const Configuracoes = () => {
           "$1.$2.$3/$4-$5"
         );
       },
+      cep: (value) => {
+        const digits = value.replace(/\D/g, "");
+        return digits.replace(/(\d{5})(\d{3})/, "$1-$2");
+      },
       numbersOnly: (value) => value.replace(/\D/g, ""),
     }),
     []
@@ -380,13 +471,20 @@ const Configuracoes = () => {
   const validators = useMemo(
     () => ({
       [FORM_FIELDS.NOME_ESTABELECIMENTO]: (value) => value.trim().length >= 3,
-      [FORM_FIELDS.ENDERECO]: (value) => value.trim().length >= 10,
       [FORM_FIELDS.CNPJ]: (value) =>
         formatters.numbersOnly(value).length === 14,
       [FORM_FIELDS.TELEFONE]: (value) =>
         formatters.numbersOnly(value).length >= 10,
       [FORM_FIELDS.INSCRICAO_ESTADUAL]: (value) =>
         formatters.numbersOnly(value).length >= 5,
+      [FORM_FIELDS.PAIS]: (value) => value.trim().length >= 2,
+      [FORM_FIELDS.ESTADO]: (value) => value.trim().length >= 2,
+      [FORM_FIELDS.CIDADE]: (value) => value.trim().length >= 2,
+      [FORM_FIELDS.BAIRRO]: (value) => value.trim().length >= 2,
+      [FORM_FIELDS.RUA]: (value) => value.trim().length >= 3,
+      [FORM_FIELDS.COMPLEMENTO]: () => true, // opcional
+      [FORM_FIELDS.CEP]: (value) =>
+        formatters.numbersOnly(value).length === 8,
     }),
     [formatters]
   );
@@ -426,8 +524,6 @@ const Configuracoes = () => {
     () => ({
       [FORM_FIELDS.NOME_ESTABELECIMENTO]: (e) =>
         updateField(FORM_FIELDS.NOME_ESTABELECIMENTO, e.target.value),
-      [FORM_FIELDS.ENDERECO]: (e) =>
-        updateField(FORM_FIELDS.ENDERECO, e.target.value),
       [FORM_FIELDS.TELEFONE]: (e) =>
         updateField(
           FORM_FIELDS.TELEFONE,
@@ -440,6 +536,20 @@ const Configuracoes = () => {
           FORM_FIELDS.INSCRICAO_ESTADUAL,
           formatters.numbersOnly(e.target.value)
         ),
+      [FORM_FIELDS.PAIS]: (e) =>
+        updateField(FORM_FIELDS.PAIS, e.target.value),
+      [FORM_FIELDS.ESTADO]: (e) =>
+        updateField(FORM_FIELDS.ESTADO, e.target.value),
+      [FORM_FIELDS.CIDADE]: (e) =>
+        updateField(FORM_FIELDS.CIDADE, e.target.value),
+      [FORM_FIELDS.BAIRRO]: (e) =>
+        updateField(FORM_FIELDS.BAIRRO, e.target.value),
+      [FORM_FIELDS.RUA]: (e) =>
+        updateField(FORM_FIELDS.RUA, e.target.value),
+      [FORM_FIELDS.COMPLEMENTO]: (e) =>
+        updateField(FORM_FIELDS.COMPLEMENTO, e.target.value),
+      [FORM_FIELDS.CEP]: (e) =>
+        updateField(FORM_FIELDS.CEP, formatters.numbersOnly(e.target.value)),
     }),
     [updateField, formatters]
   );
@@ -476,7 +586,7 @@ const Configuracoes = () => {
     };
 
     reader.readAsDataURL(file);
-  }, []);
+  }, [updateState]);
 
   // Submit
   const handleSubmit = useCallback(() => {
@@ -499,7 +609,7 @@ const Configuracoes = () => {
       });
       alert("Dados da empresa atualizados com sucesso! ✅");
     }, 1500);
-  }, [isFormValid, hasChanges, state.companyData]);
+  }, [isFormValid, hasChanges, state.companyData, updateState]);
 
   // Componente de input
   const InputField = useCallback(
@@ -507,12 +617,15 @@ const Configuracoes = () => {
       const config = FIELD_CONFIG[fieldKey];
       const Icon = config.icon;
       const isValid = validators[fieldKey] ? validators[fieldKey](value) : true;
+      const showValidation = config.required && value.length > 0;
 
       let displayValue = value;
       if (fieldKey === FORM_FIELDS.TELEFONE) {
         displayValue = formatters.phone(value);
       } else if (fieldKey === FORM_FIELDS.CNPJ) {
         displayValue = formatters.cnpj(value);
+      } else if (fieldKey === FORM_FIELDS.CEP) {
+        displayValue = formatters.cep(value);
       }
 
       return (
@@ -520,30 +633,32 @@ const Configuracoes = () => {
           <label style={styles.inputLabel}>
             <Icon />
             {config.label}
-            <span style={styles.requiredIndicator}>*</span>
+            {config.required && <span style={styles.requiredIndicator}>*</span>}
           </label>
           <div style={styles.inputWrapper}>
             <input
               type={config.type}
               style={{
                 ...styles.formInput,
-                ...((!isValid) && styles.formInputInvalid),
+                ...(showValidation && !isValid && styles.formInputInvalid),
               }}
               value={displayValue}
               onChange={fieldHandlers[fieldKey]}
               placeholder={config.placeholder}
               maxLength={config.maxLength}
-              required
+              required={config.required}
             />
-            <div style={styles.inputIcon}>
-              {isValid ? (
-                <FaCheck color="var(--success-500)" />
-              ) : (
-                <FaExclamationTriangle color="var(--error-500)" />
-              )}
-            </div>
+            {showValidation && (
+              <div style={styles.inputIcon}>
+                {isValid ? (
+                  <FaCheck color="var(--success-500)" />
+                ) : (
+                  <FaExclamationTriangle color="var(--error-500)" />
+                )}
+              </div>
+            )}
           </div>
-          {!isValid && (
+          {showValidation && !isValid && (
             <div style={styles.validationMessage}>
               <FaExclamationTriangle />
               Campo obrigatório com formato inválido
@@ -562,6 +677,24 @@ const Configuracoes = () => {
       </div>
     );
   }
+
+  // Separar campos básicos e de endereço
+  const basicFields = [
+    FORM_FIELDS.NOME_ESTABELECIMENTO,
+    FORM_FIELDS.CNPJ,
+    FORM_FIELDS.TELEFONE,
+    FORM_FIELDS.INSCRICAO_ESTADUAL,
+  ];
+
+  const addressFields = [
+    FORM_FIELDS.PAIS,
+    FORM_FIELDS.ESTADO,
+    FORM_FIELDS.CIDADE,
+    FORM_FIELDS.BAIRRO,
+    FORM_FIELDS.RUA,
+    FORM_FIELDS.COMPLEMENTO,
+    FORM_FIELDS.CEP,
+  ];
 
   return (
     <div style={styles.container}>
@@ -671,14 +804,31 @@ const Configuracoes = () => {
 
         {/* Formulário */}
         <div style={styles.formSection}>
+          {/* Dados Básicos */}
           <h3 style={styles.formTitle}>
             <FaBuilding />
             Dados da Empresa
           </h3>
 
-          <div>
+          <div style={styles.formGrid}>
+            {basicFields.map((fieldKey) => (
+              <InputField
+                key={fieldKey}
+                fieldKey={fieldKey}
+                value={state.companyData[fieldKey]}
+              />
+            ))}
+          </div>
+
+          {/* Endereço */}
+          <div style={styles.addressSection}>
+            <h3 style={styles.formTitle}>
+              <FaMapMarkerAlt />
+              Endereço
+            </h3>
+
             <div style={styles.formGrid}>
-              {Object.keys(FIELD_CONFIG).map((fieldKey) => (
+              {addressFields.map((fieldKey) => (
                 <InputField
                   key={fieldKey}
                   fieldKey={fieldKey}
@@ -686,37 +836,38 @@ const Configuracoes = () => {
                 />
               ))}
             </div>
+          </div>
 
-            <div style={styles.submitSection}>
-              <button
-                onClick={handleSubmit}
-                style={{
-                  ...styles.submitButton,
-                  ...((!hasChanges || !isFormValid || state.saving) && styles.submitButtonDisabled),
-                  ...(state.saving && { background: 'var(--success-500)' }),
-                }}
-                disabled={!hasChanges || !isFormValid || state.saving}
-                onMouseEnter={(e) => {
-                  if (hasChanges && isFormValid && !state.saving) {
-                    e.currentTarget.style.background = "var(--primary-hover)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!state.saving) {
-                    e.currentTarget.style.background = "var(--primary-color)";
-                  }
-                }}
-              >
-                {state.saving ? (
-                  <>Salvando...</>
-                ) : (
-                  <>
-                    <FaSave />
-                    Salvar Alterações
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Botão Salvar */}
+          <div style={styles.submitSection}>
+            <button
+              onClick={handleSubmit}
+              style={{
+                ...styles.submitButton,
+                ...((!hasChanges || !isFormValid || state.saving) && styles.submitButtonDisabled),
+                ...(state.saving && { background: 'var(--success-500)' }),
+              }}
+              disabled={!hasChanges || !isFormValid || state.saving}
+              onMouseEnter={(e) => {
+                if (hasChanges && isFormValid && !state.saving) {
+                  e.currentTarget.style.background = "var(--primary-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!state.saving) {
+                  e.currentTarget.style.background = "var(--primary-color)";
+                }
+              }}
+            >
+              {state.saving ? (
+                <>Salvando...</>
+              ) : (
+                <>
+                  <FaSave />
+                  Salvar Alterações
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

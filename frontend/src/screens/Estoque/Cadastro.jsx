@@ -646,8 +646,6 @@ const CadastrarProduto = () => {
         precoVenda: "",
         markup: 0,
         categoriaId: "",
-        referencia: "",
-        usarReferencia: false,
       });
 
       setVariacoes([]);
@@ -750,6 +748,11 @@ const CadastrarProduto = () => {
       ":hover": {
         borderColor: "var(--surface-border)",
       },
+    }),
+    singleValue: (base, state) => ({
+      ...base,
+      color: "var(--text-primary)",
+      fontWeight: 600,
     }),
     menu: (base) => ({
       ...base,
