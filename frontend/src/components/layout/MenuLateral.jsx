@@ -79,7 +79,7 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
     },
     {
       path: "/produtos",
-      label: "Produtos",
+      label: "Catálogo",
       iconFilled: MdSell,
       iconOutline: MdOutlineSell,
       subcategories: [
@@ -122,8 +122,8 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconFilled: RiRobot2Fill,
       iconOutline: RiRobot2Line,
       subcategories: [
-        { path: "/automacao/status", label: "Status de conexão" },
         { path: "/automacao/configuracao", label: "Configurações" },
+        { path: "/automacao/status", label: "Status de conexão" },
       ]
     },
     {

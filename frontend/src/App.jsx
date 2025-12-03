@@ -49,6 +49,15 @@ import Configuracoes from "./screens/Configuracoes";
 
 //Automação
 import Status from "./screens/Automacao/Status"
+import ConfiguracoesAutomacao from "./screens/Automacao/Configuracao";
+
+//Relatorios
+import RelatorioGeral from "./screens/Relatorios/Geral";
+import RelatorioClientes from "./screens/Relatorios/Clientes";
+import RelatorioEstoque from "./screens/Relatorios/Estoque";
+import RelatorioVendas from "./screens/Relatorios/Vendas";
+import RelatorioFluxoCaixa from "./screens/Relatorios/Fluxo";
+import RelatorioDespesas from "./screens/Relatorios/Despesas";
 
 function App() {
   return (
@@ -106,15 +115,15 @@ function MainLayout() {
 
         <Route path="/fluxoDeCaixa/movimentacoes" element={<FluxoCaixa/>} />
 
+        <Route path="/automacao/configuracao" element={<ConfiguracoesAutomacao/>} />
         <Route path="/automacao/status" element={<Status/>} />
 
-        <Route path="/relatorios" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/geral" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/vendas" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/fluxo" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/estoque" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/despesas" element={<h1>Produtos</h1>} />
-        <Route path="/relatorios/clientes" element={<h1>Produtos</h1>} />
+        <Route path="/relatorios/geral" element={<RelatorioGeral/>} />
+        <Route path="/relatorios/vendas" element={<RelatorioVendas/>} />
+        <Route path="/relatorios/fluxo" element={<RelatorioFluxoCaixa/>} />
+        <Route path="/relatorios/estoque" element={<RelatorioEstoque/>} />
+        <Route path="/relatorios/despesas" element={<RelatorioDespesas/>} />
+        <Route path="/relatorios/clientes" element={<RelatorioClientes/>} />
 
         <Route path="/funcionarios" element={<h1>Produtos</h1>} />
         <Route path="/funcionarios/lista" element={<h1>Produtos</h1>} />
