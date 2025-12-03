@@ -310,10 +310,10 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
 
         {/* Settings Button (Fixed at Bottom) */}
         <button
-          onClick={() => onNavigate && onNavigate("/configurações")}
+          onClick={() => onNavigate && onNavigate("/configuracoes")}
           style={styles.preferencias}
         >
-          {isActive("/configurações") ? (
+          {isActive("/configuracoes") ? (
             <BsGearFill style={styles.iconsMenuLateral} />
           ) : (
             <BsGear style={styles.iconsMenuLateral} />

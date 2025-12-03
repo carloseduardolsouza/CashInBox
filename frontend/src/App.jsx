@@ -42,6 +42,7 @@ import CadastrarProduto from "./screens/Estoque/Cadastro";
 
 //Configuracoes
 import Boletos from "./screens/Configuracoes/Boletos";
+import Configuracoes from "./screens/Configuracoes";
 
 function App() {
   return (
@@ -110,6 +111,7 @@ function MainLayout() {
         <Route path="/funcionarios" element={<h1>Produtos</h1>} />
         <Route path="/funcionarios/lista" element={<h1>Produtos</h1>} />
 
+        <Route path="/configuracoes" element={<Configuracoes/>} />
         <Route path="/configuracoes/boletos" element={<Boletos/>} />
       </Routes>
     </>
