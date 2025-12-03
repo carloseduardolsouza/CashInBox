@@ -18,7 +18,6 @@ import Select from "react-select";
 
 //modais
 import ModalVariacao from "./components/ModalVariacao";
-import ModalCategoria from "./components/ModalCategoria";
 
 // Dados simulados
 const categoriasSimuladas = [
@@ -142,23 +141,6 @@ const CadastrarProduto = () => {
     },
     categorySelect: {
       flex: 1,
-    },
-    iconButton: {
-      width: "44px",
-      height: "44px",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "18px",
-      transition: "all 0.2s ease",
-      flexShrink: 0,
-    },
-    addButton: {
-      background: "var(--warning-500)",
-      color: "white",
     },
     textarea: {
       minHeight: "100px",
@@ -857,16 +839,6 @@ const CadastrarProduto = () => {
                       }}
                     />
                   </div>
-                  <button
-                    type="button"
-                    style={{ ...styles.iconButton, ...styles.addButton }}
-                    onClick={() =>
-                      setState((prev) => ({ ...prev, showModal: true }))
-                    }
-                    title="Adicionar nova categoria"
-                  >
-                    <FaPlus />
-                  </button>
                 </div>
               </div>
 

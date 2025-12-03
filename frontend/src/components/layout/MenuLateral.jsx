@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect , useRef } from "react";
+
+import { useClickOutside } from "../../hooks/useClickOutside";
 
 // Icons
 import { GoHome, GoHomeFill } from "react-icons/go";
@@ -15,11 +17,14 @@ import { MdInsertChartOutlined, MdInsertChart } from "react-icons/md";
 import { RiRobot2Fill , RiRobot2Line } from "react-icons/ri";
 
 const MenuLateral = ({ currentPath = "/", onNavigate }) => {
+  const ref = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  useClickOutside(ref , () => setIsOpen(false))
 
   const isActive = (path) => {
     return currentPath === path;
@@ -290,7 +295,7 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
   `;
 
   return (
-    <>
+    <div ref={ref}>
       <style>{scrollbarStyles}</style>
       <aside style={styles.menuLateralBoxArea}>
         {/* Menu Toggle Button */}
@@ -355,7 +360,7 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
           </button>
         </nav>
       </aside>
-    </>
+    </div>
   );
 };
 

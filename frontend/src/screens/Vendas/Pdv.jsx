@@ -237,9 +237,9 @@ const styles = {
   },
   variacaoButton: {
     padding: "12px",
-    background: "var(--background-soft)",
+    background: "var(--surface-border)",
     borderRadius: "8px",
-    color: "#ffffff",
+    color: "var(--text-primary)",
     fontSize: "14px",
     cursor: "pointer",
     transition: "all 0.3s",
