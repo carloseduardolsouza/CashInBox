@@ -32,6 +32,8 @@ import FluxoCaixa from "./screens/FluxoCaixa"
 
 //Contas
 import ListaContas from "./screens/Contas/Lista"
+import Categorias from "./screens/Contas/Categorias";
+import ContasPagas from "./screens/Contas/ContasPagas";
 
 //Produtos
 import ListaProdutos from "./screens/Produtos/Lista";
@@ -39,10 +41,14 @@ import ListaProdutos from "./screens/Produtos/Lista";
 //Estoque
 import Inventario from "./screens/Estoque/Inventario";
 import CadastrarProduto from "./screens/Estoque/Cadastro";
+import Categoria from "./screens/Estoque/Categoria"
 
 //Configuracoes
 import Boletos from "./screens/Configuracoes/Boletos";
 import Configuracoes from "./screens/Configuracoes";
+
+//Automação
+import Status from "./screens/Automacao/Status"
 
 function App() {
   return (
@@ -88,17 +94,19 @@ function MainLayout() {
         <Route path="/clientes/detalhes/:id" element={<DetalhesCliente/>} />
 
         <Route path="/produtos/lista" element={<ListaProdutos />} />
-        <Route path="/produtos/categorias" element={<h1>Produtos</h1>} />
 
         <Route path="/estoque/inventario" element={<Inventario/>} />
+        <Route path="/estoque/categorias" element={<Categoria/>} />
         <Route path="/estoque/cadastro" element={<CadastrarProduto/>} />
         <Route path="/estoque/minimo" element={<h1>Produtos</h1>} />
 
         <Route path="/contasPagar/lista" element={<ListaContas/>} />
-        <Route path="/contasPagar/pagas" element={<h1>Produtos</h1>} />
-        <Route path="/contasPagar/categorias" element={<h1>Produtos</h1>} />
+        <Route path="/contasPagar/pagas" element={<ContasPagas/>} />
+        <Route path="/contasPagar/categorias" element={<Categorias/>} />
 
         <Route path="/fluxoDeCaixa/movimentacoes" element={<FluxoCaixa/>} />
+
+        <Route path="/automacao/status" element={<Status/>} />
 
         <Route path="/relatorios" element={<h1>Produtos</h1>} />
         <Route path="/relatorios/geral" element={<h1>Produtos</h1>} />

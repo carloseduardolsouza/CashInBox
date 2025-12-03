@@ -12,7 +12,7 @@ import { FaMoneyBill1 } from "react-icons/fa6";
 import { FaRegMoneyBillAlt } from "react-icons/fa";
 import { PiCashRegisterFill, PiCashRegisterLight } from "react-icons/pi";
 import { MdInsertChartOutlined, MdInsertChart } from "react-icons/md";
-import { MdWork , MdWorkOutline } from "react-icons/md";
+import { RiRobot2Fill , RiRobot2Line } from "react-icons/ri";
 
 const MenuLateral = ({ currentPath = "/", onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,7 +84,6 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconOutline: MdOutlineSell,
       subcategories: [
         { path: "/produtos/lista", label: "Lista de Produtos" },
-        { path: "/produtos/categorias", label: "Categorias" },
       ]
     },
     {
@@ -94,7 +93,7 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       iconOutline: BsBox2,
       subcategories: [
         { path: "/estoque/inventario", label: "Inventário" },
-        { path: "/estoque/minimo", label: "Estoque Mínimo" }
+        { path: "/estoque/categorias", label: "Categorias" },
       ]
     },
     {
@@ -118,12 +117,13 @@ const MenuLateral = ({ currentPath = "/", onNavigate }) => {
       ]
     },
     {
-      path: "/funcionarios",
-      label: "Funcionarios",
-      iconFilled: MdWork,
-      iconOutline: MdWorkOutline,
+      path: "/automacao",
+      label: "Automações",
+      iconFilled: RiRobot2Fill,
+      iconOutline: RiRobot2Line,
       subcategories: [
-        { path: "/funcionarios/lista", label: "lista de funcionarios" }
+        { path: "/automacao/status", label: "Status de conexão" },
+        { path: "/automacao/configuracao", label: "Configurações" },
       ]
     },
     {

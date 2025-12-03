@@ -155,7 +155,7 @@ function Dashboard({theme , setTheme}) {
         <div style={styles.gridLeft}>
           <NavButton icon={<Users size={24} />} label="Funcionários" to={"/"}/>
           <NavButton icon={<Package size={24} />} label="Planos" to={"/configuracoes/boletos"}/>
-          <NavButton icon={<DollarSign size={24} />} label="Fluxo" to={"/"}/>
+          <NavButton icon={<DollarSign size={24} />} label="Fluxo" to={"/fluxoDeCaixa/movimentacoes"}/>
           <NavButton icon={<ShoppingBasket size={24} />} label="PDV" to={"/vendas/pdv"}/>
         </div>
 
