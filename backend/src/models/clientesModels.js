@@ -1,4 +1,5 @@
 const { db } = require("../config/database");
+const formate = require("../utils/formate");
 
 const cadastro = async (clienteData) => {
   return await db.transaction(async (trx) => {
@@ -7,6 +8,8 @@ const cadastro = async (clienteData) => {
     // 1. Criar cliente
     const [clienteId] = await trx("cliente").insert({
       ...cliente,
+      nome: formate.formatNome(cliente.nome),
+      email: cliente.email ? cliente.email.toLowerCase() : "",
       created_at: trx.fn.now(),
     });
 
@@ -14,7 +17,13 @@ const cadastro = async (clienteData) => {
     if (Array.isArray(endereco) && endereco.length > 0) {
       for (const end of endereco) {
         await trx("endereco").insert({
-          ...end,
+          pais: formate.normalize(end.pais),
+          estado: formate.normalize(end.estado),
+          cidade: formate.normalize(end.cidade),
+          bairro: formate.normalize(end.bairro),
+          rua: formate.normalize(end.rua),
+          cep: end.cep,
+          complemento: formate.normalize(end.complemento),
           id_cliente: clienteId,
         });
       }

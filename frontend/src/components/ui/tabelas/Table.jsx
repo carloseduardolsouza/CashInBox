@@ -1,6 +1,16 @@
 import { useState } from "react";
 
-function Table({ columns, data, actions }) {
+function Table({ columns, data, actions, rowsPerPage = 25 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [hoveredButton, setHoveredButton] = useState(null);
+
+  // Calcular paginação
+  const totalPages = Math.ceil((data?.length || 0) / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentData = data?.slice(startIndex, endIndex) || [];
+
   const styles = {
     tableContainer: {
       width: "100%",
@@ -82,11 +92,11 @@ function Table({ columns, data, actions }) {
     deleteButtonHover: {
       backgroundColor: "var(--error-700)",
     },
-    faturarButton : {
+    faturarButton: {
       backgroundColor: "var(--success-500)",
       color: "#ffffff",
     },
-    faturarButtonHover : {
+    faturarButtonHover: {
       backgroundColor: "var(--success-700)",
     },
     emptyState: {
@@ -95,10 +105,65 @@ function Table({ columns, data, actions }) {
       color: "var(--text-muted)",
       fontSize: "14px",
     },
+    paginationContainer: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "16px",
+      backgroundColor: "var(--background-soft)",
+      borderTop: "1px solid var(--surface-border)",
+      borderRadius: "0 0 8px 8px",
+    },
+    paginationInfo: {
+      color: "var(--text-muted)",
+      fontSize: "14px",
+    },
+    paginationButtons: {
+      display: "flex",
+      gap: "8px",
+      alignItems: "center",
+    },
+    paginationButton: {
+      padding: "8px 16px",
+      border: "1px solid var(--surface-border)",
+      borderRadius: "4px",
+      backgroundColor: "var(--background-color)",
+      color: "var(--text-secondary)",
+      cursor: "pointer",
+      fontSize: "14px",
+      transition: "all 0.2s",
+      fontWeight: "500",
+    },
+    paginationButtonHover: {
+      backgroundColor: "var(--primary-color)",
+      color: "#ffffff",
+      borderColor: "var(--primary-color)",
+    },
+    paginationButtonDisabled: {
+      opacity: 0.5,
+      cursor: "not-allowed",
+    },
+    pageNumber: {
+      padding: "8px 12px",
+      border: "1px solid var(--surface-border)",
+      borderRadius: "4px",
+      backgroundColor: "var(--background-color)",
+      color: "var(--text-secondary)",
+      fontSize: "14px",
+      minWidth: "40px",
+      textAlign: "center",
+      cursor: "pointer",
+      transition: "all 0.2s",
+    },
+    pageNumberActive: {
+      backgroundColor: "var(--primary-color)",
+      color: "#ffffff",
+      borderColor: "var(--primary-color)",
+      fontWeight: "600",
+    },
   };
 
-  const [hoveredRow, setHoveredRow] = useState(null);
-  const [hoveredButton, setHoveredButton] = useState(null);
+  const [hoveredPaginationBtn, setHoveredPaginationBtn] = useState(null);
 
   const getButtonStyle = (type, isHovered) => {
     const baseStyle = styles.actionButton;
@@ -131,76 +196,164 @@ function Table({ columns, data, actions }) {
     };
   };
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          style={{
+            ...styles.pageNumber,
+            ...(currentPage === i ? styles.pageNumberActive : {}),
+            ...(hoveredPaginationBtn === `page-${i}` && currentPage !== i
+              ? styles.paginationButtonHover
+              : {}),
+          }}
+          onClick={() => handlePageChange(i)}
+          onMouseEnter={() => setHoveredPaginationBtn(`page-${i}`)}
+          onMouseLeave={() => setHoveredPaginationBtn(null)}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
   return (
-    <div style={styles.tableContainer}>
-      <table style={styles.table}>
-        <thead style={styles.thead}>
-          <tr>
-            {columns.map((column, index) => (
-              <th key={index} style={styles.th}>
-                {column.header}
-              </th>
-            ))}
-            {actions && actions.length > 0 && (
-              <th style={styles.th}>Ações</th>
-            )}
-          </tr>
-        </thead>
-        <tbody style={styles.tbody}>
-          {data && data.length > 0 ? (
-            data.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                style={{
-                  ...styles.tr,
-                  ...(hoveredRow === rowIndex ? styles.trHover : {}),
-                }}
-                onMouseEnter={() => setHoveredRow(rowIndex)}
-                onMouseLeave={() => setHoveredRow(null)}
-              >
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex} style={styles.td}>
-                    {row[column.key]}
-                  </td>
-                ))}
-                {actions && actions.length > 0 && (
-                  <td>
-                    <div style={styles.actionsCell}>
-                      {actions.map((action, actionIndex) => (
-                        <button
-                          key={actionIndex}
-                          style={getButtonStyle(
-                            action.type,
-                            hoveredButton === `${rowIndex}-${actionIndex}`
-                          )}
-                          onClick={() => action.onClick(row, rowIndex)}
-                          onMouseEnter={() =>
-                            setHoveredButton(`${rowIndex}-${actionIndex}`)
-                          }
-                          onMouseLeave={() => setHoveredButton(null)}
-                        >
-                          {action.label}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))
-          ) : (
+    <div>
+      <div style={styles.tableContainer}>
+        <table style={styles.table}>
+          <thead style={styles.thead}>
             <tr>
-              <td
-                colSpan={
-                  columns.length + (actions && actions.length > 0 ? 1 : 0)
-                }
-                style={styles.emptyState}
-              >
-                Nenhum dado disponível
-              </td>
+              {columns.map((column, index) => (
+                <th key={index} style={styles.th}>
+                  {column.header}
+                </th>
+              ))}
+              {actions && actions.length > 0 && (
+                <th style={styles.th}>Ações</th>
+              )}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody style={styles.tbody}>
+            {currentData && currentData.length > 0 ? (
+              currentData.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  style={{
+                    ...styles.tr,
+                    ...(hoveredRow === rowIndex ? styles.trHover : {}),
+                  }}
+                  onMouseEnter={() => setHoveredRow(rowIndex)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  {columns.map((column, colIndex) => (
+                    <td key={colIndex} style={styles.td}>
+                      {row[column.key]}
+                    </td>
+                  ))}
+                  {actions && actions.length > 0 && (
+                    <td>
+                      <div style={styles.actionsCell}>
+                        {actions.map((action, actionIndex) => (
+                          <button
+                            key={actionIndex}
+                            style={getButtonStyle(
+                              action.type,
+                              hoveredButton === `${rowIndex}-${actionIndex}`
+                            )}
+                            onClick={() => action.onClick(row, startIndex + rowIndex)}
+                            onMouseEnter={() =>
+                              setHoveredButton(`${rowIndex}-${actionIndex}`)
+                            }
+                            onMouseLeave={() => setHoveredButton(null)}
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={
+                    columns.length + (actions && actions.length > 0 ? 1 : 0)
+                  }
+                  style={styles.emptyState}
+                >
+                  Nenhum dado disponível
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div style={styles.paginationContainer}>
+          <div style={styles.paginationInfo}>
+            Mostrando {startIndex + 1} a {Math.min(endIndex, data.length)} de {data.length} registros
+          </div>
+          
+          <div style={styles.paginationButtons}>
+            <button
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                ...(hoveredPaginationBtn === "prev" && currentPage !== 1
+                  ? styles.paginationButtonHover
+                  : {}),
+              }}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              onMouseEnter={() => setHoveredPaginationBtn("prev")}
+              onMouseLeave={() => setHoveredPaginationBtn(null)}
+            >
+              Anterior
+            </button>
+
+            {renderPageNumbers()}
+
+            <button
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === totalPages
+                  ? styles.paginationButtonDisabled
+                  : {}),
+                ...(hoveredPaginationBtn === "next" && currentPage !== totalPages
+                  ? styles.paginationButtonHover
+                  : {}),
+              }}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              onMouseEnter={() => setHoveredPaginationBtn("next")}
+              onMouseLeave={() => setHoveredPaginationBtn(null)}
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

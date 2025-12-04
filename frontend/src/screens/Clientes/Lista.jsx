@@ -1,4 +1,7 @@
-import { Link , useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import clientesFetch from "../../services/api/clientesFetch";
+import format from "../../utils/formatters";
 
 //Icones
 import { FaSearch } from "react-icons/fa";
@@ -42,52 +45,76 @@ function ListaClientes() {
       fontSize: "15px",
     },
     buttonSearch: {
-        border: "none",
-        fontSize: "17px",
-        cursor: "pointer",
-        borderRadius: "6px",
-        width: "38px",
-        height: "38px",
-        marginLeft: "3px",
-        color: "var(--text-inverse)",
-        backgroundColor: "var(--warning-500)"
+      border: "none",
+      fontSize: "17px",
+      cursor: "pointer",
+      borderRadius: "6px",
+      width: "38px",
+      height: "38px",
+      marginLeft: "3px",
+      color: "var(--text-inverse)",
+      backgroundColor: "var(--warning-500)",
     },
   };
+
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const listaClientes = async () => {
+      const clientes = await clientesFetch.lista();
+
+      const clientesFormated = clientes.map((dados) => {
+        // Campos do endereço
+        const camposEndereco = [
+          dados.endereco?.[0]?.bairro,
+          dados.endereco?.[0]?.rua,
+          dados.endereco?.[0]?.complemento,
+          dados.endereco?.[0]?.cidade,
+          dados.endereco?.[0]?.estado,
+          dados.endereco?.[0]?.pais,
+        ];
+
+        // Remove campos nulos e vazios
+        const enderecoLimpo = camposEndereco.filter(
+          (campo) => campo && campo.trim() !== ""
+        );
+
+        // Junta com " - "
+        let endereco = enderecoLimpo.join(" - ");
+
+        // Limite de caracteres
+        const LIMIT = 40;
+        if (endereco.length > LIMIT) {
+          endereco = endereco.substring(0, LIMIT) + "...";
+        }
+
+        return {
+          ...dados,
+          cpfCNPJ: format.formatCPF(dados.cpfCNPJ),
+          telefone: format.formatarTelefone(dados.telefone),
+          endereco,
+        };
+      });
+
+      setData(clientesFormated.reverse());
+    };
+
+    listaClientes();
+  }, []);
+
+  useEffect(() => {
+    setFilteredData(data);
+  }, [data]);
 
   // Exemplo de uso
   const columns = [
     { header: "Nome", key: "nome" },
     { header: "Telefone", key: "telefone" },
     { header: "Endereço", key: "endereco" },
+    { header: "CPF/CNPJ", key: "cpfCNPJ" },
     { header: "Email", key: "email" },
-    { header: "Total em compras", key: "totalCompras" },
-  ];
-
-  const data = [
-    {
-      id: 1,
-      nome: "João Silva",
-      telefone : "",
-      endereco: "",
-      email: "",
-      totalCompras: 150,
-    },
-    {
-      id: 2,
-      nome: "Maria Santos",
-      telefone : "",
-      endereco: "",
-      email: "",
-      totalCompras: 230,
-    },
-    {
-      id: 3,
-      nome: "Pedro Costa",
-      telefone : "",
-      endereco: "",
-      email: "",
-      totalCompras: 120,
-    },
   ];
 
   const navigate = useNavigate();
@@ -97,10 +124,24 @@ function ListaClientes() {
       label: "Informações",
       type: "details",
       onClick: (row, index) => {
-        navigate(`/clientes/detalhes/${row.id}`);
+        navigate(`/clientes/detalhes/${row.id_cliente}`);
       },
     },
   ];
+
+  const filterClientes = (e) => {
+    const termo = e.target.value.toLowerCase();
+    setSearchTerm(termo);
+
+    if (termo === "") {
+      setFilteredData(data);
+    } else {
+      const clientesFiltrados = data.filter((cliente) =>
+        cliente.nome.toLowerCase().includes(termo)
+      );
+      setFilteredData(clientesFiltrados);
+    }
+  };
 
   return (
     <div style={styles.ListaClientes}>
@@ -108,21 +149,28 @@ function ListaClientes() {
 
       <div>
         <form>
-          <Link to={"/clientes/cadastro"} style={styles.buttonAdicionarCliente} type="button">
+          <Link
+            to={"/clientes/cadastro"}
+            style={styles.buttonAdicionarCliente}
+            type="button"
+          >
             +
           </Link>
           <input
             type="text"
             style={styles.inputSearch}
             placeholder="Procurar Cliente..."
+            onChange={(e) => {
+              filterClientes(e);
+            }}
           />
-          <button style={styles.buttonSearch} type="submit">
+          <button style={styles.buttonSearch} type="button">
             <FaSearch />
           </button>
         </form>
       </div>
 
-      <Table columns={columns} data={data} actions={actions} />
+      <Table columns={columns} data={filteredData} actions={actions} />
     </div>
   );
 }
