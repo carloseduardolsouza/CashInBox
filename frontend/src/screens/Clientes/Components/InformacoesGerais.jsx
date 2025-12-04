@@ -13,6 +13,9 @@ import {
 } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
 import format from "../../../utils/formatters";
+import clientesFetch from "../../../services/api/clientesFetch";
+import CardConfirmacao from "../../../components/ui/modal/CardConfirmacao";
+import { useNavigate } from "react-router-dom";
 
 const styles = {
   mainCard: {
@@ -190,11 +193,93 @@ const styles = {
   },
 };
 
+const InfoCard = ({
+  icon: Icon,
+  label,
+  value,
+  field,
+  enderecoField,
+  type = "text",
+  options,
+  cardId,
+  editar,
+  hoveredCard,
+  focusedInput,
+  setHoveredCard,
+  setFocusedInput,
+  handleChange,
+  handleEnderecoChange,
+}) => (
+  <div
+    style={
+      hoveredCard === cardId && !editar ? styles.infoCardHover : styles.infoCard
+    }
+    onMouseEnter={() => setHoveredCard(cardId)}
+    onMouseLeave={() => setHoveredCard(null)}
+  >
+    <div style={styles.infoLabel}>
+      <Icon style={styles.labelIcon} />
+      {label}
+    </div>
+    {editar ? (
+      options ? (
+        <select
+          style={{
+            ...styles.infoInput,
+            ...(focusedInput === cardId ? styles.infoInputFocus : {}),
+          }}
+          value={value}
+          onChange={(e) =>
+            enderecoField
+              ? handleEnderecoChange(enderecoField, e.target.value)
+              : handleChange(field, e.target.value)
+          }
+          onFocus={() => setFocusedInput(cardId)}
+          onBlur={() => setFocusedInput(null)}
+        >
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          style={{
+            ...styles.infoInput,
+            ...(focusedInput === cardId ? styles.infoInputFocus : {}),
+          }}
+          type={type}
+          value={value}
+          onChange={(e) =>
+            enderecoField
+              ? handleEnderecoChange(enderecoField, e.target.value)
+              : handleChange(field, e.target.value)
+          }
+          onFocus={() => setFocusedInput(cardId)}
+          onBlur={() => setFocusedInput(null)}
+          maxLength={
+            type === "tel"
+              ? "11"
+              : type === "text" && field === "cpfCNPJ"
+              ? "11"
+              : undefined
+          }
+        />
+      )
+    ) : (
+      <div style={styles.infoValue}>{value || "—"}</div>
+    )}
+  </div>
+);
+
 const InformacoesGerais = ({ dados }) => {
   const [editar, setEditar] = useState(false);
   const [cliente, setCliente] = useState(dados);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [focusedInput, setFocusedInput] = useState(null);
+
+  const [modalDelete, setModalDelete] = useState(false);
 
   const handleChange = (field, value) => {
     setCliente((prev) => ({ ...prev, [field]: value }));
@@ -207,8 +292,15 @@ const InformacoesGerais = ({ dados }) => {
     }));
   };
 
-  const editarCliente = () => {
-    setCliente(dados);
+  const editarCliente = async () => {
+    const clienteData = {
+      ...cliente,
+      endereco: [
+        cliente.endereco
+      ]
+    }
+    console.log(clienteData);
+    const res = await clientesFetch.editar(dados.id_cliente , clienteData)
     setEditar(false);
   };
 
@@ -217,87 +309,23 @@ const InformacoesGerais = ({ dados }) => {
     setEditar(false);
   };
 
-  const deletarCliente = () => {
-    return
-  };
+  const navigate = useNavigate();
 
-  const InfoCard = ({
-    icon: Icon,
-    label,
-    value,
-    field,
-    enderecoField,
-    type = "text",
-    options,
-    cardId,
-  }) => (
-    <div
-      style={
-        hoveredCard === cardId && !editar
-          ? styles.infoCardHover
-          : styles.infoCard
-      }
-      onMouseEnter={() => setHoveredCard(cardId)}
-      onMouseLeave={() => setHoveredCard(null)}
-    >
-      <div style={styles.infoLabel}>
-        <Icon style={styles.labelIcon} />
-        {label}
-      </div>
-      {editar ? (
-        options ? (
-          <select
-            style={{
-              ...styles.infoInput,
-              ...(focusedInput === cardId ? styles.infoInputFocus : {}),
-            }}
-            value={value}
-            onChange={(e) =>
-              enderecoField
-                ? handleEnderecoChange(enderecoField, e.target.value)
-                : handleChange(field, e.target.value)
-            }
-            onFocus={() => setFocusedInput(cardId)}
-            onBlur={() => setFocusedInput(null)}
-          >
-            {options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            style={{
-              ...styles.infoInput,
-              ...(focusedInput === cardId ? styles.infoInputFocus : {}),
-            }}
-            type={type}
-            value={value}
-            onChange={(e) =>
-              enderecoField
-                ? handleEnderecoChange(enderecoField, e.target.value)
-                : handleChange(field, e.target.value)
-            }
-            onFocus={() => setFocusedInput(cardId)}
-            onBlur={() => setFocusedInput(null)}
-            maxLength={
-              type === "tel"
-                ? "11"
-                : type === "text" && field === "cpfCNPJ"
-                ? "11"
-                : undefined
-            }
-          />
-        )
-      ) : (
-        <div style={styles.infoValue}>{value || "—"}</div>
-      )}
-    </div>
-  );
+  const deletarCliente = async () => {
+    const res = await clientesFetch.deletar(dados.id_cliente);
+    navigate("/clientes/lista");
+  };
 
   return (
     <div style={styles.container}>
+      {modalDelete && (
+        <CardConfirmacao
+          text={`Deseja confirma a exclusão de:  ${dados.nome} ?`}
+          subText={"esses dados não poderam ser recuperados posteriormente"}
+          onClose={() => setModalDelete(false)}
+          action={deletarCliente}
+        />
+      )}
       <div style={styles.mainCard}>
         <div style={styles.header}>
           <div style={styles.headerBefore} />
@@ -323,6 +351,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.nome}
                 field="nome"
                 cardId="nome"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaIdCard}
@@ -332,6 +367,13 @@ const InformacoesGerais = ({ dados }) => {
                 }
                 field="cpfCNPJ"
                 cardId="cpf"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaBirthdayCake}
@@ -344,6 +386,13 @@ const InformacoesGerais = ({ dados }) => {
                 field="data_nascimento"
                 type="date"
                 cardId="nascimento"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaVenusMars}
@@ -357,6 +406,13 @@ const InformacoesGerais = ({ dados }) => {
                   "Prefiro não informar",
                 ]}
                 cardId="genero"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
             </div>
           </div>
@@ -378,6 +434,13 @@ const InformacoesGerais = ({ dados }) => {
                 field="telefone"
                 type="tel"
                 cardId="telefone"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaEnvelope}
@@ -386,6 +449,13 @@ const InformacoesGerais = ({ dados }) => {
                 field="email"
                 type="email"
                 cardId="email"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
             </div>
           </div>
@@ -406,6 +476,13 @@ const InformacoesGerais = ({ dados }) => {
                 }
                 enderecoField="cep"
                 cardId="cep"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaMapMarkerAlt}
@@ -413,6 +490,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.endereco.rua}
                 enderecoField="rua"
                 cardId="rua"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaMapMarkerAlt}
@@ -420,6 +504,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.endereco.bairro}
                 enderecoField="bairro"
                 cardId="bairro"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaMapMarkerAlt}
@@ -427,6 +518,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.endereco.cidade}
                 enderecoField="cidade"
                 cardId="cidade"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaMapMarkerAlt}
@@ -434,6 +532,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.endereco.estado}
                 enderecoField="estado"
                 cardId="estado"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
               <InfoCard
                 icon={FaMapMarkerAlt}
@@ -441,6 +546,13 @@ const InformacoesGerais = ({ dados }) => {
                 value={cliente.endereco.complemento}
                 enderecoField="complemento"
                 cardId="complemento"
+                editar={editar}
+                hoveredCard={hoveredCard}
+                focusedInput={focusedInput}
+                setHoveredCard={setHoveredCard}
+                setFocusedInput={setFocusedInput}
+                handleChange={handleChange}
+                handleEnderecoChange={handleEnderecoChange}
               />
             </div>
           </div>
@@ -474,7 +586,7 @@ const InformacoesGerais = ({ dados }) => {
                 </button>
                 <button
                   style={{ ...styles.btn, ...styles.btnOutline }}
-                  onClick={deletarCliente}
+                  onClick={() => setModalDelete(true)}
                 >
                   <MdDeleteOutline />
                   Excluir Cliente

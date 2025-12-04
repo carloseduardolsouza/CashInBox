@@ -76,17 +76,29 @@ const editar = async (id, clienteData) => {
     const { endereco, ...dadosCliente } = clienteData;
 
     // 1. Atualiza dados do cliente
-    await trx("cliente").where("id_cliente", id).update(dadosCliente);
+    await trx("cliente")
+      .where("id_cliente", id)
+      .update({
+        ...dadosCliente,
+        nome: formate.formatNome(dadosCliente.nome),
+        email: dadosCliente.email ? dadosCliente.email.toLowerCase() : "",
+      });
 
     // 2. Atualizar endereços
     if (Array.isArray(endereco)) {
       // Remove endereços antigos
       await trx("endereco").where("id_cliente", id).del();
 
-      // Insere endereços novos
+      // Adiciona endereços novamente já formatados
       for (const end of endereco) {
         await trx("endereco").insert({
-          ...end,
+          pais: formate.normalize(end.pais),
+          estado: formate.normalize(end.estado),
+          cidade: formate.normalize(end.cidade),
+          bairro: formate.normalize(end.bairro),
+          rua: formate.normalize(end.rua),
+          cep: end.cep,
+          complemento: formate.normalize(end.complemento),
           id_cliente: id,
         });
       }
