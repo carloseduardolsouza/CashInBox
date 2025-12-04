@@ -1,7 +1,7 @@
 // backend/src/database/migrations/20251203210057_create_clientes_tables.js
 
 exports.up = async function(knex) {
-  // 1. Tabela de clientes (precisa ser criada antes de endereço devido à referência circular)
+  // 1. Tabela de clientes
   await knex.schema.createTable('cliente', (table) => {
     table.increments('id_cliente').primary();
     table.string('nome', 200).notNullable();
@@ -10,7 +10,6 @@ exports.up = async function(knex) {
     table.string('cpfCNPJ', 20);
     table.date('data_nascimento');
     table.string('genero', 20);
-    table.integer('id_endereco').unsigned(); // Sem FK ainda
     table.text('observacoes');
     table.timestamp('created_at').defaultTo(knex.fn.now());
     
@@ -19,10 +18,17 @@ exports.up = async function(knex) {
     table.index('email');
   });
 
-  // 2. Tabela de endereços
+  // 2. Tabela de endereços (1 cliente → muitos endereços)
   await knex.schema.createTable('endereco', (table) => {
     table.increments('id_endereco').primary();
-    table.integer('id_cliente').unsigned().references('id_cliente').inTable('cliente').onDelete('CASCADE');
+    table
+      .integer('id_cliente')
+      .unsigned()
+      .notNullable()
+      .references('id_cliente')
+      .inTable('cliente')
+      .onDelete('CASCADE');
+
     table.string('pais', 100).defaultTo('Brasil');
     table.string('estado', 100);
     table.string('cidade', 150);
@@ -34,19 +40,9 @@ exports.up = async function(knex) {
     table.index('id_cliente');
     table.index('cep');
   });
-
-  // 3. Adiciona a FK de endereco em cliente (agora que a tabela endereco existe)
-  await knex.schema.alterTable('cliente', (table) => {
-    table.foreign('id_endereco').references('id_endereco').inTable('endereco').onDelete('SET NULL');
-  });
 };
 
 exports.down = async function(knex) {
-  // Remove a FK antes de dropar as tabelas
-  await knex.schema.alterTable('cliente', (table) => {
-    table.dropForeign('id_endereco');
-  });
-  
   await knex.schema.dropTableIfExists('endereco');
   await knex.schema.dropTableIfExists('cliente');
 };

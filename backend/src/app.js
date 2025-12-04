@@ -8,6 +8,7 @@ const produtoRoutes = require("./routers/produtoRoutes");
 const vendaRoutes = require("./routers/vendaRoutes");
 const contaRoutes = require("./routers/contaRoutes");
 const caixaRoutes = require("./routers/caixaRoutes");
+const configuracaoRoutes = require("./routers/configuracaoRoutes");
 
 // Inicializa o app Express
 const app = express();
@@ -47,5 +48,6 @@ app.use("/produto", produtoRoutes);
 app.use("/venda", vendaRoutes);
 app.use("/conta", contaRoutes);
 app.use("/caixa", caixaRoutes);
+app.use("/configuracao", configuracaoRoutes);
 
 module.exports = app;

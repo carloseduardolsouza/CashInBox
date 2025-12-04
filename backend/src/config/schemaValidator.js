@@ -40,7 +40,7 @@ const EXPECTED_SCHEMA = {
   cliente: {
     columns: [
       'id_cliente', 'nome', 'telefone', 'email', 'cpfCNPJ',
-      'data_nascimento', 'genero', 'id_endereco', 'observacoes', 'created_at'
+      'data_nascimento', 'genero', 'observacoes', 'created_at'
     ],
     indexes: ['nome', 'cpfCNPJ', 'email']
   },
