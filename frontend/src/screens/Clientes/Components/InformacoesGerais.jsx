@@ -284,7 +284,7 @@ const InformacoesGerais = ({ dados }) => {
             maxLength={
               type === "tel"
                 ? "11"
-                : type === "text" && field === "cpf_cnpj"
+                : type === "text" && field === "cpfCNPJ"
                 ? "11"
                 : undefined
             }
@@ -308,7 +308,7 @@ const InformacoesGerais = ({ dados }) => {
             <div style={styles.headerText}>
               <h1 style={styles.headerTitle}>{cliente.nome}</h1>
               <p style={styles.headerSubtitle}>
-                {format.formatCPF(cliente.cpf_cnpj)}
+                {format.formatCPF(cliente.cpfCNPJ)}
               </p>
             </div>
           </div>
@@ -328,9 +328,9 @@ const InformacoesGerais = ({ dados }) => {
                 icon={FaIdCard}
                 label="CPF"
                 value={
-                  editar ? cliente.cpf_cnpj : format.formatCPF(cliente.cpf_cnpj)
+                  editar ? cliente.cpfCNPJ : format.formatCPF(cliente.cpfCNPJ)
                 }
-                field="cpf_cnpj"
+                field="cpfCNPJ"
                 cardId="cpf"
               />
               <InfoCard

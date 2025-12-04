@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import clientesFetch from "../../services/api/clientesFetch";
+import { useParams } from "react-router-dom";
 
 //biblioteca de paginas
-import { Tabs, Tab, Box } from "@mui/material";
+import { Tabs, Tab, Box, CircularProgress } from "@mui/material";
 
 //components
 import InformacoesGerais from "./Components/InformacoesGerais";
@@ -11,7 +13,7 @@ import Table from "../../components/ui/tabelas/Table";
 const clienteSimulado = {
   id: 123,
   nome: "Carlos eduardo lourenço de souza",
-  cpf_cnpj: "71247814181",
+  cpfCNPJ: "71247814181.0",
   email: "joao.silva@email.com",
   genero: "Masculino",
   telefone: "34999887766",
@@ -52,6 +54,14 @@ const styles = {
   },
   ContainerGeral: {
     height: "100vh",
+  },
+  LoadingContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    width: "100vw",
+    background: "var(--background-color)",
   },
 };
 
@@ -144,7 +154,40 @@ const Pendencias = () => {
 };
 
 function DetalhesCliente() {
+  const { id } = useParams();
   const [value, setValue] = useState(0);
+  const [clienteData, setClienteData] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const procurarCliente = async () => {
+      try {
+        setLoading(true);
+        const data = await clientesFetch.clienteID(id);
+
+        const obj = {
+          ...data,
+          endereco: data.endereco[0],
+        };
+
+        setClienteData(obj);
+      } catch (error) {
+        console.error("Erro ao buscar cliente:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    procurarCliente();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Box sx={styles.LoadingContainer}>
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -156,7 +199,7 @@ function DetalhesCliente() {
         </Tabs>
 
         <Box sx={{ padding: 2 }}>
-          {value === 0 && <InformacoesGerais dados={clienteSimulado} />}
+          {value === 0 && <InformacoesGerais dados={clienteData} />}
           {value === 1 && <HistoricoCompras />}
           {value === 2 && <Pendencias />}
         </Box>
