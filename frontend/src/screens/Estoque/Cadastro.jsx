@@ -15,6 +15,7 @@ import {
 
 //Biblioteca
 import Select from "react-select";
+import estoqueFetch from "../../services/api/estoqueFetch";
 
 //modais
 import ModalVariacao from "./components/ModalVariacao";
@@ -27,6 +28,127 @@ const categoriasSimuladas = [
   { id: 4, nome: "Livros" },
   { id: 5, nome: "Brinquedos" },
 ];
+
+// Modal de Categoria
+const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
+  if (!isOpen) return null;
+
+  const styles = {
+    modalOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0, 0, 0, 0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+    },
+    modal: {
+      background: "var(--background)",
+      borderRadius: "16px",
+      padding: "32px",
+      maxWidth: "500px",
+      width: "90%",
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+    },
+    modalHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "24px",
+      paddingBottom: "16px",
+      borderBottom: "2px solid var(--surface-border)",
+    },
+    modalTitle: {
+      fontSize: "20px",
+      fontWeight: "700",
+      color: "var(--text-primary)",
+      margin: 0,
+    },
+    closeButton: {
+      background: "transparent",
+      border: "none",
+      fontSize: "24px",
+      color: "var(--text-muted)",
+      cursor: "pointer",
+      padding: "4px",
+    },
+    formInput: {
+      width: "95%",
+      padding: "12px 16px",
+      border: "2px solid var(--surface-border)",
+      borderRadius: "8px",
+      fontSize: "15px",
+      color: "var(--text-primary)",
+      background: "var(--background)",
+      transition: "all 0.2s ease",
+      fontFamily: "inherit",
+    },
+    modalActions: {
+      display: "flex",
+      gap: "12px",
+      justifyContent: "flex-end",
+      marginTop: "24px",
+    },
+    cancelButton: {
+      padding: "10px 24px",
+      background: "var(--surface)",
+      color: "var(--text-primary)",
+      border: "2px solid var(--surface-border)",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontSize: "14px",
+      fontWeight: "600",
+    },
+    saveButton: {
+      padding: "10px 24px",
+      background: "var(--primary-color)",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontSize: "14px",
+      fontWeight: "600",
+    },
+  };
+
+  return (
+    <div style={styles.modalOverlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.modalHeader}>
+          <h3 style={styles.modalTitle}>Nova Categoria</h3>
+          <button style={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
+        </div>
+        <input
+          type="text"
+          style={styles.formInput}
+          placeholder="Nome da categoria"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div style={styles.modalActions}>
+          <button style={styles.cancelButton} onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            style={styles.saveButton}
+            onClick={() => {
+              onSave(value);
+              onClose();
+            }}
+          >
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CadastrarProduto = () => {
   const fileInputRef = useRef(null);
@@ -523,6 +645,21 @@ const CadastrarProduto = () => {
       fontSize: "14px",
       fontWeight: "600",
     },
+    successMessage: {
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      background: "var(--success-500)",
+      color: "white",
+      padding: "16px 24px",
+      borderRadius: "8px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      zIndex: 2000,
+      animation: "slideIn 0.3s ease-out",
+    },
   };
 
   const calculatePrices = (field, value) => {
@@ -597,19 +734,132 @@ const CadastrarProduto = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  // Função para criar o objeto JSON e enviar para API
+  const createProductPayload = () => {
+    // Preparar imagens do produto principal
+    const productImages = state.imageFiles.map((file, index) => ({
+      image: file, // Arquivo de imagem
+      principal: index === 0, // Primeira imagem é principal
+    }));
+
+    // Preparar variações
+    const variacoesFormatadas = variacoes.map((variacao) => {
+      // Obter imagens específicas da variação
+      const variacaoImages = [];
+      
+      if (variacao.imagemIndex !== null && state.imageFiles[variacao.imagemIndex]) {
+        variacaoImages.push({
+          image: state.imageFiles[variacao.imagemIndex],
+          principal: true,
+        });
+      }
+
+      return {
+        nome: variacao.nome || "",
+        tipo: variacao.tipo || "",
+        cod_interno: variacao.cod_interno || "",
+        cod_barras: variacao.cod_barras || "",
+        estoque: variacao.estoque || "",
+        estoque_minimo: variacao.estoque_minimo || "",
+        images: variacaoImages,
+      };
+    });
+
+    // Montar objeto final
+    const payload = {
+      nome: formData.nome,
+      descricao: formData.descricao || "",
+      cod_barras: "",
+      preco_custo: parseFloat(formData.precoCompra) || 0,
+      preco_venda: parseFloat(formData.precoVenda) || 0,
+      margem: parseFloat(formData.markup) || 0,
+      id_categoria: formData.categoriaId ? parseInt(formData.categoriaId) : null,
+      id_subcategoria: null,
+      variacao: variacoesFormatadas,
+      images: productImages,
+    };
+
+    return payload;
+  };
+
+  // Função para enviar para API
+  const enviarParaAPI = async (payload) => {
+    try {
+      // Criar FormData para enviar arquivos
+      const formDataToSend = new FormData();
+
+      // Adicionar campos simples
+      formDataToSend.append("nome", payload.nome);
+      formDataToSend.append("descricao", payload.descricao);
+      formDataToSend.append("cod_barras", payload.cod_barras);
+      formDataToSend.append("preco_custo", payload.preco_custo);
+      formDataToSend.append("preco_venda", payload.preco_venda);
+      formDataToSend.append("margem", payload.margem);
+      formDataToSend.append("id_categoria", payload.id_categoria);
+      formDataToSend.append("id_subcategoria", payload.id_subcategoria);
+
+      // Adicionar imagens do produto
+      payload.images.forEach((img, index) => {
+        formDataToSend.append(`images[${index}][image]`, img.image);
+        formDataToSend.append(`images[${index}][principal]`, img.principal);
+      });
+
+      // Adicionar variações
+      payload.variacao.forEach((variacao, vIndex) => {
+        formDataToSend.append(`variacao[${vIndex}][nome]`, variacao.nome);
+        formDataToSend.append(`variacao[${vIndex}][tipo]`, variacao.tipo);
+        formDataToSend.append(`variacao[${vIndex}][cod_interno]`, variacao.cod_interno);
+        formDataToSend.append(`variacao[${vIndex}][cod_barras]`, variacao.cod_barras);
+        formDataToSend.append(`variacao[${vIndex}][estoque]`, variacao.estoque);
+        formDataToSend.append(`variacao[${vIndex}][estoque_minimo]`, variacao.estoque_minimo);
+
+        // Adicionar imagens da variação
+        variacao.images.forEach((img, imgIndex) => {
+          formDataToSend.append(
+            `variacao[${vIndex}][images][${imgIndex}][image]`,
+            img.image
+          );
+          formDataToSend.append(
+            `variacao[${vIndex}][images][${imgIndex}][principal]`,
+            img.principal
+          );
+        });
+      });
+
+      // Fazer requisição para API
+      const response = await estoqueFetch.cadastro(formDataToSend)
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Erro ao enviar para API:", error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (state.isSubmitting) return;
 
     setState((prev) => ({ ...prev, isSubmitting: true }));
 
-    // Simular requisição de API
-    setTimeout(() => {
-      console.log("Produto:", formData);
-      console.log("Variações:", variacoes);
-      console.log("Imagens:", state.imageFiles);
+    try {
+      // Criar payload
+      const payload = createProductPayload();
+      
+      // Log do payload (remover em produção)
+      console.log("Payload JSON:", JSON.stringify(payload, null, 2));
+      console.log("Dados completos:", payload);
 
+      // Enviar para API
+      const result = await enviarParaAPI(payload);
+      console.log("Resposta da API:", result);
+
+      // Simular requisição de API (remover quando conectar com API real)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Mostrar mensagem de sucesso
       setState((prev) => ({
         ...prev,
         isSubmitting: false,
@@ -620,6 +870,7 @@ const CadastrarProduto = () => {
         currentImageIndex: 0,
       }));
 
+      // Resetar formulário
       setFormData({
         nome: "",
         marca: "",
@@ -628,6 +879,8 @@ const CadastrarProduto = () => {
         precoVenda: "",
         markup: 0,
         categoriaId: "",
+        referencia: "",
+        usarReferencia: false,
       });
 
       setVariacoes([]);
@@ -636,24 +889,14 @@ const CadastrarProduto = () => {
         fileInputRef.current.value = "";
       }
 
+      // Esconder mensagem de sucesso após 3 segundos
       setTimeout(() => {
         setState((prev) => ({ ...prev, showSuccess: false }));
       }, 3000);
-    }, 1500);
-  };
-
-  const handleAddCategoria = () => {
-    if (novaCategoria.trim()) {
-      const newCat = {
-        id: state.categorias.length + 1,
-        nome: novaCategoria,
-      };
-      setState((prev) => ({
-        ...prev,
-        categorias: [...prev.categorias, newCat],
-        showModal: false,
-      }));
-      setNovaCategoria("");
+    } catch (error) {
+      console.error("Erro ao cadastrar produto:", error);
+      alert("Erro ao cadastrar produto. Tente novamente.");
+      setState((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
 
@@ -759,21 +1002,6 @@ const CadastrarProduto = () => {
       label: categoria.nome,
     });
   });
-
-  const handleSaveCategoria = (value) => {
-    if (value.trim()) {
-      const newCat = {
-        id: state.categorias.length + 1,
-        nome: value,
-      };
-      setState((prev) => ({
-        ...prev,
-        categorias: [...prev.categorias, newCat],
-        showModal: false,
-      }));
-      setNovaCategoria("");
-    }
-  };
 
   return (
     <div style={styles.container}>
@@ -1127,17 +1355,6 @@ const CadastrarProduto = () => {
           </div>
         </div>
       </div>
-
-      {/* Modal de Categoria */}
-      {state.showModal && (
-        <ModalCategoria
-          isOpen={state.showModal}
-          onClose={() => setState((prev) => ({ ...prev, showModal: false }))}
-          onSave={handleSaveCategoria}
-          value={novaCategoria}
-          onChange={setNovaCategoria}
-        />
-      )}
 
       {/* Modal de Variação */}
       {state.showVariacaoModal && (

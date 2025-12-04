@@ -29,6 +29,8 @@ const lista = async (req, res) => {
  */
 const cadastro = async (req, res) => {
   try {
+    console.log(req.body)
+    return
     // Validações básicas
     if (!req.body.nome) {
       return res.status(400).json({
