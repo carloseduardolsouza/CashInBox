@@ -42,8 +42,32 @@ const clienteID = async (id) => {
   }
 };
 
+const cadastro = async (dados) => {
+  try {
+    const res = await fetch(API_URL + "/cliente/cadastro", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao cadastrar cliente:", err);
+    throw err;
+  }
+};
+
+
 
 export default {
   lista,
-  clienteID
+  clienteID,
+  cadastro
 };

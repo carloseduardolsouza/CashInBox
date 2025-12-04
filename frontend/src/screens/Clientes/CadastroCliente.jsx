@@ -1,4 +1,5 @@
-import { useReducer, useState } from "react";
+import { useReducer, useState, useContext } from "react";
+import AppContext from "../../context/AppContext";
 import {
   FaUserAlt,
   FaPhone,
@@ -12,6 +13,8 @@ import {
   FaHome,
   FaMailBulk,
 } from "react-icons/fa";
+
+import clientesFetch from "../../services/api/clientesFetch";
 
 const styles = {
   container: {
@@ -201,13 +204,19 @@ function CadastrarCliente() {
   const [isHoveringButton, setIsHoveringButton] = useState(false);
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
 
+  const { adicionarAviso , avisos } = useContext(AppContext);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     dispatch({ name, value });
   };
 
-  const cadastrarCliente = () => {
-    console.log("Dados do cliente:", form);
+  const cadastrarCliente = async () => {
+    if (!form.nome) {
+      adicionarAviso("aviso" , "o campo nome , telefone e gênero precisa ser preenchido")
+      return
+    }
+    const nomeAlert = form.nome
     //json para enviar para cadastro do cliente
     const clienteData = {
       nome: form.nome,
@@ -216,16 +225,25 @@ function CadastrarCliente() {
       cpfCNPJ: form.cpf,
       data_nascimento: form.nascimento,
       genero: form.genero,
-      endereco: {
-        pais: form.pais,
-        estado: form.estado,
-        cidade: form.cidade,
-        bairro: form.bairro,
-        rua: form.rua,
-        cep: form.cep,
-        complemento: form.complemento,
-      },
+      endereco: [
+        {
+          pais: form.pais,
+          estado: form.estado,
+          cidade: form.cidade,
+          bairro: form.bairro,
+          rua: form.rua,
+          cep: form.cep,
+          complemento: form.complemento,
+        },
+      ],
     };
+
+    const resultadoCadastro = await clientesFetch.cadastro(clienteData);
+    if (resultadoCadastro.success) {
+      dispatch({ type: "RESET" });
+      adicionarAviso("sucesso" , `Cliente ${nomeAlert} cadastrado com sucesso`)
+    } else {
+    }
   };
 
   return (

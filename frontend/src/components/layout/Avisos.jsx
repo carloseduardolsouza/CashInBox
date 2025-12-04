@@ -1,13 +1,48 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useContext } from "react";
+import AppContext from "../../context/AppContext";
 
 function Avisos() {
-  // const { avisos } = useContext(AppContext);
+  const { avisos, deletarAviso } = useContext(AppContext);
+  const [temporizadores, setTemporizadores] = useState({});
+
+  useEffect(() => {
+    avisos.forEach((aviso) => {
+      if (!temporizadores[aviso.id]) {
+        // Inicia o temporizador para cada aviso
+        setTemporizadores((prev) => ({
+          ...prev,
+          [aviso.id]: setTimeout(() => {
+            deletarAviso(aviso.id);
+          }, 10000),
+        }));
+      }
+    });
+
+    // Limpa temporizadores de avisos que não existem mais
+    Object.keys(temporizadores).forEach((id) => {
+      if (!avisos.find((aviso) => aviso.id === id)) {
+        clearTimeout(temporizadores[id]);
+        setTemporizadores((prev) => {
+          const novo = { ...prev };
+          delete novo[id];
+          return novo;
+        });
+      }
+    });
+
+    // Cleanup ao desmontar
+    return () => {
+      Object.values(temporizadores).forEach((timer) => clearTimeout(timer));
+    };
+  }, [avisos]);
 
   const styles = {
     layoutAvisos: {
       position: "fixed",
       bottom: "10px",
       right: "10px",
+      zIndex: 9999,
     },
     error: {
       minWidth: "370px",
@@ -20,8 +55,8 @@ function Avisos() {
       borderRadius: "8px",
       boxShadow: "0px 0px 5px -3px #111",
       animation: "entrada .5s linear",
-      zIndex: 9999,
       position: "relative",
+      overflow: "hidden",
     },
     errorIcon: {
       width: "20px",
@@ -39,47 +74,67 @@ function Avisos() {
       height: "20px",
       cursor: "pointer",
       marginLeft: "auto",
+      zIndex: 2,
+    },
+    progressBar: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      height: "4px",
+      width: "100%",
+      backgroundColor: "rgba(255, 255, 255, 0.3)",
+      animation: "diminuir 5s linear forwards",
     },
   };
 
-  // Usando um array de exemplo para teste
-  const avisos = [
-    {
-      tipo: "aviso",
-      descricao: "Boleto já disponível para pagamento",
-    },
-    {
-      tipo: "erro",
-      descricao: "Falha na conexão com o servidor. Tente novamente!",
-    },
-    {
-      tipo: "sucesso",
-      descricao: "Operação realizada com sucesso. Boa!",
-    },
-    {
-      tipo: "atenção",
-      descricao: "Sua sessão vai expirar em 5 minutos.",
-    },
-  ];
+  // Adiciona a animação CSS dinamicamente
+  useEffect(() => {
+    const styleSheet = document.styleSheets[0];
+    const keyframes = `
+      @keyframes entrada {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes diminuir {
+        from {
+          width: 100%;
+        }
+        to {
+          width: 0%;
+        }
+      }
+    `;
+    
+    try {
+      styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+    } catch (e) {
+      // Animação já existe
+    }
+  }, []);
 
   return (
     <div style={styles.layoutAvisos}>
       {avisos.map((dados, index) => {
         return (
           <div
-
-            key={index}
+            key={dados.id || index}
             style={{
               backgroundColor: `${
                 dados.tipo === "aviso"
-                  ? "#5b67ef" 
+                  ? "var(--primary-color)"
                   : dados.tipo === "atenção"
-                  ? "#C9C707" 
+                  ? "var(--warning-700)"
                   : dados.tipo === "sucesso"
-                  ? "#0DA800" 
+                  ? "var(--success-700)"
                   : dados.tipo === "erro"
-                  ? "#C90000" 
-                  : "#333" 
+                  ? "#C90000"
+                  : "#333"
               }`,
               ...styles.error,
             }}
@@ -99,9 +154,17 @@ function Avisos() {
               </svg>
             </div>
 
-            <div style={styles.errorTitle}>{dados.descricao}</div>
+            <div style={styles.errorTitle}>{dados.texto}</div>
 
-            <div style={styles.errorClose}>
+            <div
+              style={styles.errorClose}
+              onClick={() => {
+                if (temporizadores[dados.id]) {
+                  clearTimeout(temporizadores[dados.id]);
+                }
+                deletarAviso(dados.id);
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -114,6 +177,9 @@ function Avisos() {
                 ></path>
               </svg>
             </div>
+
+            {/* Barra de progresso */}
+            <div style={styles.progressBar}></div>
           </div>
         );
       })}

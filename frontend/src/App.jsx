@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 //import de components
 import ApiDesconectada from "./components/shared/ApiDesconectada";
 import AssinaturaVencida from "./components/shared/AssinaturaVencida";
+import Avisos from "./components/layout/Avisos";
 
 //imports de telas
 import Home from "./screens/Home";
@@ -87,6 +88,7 @@ function MainLayout() {
 
   return (
     <>
+      <Avisos/>
       <MenuLateral
         onNavigate={(path) => navigate(path)}
         currentPath={location.pathname}
