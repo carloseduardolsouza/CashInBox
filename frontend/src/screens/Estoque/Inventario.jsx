@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import AppContext from "../../context/AppContext";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter, Download, Plus, Trash2 } from "lucide-react";
 import { FaEdit } from "react-icons/fa";
 import estoqueFetch from "../../services/api/estoqueFetch";
@@ -221,6 +222,16 @@ export default function Inventario() {
     return imagens.map((img) => `http://localhost:1122${img.caminho_arquivo}`);
   }, []);
 
+  const { adicionarAviso } = useContext(AppContext);
+
+  const deletarProduto = async (id) => {
+    const res = await estoqueFetch.deletar(id);
+    adicionarAviso("sucesso", `Produto com id: ${id} foi deletado com sucesso`);
+    listarProdutos();
+  };
+
+  const navigate = useNavigate();
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -296,7 +307,12 @@ export default function Inventario() {
                             backgroundImage: `url(${imagemProduto[0]})`,
                           }}
                         />
-                        <span style={styles.productName}>{product.nome}</span>
+                        <Link
+                          to={`/estoque/detalhes/produto/${product.id_produto}`}
+                          style={styles.productName}
+                        >
+                          {product.nome}
+                        </Link>
                       </div>
                     </td>
 
@@ -320,11 +336,18 @@ export default function Inventario() {
                       <div style={styles.actionsContainer}>
                         <button
                           style={styles.actionButton}
-                          onClick={() => console.log(produtos)}
+                          onClick={() => {
+                            navigate(
+                              `/estoque/detalhes/produto/${product.id_produto}`
+                            );
+                          }}
                         >
                           <FaEdit size={16} />
                         </button>
-                        <button style={styles.actionButton}>
+                        <button
+                          style={styles.actionButton}
+                          onClick={() => deletarProduto(product.id_produto)}
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>

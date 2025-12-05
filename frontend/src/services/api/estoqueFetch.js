@@ -17,9 +17,9 @@ const lista = async () => {
   }
 };
 
-const clienteID = async (id) => { 
+const produtoID = async (id) => { 
   try {
-    const res = await fetch(API_URL + "/cliente/lista");
+    const res = await fetch(API_URL + "/produto/lista");
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -31,13 +31,13 @@ const clienteID = async (id) => {
     // Se o backend retorna { success, data }, mantenho isso
     const lista = data.data || data;
 
-    // Filtra o cliente certo
-    const cliente = lista.find((c) => Number(c.id_cliente) === Number(id));
+    // Filtra o produto certo
+    const produto = lista.find((c) => Number(c.id_produto) === Number(id));
 
-    return cliente || null;
+    return produto || null;
 
   } catch (err) {
-    console.error("Erro ao buscar cliente por ID:", err);
+    console.error("Erro ao buscar produto por ID:", err);
     throw err;
   }
 };
@@ -63,7 +63,7 @@ const cadastro = async (dados) => {
 
 const deletar = async (id) => {
   try {
-    const res = await fetch(API_URL + `/cliente/deletar/${id}`, {
+    const res = await fetch(API_URL + `/produto/deletar/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +78,7 @@ const deletar = async (id) => {
     const data = await res.json();
     return data.data;
   } catch (err) {
-    console.error("Erro ao deletar cliente:", err);
+    console.error("Erro ao deletar produto:", err);
     throw err;
   }
 };
@@ -188,7 +188,7 @@ const deletarSubcategoria = async (id) => {
 
 export default {
   lista,
-  clienteID,
+  produtoID,
   cadastro,
   deletar,
   editar,

@@ -46,6 +46,7 @@ import ListaProdutos from "./screens/Produtos/Lista";
 import Inventario from "./screens/Estoque/Inventario";
 import CadastrarProduto from "./screens/Estoque/Cadastro";
 import Categoria from "./screens/Estoque/Categoria"
+import DetalhesProduto from "./screens/Estoque/DetalhesProduto";
 
 //Configuracoes
 import Boletos from "./screens/Configuracoes/Boletos";
@@ -112,6 +113,7 @@ function MainLayout() {
         <Route path="/produtos/lista" element={<ListaProdutos />} />
 
         <Route path="/estoque/inventario" element={<Inventario/>} />
+        <Route path="/estoque/detalhes/produto/:id" element={<DetalhesProduto/>} />
         <Route path="/estoque/categorias" element={<Categoria/>} />
         <Route path="/estoque/cadastro" element={<CadastrarProduto/>} />
         <Route path="/estoque/minimo" element={<h1>Produtos</h1>} />
