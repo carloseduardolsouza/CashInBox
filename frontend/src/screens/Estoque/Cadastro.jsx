@@ -617,7 +617,7 @@ const CadastrarProduto = () => {
 
   const handleCategoriaChange = (selectedOption) => {
     const categoriaId = selectedOption.value;
-    
+
     // Encontrar a categoria selecionada
     const categoriaSelecionada = categoriasProduto.find(
       (cat) => cat.id_categoria === parseInt(categoriaId)
@@ -632,7 +632,11 @@ const CadastrarProduto = () => {
     }));
 
     // Verificar se a categoria tem subcategorias
-    if (categoriaSelecionada && categoriaSelecionada.subcategorias && categoriaSelecionada.subcategorias.length > 0) {
+    if (
+      categoriaSelecionada &&
+      categoriaSelecionada.subcategorias &&
+      categoriaSelecionada.subcategorias.length > 0
+    ) {
       setSubcategorias(categoriaSelecionada.subcategorias);
       setShowSubcategoria(true);
     } else {
@@ -834,8 +838,7 @@ const CadastrarProduto = () => {
     }
   };
 
-  const isFormValid =
-    formData.nome.trim() !== "" && formData.categoriaId !== "";
+  const isFormValid = formData.nome.trim() !== "";
 
   const customStyles = {
     control: (base) => ({
@@ -923,7 +926,7 @@ const CadastrarProduto = () => {
 
               <div style={styles.formGroup}>
                 <label style={styles.formLabel}>
-                  Categoria <span style={styles.requiredIndicator}>*</span>
+                  Categoria
                 </label>
                 <div style={styles.categoryRow}>
                   <div style={styles.categorySelect}>
@@ -1256,14 +1259,6 @@ const CadastrarProduto = () => {
           isEditing={state.editingVariacaoIndex !== null}
           images={state.images}
         />
-      )}
-
-      {/* Mensagem de Sucesso */}
-      {state.showSuccess && (
-        <div style={styles.successMessage}>
-          <FaCheck />
-          <span>Produto cadastrado com sucesso!</span>
-        </div>
       )}
     </div>
   );

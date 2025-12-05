@@ -8,6 +8,7 @@ import {
 } from "react-icons/fa";
 import Lightbox from "react-awesome-lightbox";
 import "react-awesome-lightbox/build/style.css";
+import estoqueFetch from "../../services/api/estoqueFetch";
 
 function ListaProdutos() {
   const [produtos, setProdutos] = useState([]);
@@ -17,7 +18,6 @@ function ListaProdutos() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [expandedProducts, setExpandedProducts] = useState({});
 
-  // Otimização: useCallback para evitar recriação de funções
   const abrirLightbox = useCallback((imagens, indexInicial = 0) => {
     setLightboxImages(imagens);
     setCurrentImageIndex(indexInicial);
@@ -35,13 +35,15 @@ function ListaProdutos() {
     }));
   }, []);
 
-  // Otimização: Função simplificada e mais eficiente
   const getImagemPrincipal = useCallback(
     (imagens, possuiVariacao, variacoes = []) => {
       if (!possuiVariacao) {
         if (!imagens?.length) return null;
         const principal = imagens.find(
-          (img) => img.principal === true || img.principal === "1"
+          (img) =>
+            img.principal === true ||
+            img.principal === 1 ||
+            img.principal === "1"
         );
         return (
           principal?.caminho_arquivo || imagens[0]?.caminho_arquivo || null
@@ -50,15 +52,18 @@ function ListaProdutos() {
 
       if (possuiVariacao && Array.isArray(variacoes)) {
         for (const variacao of variacoes) {
-          if (!variacao?.imagem?.length) continue;
-          const principal = variacao.imagem.find(
-            (img) => img.principal === true || img.principal === "1"
+          if (!variacao?.images?.length) continue;
+          const principal = variacao.images.find(
+            (img) =>
+              img.principal === true ||
+              img.principal === 1 ||
+              img.principal === "1"
           );
           if (principal) return principal.caminho_arquivo;
         }
 
         for (const variacao of variacoes) {
-          if (variacao?.imagem?.[0]) return variacao.imagem[0].caminho_arquivo;
+          if (variacao?.images?.[0]) return variacao.images[0].caminho_arquivo;
         }
       }
 
@@ -67,162 +72,40 @@ function ListaProdutos() {
     []
   );
 
-  const getAllImages = useCallback((imagens, possuiVariacao, variacoes = []) => {
-    if (!possuiVariacao) {
-      if (!imagens?.length) return [];
-      return imagens.map(
-        (img) => `http://localhost:3322/uploads/${img.caminho_arquivo}`
-      );
-    }
+  const getAllImages = useCallback(
+    (imagens, possuiVariacao, variacoes = []) => {
+      if (!possuiVariacao) {
+        if (!imagens?.length) return [];
+        return imagens.map(
+          (img) => `http://localhost:1122${img.caminho_arquivo}`
+        );
+      }
 
-    if (possuiVariacao && Array.isArray(variacoes)) {
-      for (const variacao of variacoes) {
-        if (variacao?.imagem?.length) {
-          return variacao.imagem.map(
-            (img) => `http://localhost:3322/uploads/${img.caminho_arquivo}`
-          );
+      if (possuiVariacao && Array.isArray(variacoes)) {
+        for (const variacao of variacoes) {
+          if (variacao?.images?.length) {
+            return variacao.images.map(
+              (img) => `http://localhost:1122${img.caminho_arquivo}`
+            );
+          }
         }
       }
-    }
 
-    return [];
-  }, []);
+      return [];
+    },
+    []
+  );
 
-  // Mock inicial
+  const listarProdutos = async () => {
+    const produtos = await estoqueFetch.lista();
+    console.log(produtos);
+    setProdutos(produtos);
+  };
+
   useEffect(() => {
-    const mockProdutos = [
-      {
-        id: "1",
-        nome: "Camiseta Básica Premium",
-        descricao: "Camiseta de algodão premium com tecnologia anti-odor",
-        preco_venda: "59.90",
-        estoque: "150",
-        estoque_minimo: "20",
-        imagem: [],
-        variacao: [
-          {
-            id: "1",
-            nome: "P Vermelho",
-            tipo: "Tamanho P / Cor Vermelha",
-            estoque: "50",
-            cod_interno: "CAM-P-VM",
-            estoque_minimo: "10",
-            imagem: [
-              {
-                caminho_arquivo: "1764632648138-fog__o_-_2.avif",
-                principal: false,
-              },
-            ],
-          },
-          {
-            id: "2",
-            nome: "G Preto",
-            tipo: "Tamanho G / Cor Preta",
-            estoque: "25",
-            cod_interno: "CAM-G-PR",
-            estoque_minimo: "8",
-            imagem: [
-              {
-                caminho_arquivo: "1764356583070-airfryer-_1.jpg",
-                principal: true,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "2",
-        nome: "Whey Protein Isolado",
-        descricao: "Suplemento proteico de alta qualidade",
-        cod_barras: "7891234567894",
-        cod_interno: "WHEY001",
-        preco_custo: "65.00",
-        preco_venda: "99.90",
-        margem: "53.69",
-        estoque: "80",
-        estoque_minimo: "15",
-        imagem: [
-          { caminho_arquivo: "1764356583070-airfryer-_1.jpg", principal: true },
-        ],
-        variacao: [],
-      },
-      {
-        id: "3",
-        nome: "Whey Protein Isolado",
-        descricao: "Suplemento proteico de alta qualidade",
-        cod_barras: "7891234567894",
-        cod_interno: "WHEY001",
-        preco_custo: "65.00",
-        preco_venda: "99.90",
-        margem: "53.69",
-        estoque: "80",
-        estoque_minimo: "15",
-        imagem: [
-          { caminho_arquivo: "1764356583070-airfryer-_1.jpg", principal: true },
-        ],
-        variacao: [],
-      },
-      {
-        id: "2",
-        nome: "Whey Protein Isolado",
-        descricao: "Suplemento proteico de alta qualidade",
-        cod_barras: "7891234567894",
-        cod_interno: "WHEY001",
-        preco_custo: "65.00",
-        preco_venda: "99.90",
-        margem: "53.69",
-        estoque: "80",
-        estoque_minimo: "15",
-        imagem: [
-          { caminho_arquivo: "1764356583070-airfryer-_1.jpg", principal: true },
-        ],
-        variacao: [],
-      },
-      {
-        id: "1",
-        nome: "Camiseta Básica Premium",
-        descricao: "Camiseta de algodão premium com tecnologia anti-odor",
-        preco_venda: "59.90",
-        estoque: "150",
-        estoque_minimo: "20",
-        imagem: [],
-        variacao: [
-          {
-            id: "1",
-            nome: "P Vermelho",
-            tipo: "Tamanho P / Cor Vermelha",
-            estoque: "50",
-            cod_interno: "CAM-P-VM",
-            estoque_minimo: "10",
-            imagem: [
-              {
-                caminho_arquivo: "1764632648138-fog__o_-_2.avif",
-                principal: false,
-              },
-            ],
-          },
-          {
-            id: "2",
-            nome: "G Preto",
-            tipo: "Tamanho G / Cor Preta",
-            estoque: "25",
-            cod_interno: "CAM-G-PR",
-            estoque_minimo: "8",
-            imagem: [
-              {
-                caminho_arquivo: "1764356583070-airfryer-_1.jpg",
-                principal: true,
-              },
-            ],
-          },
-        ],
-      },
-    ];
-
-    setProdutos(mockProdutos);
+    listarProdutos();
   }, []);
 
-  // Otimização: useMemo para filtrar produtos apenas quando necessário
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) =>
       p.nome.toLowerCase().includes(busca.toLowerCase())
@@ -476,7 +359,6 @@ function ListaProdutos() {
         </div>
       </div>
 
-      {/* Lightbox com React Awesome Lightbox */}
       {lightboxOpen && lightboxImages.length > 0 && (
         <Lightbox
           images={lightboxImages}
@@ -485,21 +367,20 @@ function ListaProdutos() {
         />
       )}
 
-      {/* Grid de produtos */}
       <div style={styles.grid}>
         {produtosFiltrados.map((prod) => {
           const temVariacoes = prod.variacao?.length > 0;
           const imagemPrincipal = getImagemPrincipal(
-            prod.imagem,
+            prod.images,
             temVariacoes,
             prod.variacao
           );
           const todasImagens = getAllImages(
-            prod.imagem,
+            prod.images,
             temVariacoes,
             prod.variacao
           );
-          const isExpanded = expandedProducts[prod.id];
+          const isExpanded = expandedProducts[prod.id_produto];
 
           const estoqueTotal = temVariacoes
             ? prod.variacao.reduce(
@@ -510,7 +391,7 @@ function ListaProdutos() {
 
           return (
             <div
-              key={prod.id}
+              key={prod.id_produto}
               style={styles.card}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
@@ -522,13 +403,12 @@ function ListaProdutos() {
               }}
             >
               <div style={styles.cardContent}>
-                {/* Imagem principal */}
                 {imagemPrincipal ? (
                   <div
                     onClick={() => abrirLightbox(todasImagens, 0)}
                     style={{
                       ...styles.imageBox,
-                      backgroundImage: `url(http://localhost:3322/uploads/${imagemPrincipal})`,
+                      backgroundImage: `url(http://localhost:1122${imagemPrincipal})`,
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.transform = "scale(1.05)")
@@ -555,7 +435,7 @@ function ListaProdutos() {
                   <div style={styles.infoRow}>
                     <span style={styles.label}>Código:</span>
                     <span style={styles.value}>
-                      {prod.cod_interno || prod.id}
+                      {prod.cod_interno || prod.id_produto}
                     </span>
                   </div>
 
@@ -564,7 +444,7 @@ function ListaProdutos() {
                   </div>
 
                   <div style={styles.infoRow}>
-                    <FaBox style={{ color: "var(--text-secondary)" }} />
+                    <FaBox style={{ color: "#666" }} />
                     <span style={styles.label}>Estoque:</span>
                     <span style={styles.value}>{estoqueTotal} un.</span>
                     {temVariacoes && (
@@ -592,20 +472,11 @@ function ListaProdutos() {
                 </div>
               </div>
 
-              {/* Variações */}
               {temVariacoes && (
                 <div style={styles.variacoesContainer}>
                   <div
                     style={styles.variacoesHeader}
-                    onClick={() => toggleExpandProduct(prod.id)}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "var(--neutral-600)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "var(--surface-strong)")
-                    }
+                    onClick={() => toggleExpandProduct(prod.id_produto)}
                   >
                     {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                     <span>Variações Disponíveis ({prod.variacao.length})</span>
@@ -614,13 +485,17 @@ function ListaProdutos() {
                   {isExpanded &&
                     prod.variacao.map((variacao) => {
                       const variacaoImagemPrincipal = getImagemPrincipal(
-                        variacao.imagem
+                        variacao.images,
+                        false
                       );
-                      const variacaoImagens = getAllImages(variacao.imagem);
+                      const variacaoImagens = getAllImages(
+                        variacao.images,
+                        false
+                      );
 
                       return (
                         <div
-                          key={variacao.id}
+                          key={variacao.id_variacao}
                           style={styles.variacaoCard}
                           onMouseEnter={(e) =>
                             (e.currentTarget.style.transform =
@@ -635,7 +510,7 @@ function ListaProdutos() {
                               onClick={() => abrirLightbox(variacaoImagens, 0)}
                               style={{
                                 ...styles.variacaoImage,
-                                backgroundImage: `url(http://localhost:3322/uploads/${variacaoImagemPrincipal})`,
+                                backgroundImage: `url(http://localhost:1122${variacaoImagemPrincipal})`,
                               }}
                               onMouseEnter={(e) =>
                                 (e.currentTarget.style.transform = "scale(1.1)")
@@ -672,9 +547,7 @@ function ListaProdutos() {
                               )}
                             </div>
                             <div style={styles.infoRow}>
-                              <FaBox
-                                style={{ color: "var(--text-secondary)" }}
-                              />
+                              <FaBox style={{ color: "#666" }} />
                               <span style={styles.label}>Estoque:</span>
                               <span style={styles.value}>
                                 {variacao.estoque} un.
@@ -682,7 +555,7 @@ function ListaProdutos() {
                               <span
                                 style={{
                                   fontSize: "12px",
-                                  color: "var(--text-secondary)",
+                                  color: "#666",
                                 }}
                               >
                                 (mín: {variacao.estoque_minimo})
