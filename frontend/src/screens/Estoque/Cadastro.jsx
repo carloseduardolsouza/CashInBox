@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect , useContext } from "react";
+import AppContext from "../../context/AppContext"
 import {
   FaCamera,
   FaBox,
@@ -25,6 +26,8 @@ const CadastrarProduto = () => {
   const [categoriasProduto, setCategoriasProduto] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
   const [showSubcategoria, setShowSubcategoria] = useState(false);
+
+  const { adicionarAviso } = useContext(AppContext)
 
   const buscarCategorias = async () => {
     const categorias = await estoqueFetch.listaCategoria();
@@ -705,20 +708,10 @@ const CadastrarProduto = () => {
       console.log("- Total de variações:", variacoes.length);
 
       // 5. Fazer requisição
-      const response = await fetch("http://localhost:1122/produto/cadastro", {
-        method: "POST",
-        body: formDataToSend,
-      });
+      const response = await estoqueFetch.cadastro(formDataToSend)
+      console.log("✅ Resposta da API:", response);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log("✅ Resposta da API:", result);
-
-      return result;
+      return response;
     } catch (error) {
       console.error("❌ Erro ao enviar para API:", error);
       throw error;
@@ -727,6 +720,7 @@ const CadastrarProduto = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nomeAdicionado = formData.nome
 
     if (state.isSubmitting) return;
 
@@ -770,13 +764,10 @@ const CadastrarProduto = () => {
         fileInputRef.current.value = "";
       }
 
-      // Esconder mensagem de sucesso após 3 segundos
-      setTimeout(() => {
-        setState((prev) => ({ ...prev, showSuccess: false }));
-      }, 3000);
+      adicionarAviso("sucesso" , `${nomeAdicionado} adicionado com sucesso`)
     } catch (error) {
       console.error("Erro ao cadastrar produto:", error);
-      alert("Erro ao cadastrar produto. Tente novamente.");
+      adicionarAviso("erro" , "Erro ao cadastrar produto. Tente novamente.")
       setState((prev) => ({ ...prev, isSubmitting: false }));
     }
   };

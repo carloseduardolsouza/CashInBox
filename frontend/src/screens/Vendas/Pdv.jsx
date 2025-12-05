@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaTrash, FaSearch, FaShoppingCart } from "react-icons/fa";
 import format from "../../utils/formatters";
-
-//Biblioteca
+import estoqueFetch from "../../services/api/estoqueFetch";
 import Select from "react-select";
 
 const styles = {
@@ -319,83 +318,12 @@ const styles = {
 };
 
 function Pdv() {
-  // Dados simulados de produtos com variações
-  const produtosSimulados = [
-    {
-      id: 1,
-      nome: "Notebook Dell Inspiron",
-      preco_venda: 3499.9,
-      estoque_atual: 15,
-      variacoes: null,
-    },
-    {
-      id: 2,
-      nome: "Mouse Logitech MX Master",
-      preco_venda: 449.9,
-      estoque_atual: 42,
-      variacoes: null,
-    },
-    {
-      id: 3,
-      nome: "Camiseta Básica",
-      preco_venda: 59.9,
-      estoque_atual: 100,
-      variacoes: [
-        { id: 1, tipo: "cor", valor: "Preta", tamanho: "P", estoque: 20 },
-        { id: 2, tipo: "cor", valor: "Preta", tamanho: "M", estoque: 25 },
-        { id: 3, tipo: "cor", valor: "Preta", tamanho: "G", estoque: 15 },
-        { id: 4, tipo: "cor", valor: "Branca", tamanho: "P", estoque: 18 },
-        { id: 5, tipo: "cor", valor: "Branca", tamanho: "M", estoque: 22 },
-        { id: 6, tipo: "cor", valor: "Branca", tamanho: "G", estoque: 10 },
-      ],
-    },
-    {
-      id: 4,
-      nome: 'Monitor LG 27" 4K',
-      preco_venda: 1899.9,
-      estoque_atual: 8,
-      variacoes: null,
-    },
-    {
-      id: 5,
-      nome: "Tênis Esportivo",
-      preco_venda: 299.9,
-      estoque_atual: 60,
-      variacoes: [
-        { id: 7, tipo: "cor", valor: "Azul", tamanho: "38", estoque: 10 },
-        { id: 8, tipo: "cor", valor: "Azul", tamanho: "40", estoque: 15 },
-        { id: 9, tipo: "cor", valor: "Azul", tamanho: "42", estoque: 8 },
-        { id: 10, tipo: "cor", valor: "Preto", tamanho: "38", estoque: 12 },
-        { id: 11, tipo: "cor", valor: "Preto", tamanho: "40", estoque: 10 },
-        { id: 12, tipo: "cor", valor: "Preto", tamanho: "42", estoque: 5 },
-      ],
-    },
-    {
-      id: 6,
-      nome: "Suco Natural",
-      preco_venda: 12.9,
-      estoque_atual: 80,
-      variacoes: [
-        { id: 13, tipo: "sabor", valor: "Laranja", estoque: 30 },
-        { id: 14, tipo: "sabor", valor: "Uva", estoque: 25 },
-        { id: 15, tipo: "sabor", valor: "Morango", estoque: 25 },
-      ],
-    },
-    {
-      id: 7,
-      nome: "SSD Samsung 1TB",
-      preco_venda: 699.9,
-      estoque_atual: 50,
-      variacoes: null,
-    },
-  ];
-
   const Data = new Date();
   const log = `${String(Data.getDate()).padStart(2, "0")}/${String(
     Data.getMonth() + 1
   ).padStart(2, "0")}/${Data.getFullYear()}`;
 
-  const [resultadoProdutos] = useState(produtosSimulados);
+  const [resultadoProdutos, setResultadoProdutos] = useState([]);
   const [produto, setProduto] = useState("Selecione um produto");
   const [precovenda, setPreçovenda] = useState(0);
   const [emestoque, setEmestoque] = useState(0);
@@ -416,30 +344,41 @@ function Pdv() {
   const [formaPagamento, setFormaPagamento] = useState("dinheiro");
   const [valorPagamento, setValorPagamento] = useState(0);
 
+  const listaProdutos = async () => {
+    const produtos = await estoqueFetch.lista();
+    setResultadoProdutos(produtos);
+  };
+
+  useEffect(() => {
+    listaProdutos();
+  }, []);
+
   const renderInfoProduto = (e) => {
     const selectedId = parseInt(e.value);
     const produtoSelecionado = resultadoProdutos.find(
-      (p) => p.id === selectedId
+      (p) => p.id_produto === selectedId
     );
 
     if (produtoSelecionado) {
       setProduto(produtoSelecionado.nome);
-      setId_produto(produtoSelecionado.id);
-      setEmestoque(produtoSelecionado.estoque_atual);
+      setId_produto(produtoSelecionado.id_produto);
       setPreçovenda(produtoSelecionado.preco_venda);
 
       // Verificar se o produto tem variações
       if (
-        produtoSelecionado.variacoes &&
-        produtoSelecionado.variacoes.length > 0
+        produtoSelecionado.variacao &&
+        produtoSelecionado.variacao.length > 0
       ) {
-        setVariacoesProduto(produtoSelecionado.variacoes);
+        setVariacoesProduto(produtoSelecionado.variacao);
         setMostrarVariacoes(true);
         setVariacaoSelecionada(null);
+        setEmestoque(0); // Estoque será definido ao selecionar variação
       } else {
         setVariacoesProduto([]);
         setMostrarVariacoes(false);
         setVariacaoSelecionada(null);
+        // Para produtos sem variação, usar o estoque do produto principal
+        setEmestoque(produtoSelecionado.estoque || 0);
       }
     }
   };
@@ -468,13 +407,8 @@ function Pdv() {
       return;
     }
 
-    if (quantidadeProduto > emestoque) {
-      alert("Quantidade solicitada maior que o estoque disponível.");
-      return;
-    }
-
     const chaveItem = variacaoSelecionada
-      ? `${id_produto}-${variacaoSelecionada.id}`
+      ? `${id_produto}-${variacaoSelecionada.id_variacao}`
       : `${id_produto}`;
 
     const index = arrayVenda.findIndex((item) => item.chave === chaveItem);
@@ -487,17 +421,15 @@ function Pdv() {
       setArrayVenda(novaArrayVenda);
     } else {
       const descricaoVariacao = variacaoSelecionada
-        ? ` - ${variacaoSelecionada.valor}${
-            variacaoSelecionada.tamanho
-              ? ` (${variacaoSelecionada.tamanho})`
-              : ""
-          }`
+        ? ` - ${variacaoSelecionada.nome} (${variacaoSelecionada.tipo})`
         : "";
 
       const objetoDaVenda = {
         chave: chaveItem,
         id_produto: id_produto,
-        id_variacao: variacaoSelecionada ? variacaoSelecionada.id : null,
+        id_variacao: variacaoSelecionada
+          ? variacaoSelecionada.id_variacao
+          : null,
         produto_nome: produto + descricaoVariacao,
         quantidade: quantidadeProduto,
         preco_unitario: precovenda,
@@ -596,10 +528,13 @@ function Pdv() {
     setAcrescimo({ tipo: "real", valor: 0 });
     setFormaPagamento("dinheiro");
     setValorPagamento(0);
+    setMostrarVariacoes(false);
+    setVariacoesProduto([]);
+    setVariacaoSelecionada(null);
   };
 
   const optionsProdutos = resultadoProdutos.map((resultProdutos) => ({
-    value: resultProdutos.id,
+    value: resultProdutos.id_produto,
     label: resultProdutos.nome,
   }));
 
@@ -623,7 +558,7 @@ function Pdv() {
     singleValue: (base, state) => ({
       ...base,
       color: "var(--text-primary)",
-      fontWeight: 600, 
+      fontWeight: 600,
     }),
     option: (base, state) => ({
       ...base,
@@ -660,25 +595,30 @@ function Pdv() {
               <div style={styles.variacoesGrid}>
                 {variacoesProduto.map((variacao) => (
                   <button
-                    key={variacao.id}
+                    key={variacao.id_variacao}
                     style={{
                       ...styles.variacaoButton,
-                      ...(variacaoSelecionada?.id === variacao.id
+                      ...(variacaoSelecionada?.id_variacao ===
+                      variacao.id_variacao
                         ? styles.variacaoButtonActive
                         : {}),
                     }}
                     onClick={() => selecionarVariacao(variacao)}
                   >
-                    <div>{variacao.valor}</div>
-                    {variacao.tamanho && (
-                      <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                        {variacao.tamanho}
-                      </div>
-                    )}
+                    <div>{variacao.nome}</div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        marginTop: "4px",
+                        color: "var(--text-muted, #666)",
+                      }}
+                    >
+                      {variacao.tipo}
+                    </div>
                     <div
                       style={{
                         fontSize: "10px",
-                        color: "var(--text-muted)",
+                        color: "var(--text-muted, #666)",
                         marginTop: "4px",
                       }}
                     >
