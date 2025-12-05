@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FaCamera,
   FaBox,
@@ -20,141 +20,23 @@ import estoqueFetch from "../../services/api/estoqueFetch";
 //modais
 import ModalVariacao from "./components/ModalVariacao";
 
-// Dados simulados
-const categoriasSimuladas = [
-  { id: 1, nome: "Eletrônicos" },
-  { id: 2, nome: "Roupas" },
-  { id: 3, nome: "Alimentos" },
-  { id: 4, nome: "Livros" },
-  { id: 5, nome: "Brinquedos" },
-];
-
-// Modal de Categoria
-const ModalCategoria = ({ isOpen, onClose, onSave, value, onChange }) => {
-  if (!isOpen) return null;
-
-  const styles = {
-    modalOverlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-    },
-    modal: {
-      background: "var(--background)",
-      borderRadius: "16px",
-      padding: "32px",
-      maxWidth: "500px",
-      width: "90%",
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-    },
-    modalHeader: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "24px",
-      paddingBottom: "16px",
-      borderBottom: "2px solid var(--surface-border)",
-    },
-    modalTitle: {
-      fontSize: "20px",
-      fontWeight: "700",
-      color: "var(--text-primary)",
-      margin: 0,
-    },
-    closeButton: {
-      background: "transparent",
-      border: "none",
-      fontSize: "24px",
-      color: "var(--text-muted)",
-      cursor: "pointer",
-      padding: "4px",
-    },
-    formInput: {
-      width: "95%",
-      padding: "12px 16px",
-      border: "2px solid var(--surface-border)",
-      borderRadius: "8px",
-      fontSize: "15px",
-      color: "var(--text-primary)",
-      background: "var(--background)",
-      transition: "all 0.2s ease",
-      fontFamily: "inherit",
-    },
-    modalActions: {
-      display: "flex",
-      gap: "12px",
-      justifyContent: "flex-end",
-      marginTop: "24px",
-    },
-    cancelButton: {
-      padding: "10px 24px",
-      background: "var(--surface)",
-      color: "var(--text-primary)",
-      border: "2px solid var(--surface-border)",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: "14px",
-      fontWeight: "600",
-    },
-    saveButton: {
-      padding: "10px 24px",
-      background: "var(--primary-color)",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: "14px",
-      fontWeight: "600",
-    },
-  };
-
-  return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>Nova Categoria</h3>
-          <button style={styles.closeButton} onClick={onClose}>
-            <FaTimes />
-          </button>
-        </div>
-        <input
-          type="text"
-          style={styles.formInput}
-          placeholder="Nome da categoria"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <div style={styles.modalActions}>
-          <button style={styles.cancelButton} onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            style={styles.saveButton}
-            onClick={() => {
-              onSave(value);
-              onClose();
-            }}
-          >
-            Salvar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const CadastrarProduto = () => {
   const fileInputRef = useRef(null);
+  const [categoriasProduto, setCategoriasProduto] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [showSubcategoria, setShowSubcategoria] = useState(false);
+
+  const buscarCategorias = async () => {
+    const categorias = await estoqueFetch.listaCategoria();
+    setCategoriasProduto(categorias);
+  };
+
+  useEffect(() => {
+    buscarCategorias();
+  }, []);
 
   const [state, setState] = useState({
-    categorias: categoriasSimuladas,
+    categoria: [],
     images: [],
     imageFiles: [],
     showImagePreview: false,
@@ -174,6 +56,7 @@ const CadastrarProduto = () => {
     precoVenda: "",
     markup: 0,
     categoriaId: "",
+    subcategoriaId: "",
     referencia: "",
     usarReferencia: false,
   });
@@ -189,8 +72,6 @@ const CadastrarProduto = () => {
     estoque_minimo: "",
     imagemIndex: null,
   });
-
-  const [novaCategoria, setNovaCategoria] = useState("");
 
   const styles = {
     container: {
@@ -734,105 +615,108 @@ const CadastrarProduto = () => {
     }));
   };
 
-  // Função para criar o objeto JSON e enviar para API
-  const createProductPayload = () => {
-    // Preparar imagens do produto principal
-    const productImages = state.imageFiles.map((file, index) => ({
-      image: file, // Arquivo de imagem
-      principal: index === 0, // Primeira imagem é principal
+  const handleCategoriaChange = (selectedOption) => {
+    const categoriaId = selectedOption.value;
+    
+    // Encontrar a categoria selecionada
+    const categoriaSelecionada = categoriasProduto.find(
+      (cat) => cat.id_categoria === parseInt(categoriaId)
+    );
+
+    // Atualizar o formData com a categoria
+    setFormData((prev) => ({
+      ...prev,
+      categoriaId: categoriaId,
+      subcategoriaId: "", // Resetar subcategoria
+      marca: categoriaSelecionada ? categoriaSelecionada.nome : "",
     }));
 
-    // Preparar variações
-    const variacoesFormatadas = variacoes.map((variacao) => {
-      // Obter imagens específicas da variação
-      const variacaoImages = [];
-      
-      if (variacao.imagemIndex !== null && state.imageFiles[variacao.imagemIndex]) {
-        variacaoImages.push({
-          image: state.imageFiles[variacao.imagemIndex],
-          principal: true,
-        });
-      }
+    // Verificar se a categoria tem subcategorias
+    if (categoriaSelecionada && categoriaSelecionada.subcategorias && categoriaSelecionada.subcategorias.length > 0) {
+      setSubcategorias(categoriaSelecionada.subcategorias);
+      setShowSubcategoria(true);
+    } else {
+      setSubcategorias([]);
+      setShowSubcategoria(false);
+    }
+  };
 
-      return {
+  const handleSubcategoriaChange = (selectedOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      subcategoriaId: selectedOption.value,
+    }));
+  };
+
+  // Função para enviar para API
+  const enviarParaAPI = async () => {
+    try {
+      const formDataToSend = new FormData();
+
+      // 1. Adicionar campos básicos do produto
+      formDataToSend.append("nome", formData.nome);
+      formDataToSend.append("descricao", formData.descricao || "");
+      formDataToSend.append("cod_barras", "");
+      formDataToSend.append(
+        "preco_custo",
+        parseFloat(formData.precoCompra) || 0
+      );
+      formDataToSend.append(
+        "preco_venda",
+        parseFloat(formData.precoVenda) || 0
+      );
+      formDataToSend.append("margem", parseFloat(formData.markup) || 0);
+      formDataToSend.append("id_categoria", formData.categoriaId || null);
+      formDataToSend.append("id_subcategoria", formData.subcategoriaId || null);
+      formDataToSend.append("estoque", 0);
+      formDataToSend.append("estoque_minimo", 0);
+      formDataToSend.append("ativo", true);
+
+      // 2. Adicionar TODAS as imagens como arquivos normais
+      state.imageFiles.forEach((file) => {
+        formDataToSend.append("images", file);
+      });
+
+      // 3. Preparar variações (sem as imagens)
+      const variacoesFormatadas = variacoes.map((variacao) => ({
         nome: variacao.nome || "",
         tipo: variacao.tipo || "",
         cod_interno: variacao.cod_interno || "",
         cod_barras: variacao.cod_barras || "",
-        estoque: variacao.estoque || "",
-        estoque_minimo: variacao.estoque_minimo || "",
-        images: variacaoImages,
-      };
-    });
+        estoque: variacao.estoque || 0,
+        estoque_minimo: variacao.estoque_minimo || 0,
+        imagemIndex:
+          variacao.imagemIndex !== null ? variacao.imagemIndex : null,
+      }));
 
-    // Montar objeto final
-    const payload = {
-      nome: formData.nome,
-      descricao: formData.descricao || "",
-      cod_barras: "",
-      preco_custo: parseFloat(formData.precoCompra) || 0,
-      preco_venda: parseFloat(formData.precoVenda) || 0,
-      margem: parseFloat(formData.markup) || 0,
-      id_categoria: formData.categoriaId ? parseInt(formData.categoriaId) : null,
-      id_subcategoria: null,
-      variacao: variacoesFormatadas,
-      images: productImages,
-    };
+      formDataToSend.append("variacoes", JSON.stringify(variacoesFormatadas));
 
-    return payload;
-  };
+      // 4. Log para debug
+      console.log("📤 Enviando para API:");
+      console.log("- Nome:", formData.nome);
+      console.log("- Categoria:", formData.categoriaId);
+      console.log("- Subcategoria:", formData.subcategoriaId);
+      console.log("- Preço Venda:", formData.precoVenda);
+      console.log("- Total de imagens:", state.imageFiles.length);
+      console.log("- Total de variações:", variacoes.length);
 
-  // Função para enviar para API
-  const enviarParaAPI = async (payload) => {
-    try {
-      // Criar FormData para enviar arquivos
-      const formDataToSend = new FormData();
-
-      // Adicionar campos simples
-      formDataToSend.append("nome", payload.nome);
-      formDataToSend.append("descricao", payload.descricao);
-      formDataToSend.append("cod_barras", payload.cod_barras);
-      formDataToSend.append("preco_custo", payload.preco_custo);
-      formDataToSend.append("preco_venda", payload.preco_venda);
-      formDataToSend.append("margem", payload.margem);
-      formDataToSend.append("id_categoria", payload.id_categoria);
-      formDataToSend.append("id_subcategoria", payload.id_subcategoria);
-
-      // Adicionar imagens do produto
-      payload.images.forEach((img, index) => {
-        formDataToSend.append(`images[${index}][image]`, img.image);
-        formDataToSend.append(`images[${index}][principal]`, img.principal);
+      // 5. Fazer requisição
+      const response = await fetch("http://localhost:1122/produto/cadastro", {
+        method: "POST",
+        body: formDataToSend,
       });
 
-      // Adicionar variações
-      payload.variacao.forEach((variacao, vIndex) => {
-        formDataToSend.append(`variacao[${vIndex}][nome]`, variacao.nome);
-        formDataToSend.append(`variacao[${vIndex}][tipo]`, variacao.tipo);
-        formDataToSend.append(`variacao[${vIndex}][cod_interno]`, variacao.cod_interno);
-        formDataToSend.append(`variacao[${vIndex}][cod_barras]`, variacao.cod_barras);
-        formDataToSend.append(`variacao[${vIndex}][estoque]`, variacao.estoque);
-        formDataToSend.append(`variacao[${vIndex}][estoque_minimo]`, variacao.estoque_minimo);
-
-        // Adicionar imagens da variação
-        variacao.images.forEach((img, imgIndex) => {
-          formDataToSend.append(
-            `variacao[${vIndex}][images][${imgIndex}][image]`,
-            img.image
-          );
-          formDataToSend.append(
-            `variacao[${vIndex}][images][${imgIndex}][principal]`,
-            img.principal
-          );
-        });
-      });
-
-      // Fazer requisição para API
-      const response = await estoqueFetch.cadastro(formDataToSend)
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
+      }
 
       const result = await response.json();
+      console.log("✅ Resposta da API:", result);
+
       return result;
     } catch (error) {
-      console.error("Erro ao enviar para API:", error);
+      console.error("❌ Erro ao enviar para API:", error);
       throw error;
     }
   };
@@ -845,19 +729,9 @@ const CadastrarProduto = () => {
     setState((prev) => ({ ...prev, isSubmitting: true }));
 
     try {
-      // Criar payload
-      const payload = createProductPayload();
-      
-      // Log do payload (remover em produção)
-      console.log("Payload JSON:", JSON.stringify(payload, null, 2));
-      console.log("Dados completos:", payload);
-
       // Enviar para API
-      const result = await enviarParaAPI(payload);
+      const result = await enviarParaAPI();
       console.log("Resposta da API:", result);
-
-      // Simular requisição de API (remover quando conectar com API real)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Mostrar mensagem de sucesso
       setState((prev) => ({
@@ -879,11 +753,14 @@ const CadastrarProduto = () => {
         precoVenda: "",
         markup: 0,
         categoriaId: "",
+        subcategoriaId: "",
         referencia: "",
         usarReferencia: false,
       });
 
       setVariacoes([]);
+      setShowSubcategoria(false);
+      setSubcategorias([]);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -932,12 +809,10 @@ const CadastrarProduto = () => {
     }
 
     if (state.editingVariacaoIndex !== null) {
-      // Editando variação existente
       const newVariacoes = [...variacoes];
       newVariacoes[state.editingVariacaoIndex] = { ...variacaoForm };
       setVariacoes(newVariacoes);
     } else {
-      // Adicionando nova variação
       setVariacoes([...variacoes, { ...variacaoForm }]);
     }
 
@@ -994,14 +869,15 @@ const CadastrarProduto = () => {
     }),
   };
 
-  const optionsCategorias = [];
+  const optionsCategorias = categoriasProduto.map((categoria) => ({
+    value: categoria.id_categoria,
+    label: categoria.nome,
+  }));
 
-  state.categorias.map((categoria, index) => {
-    optionsCategorias.push({
-      value: categoria.id,
-      label: categoria.nome,
-    });
-  });
+  const optionsSubcategorias = subcategorias.map((subcategoria) => ({
+    value: subcategoria.id_subcategoria,
+    label: subcategoria.nome,
+  }));
 
   return (
     <div style={styles.container}>
@@ -1053,22 +929,35 @@ const CadastrarProduto = () => {
                   <div style={styles.categorySelect}>
                     <Select
                       styles={customStyles}
-                      placeholder="Categoria"
+                      placeholder="Selecione a categoria"
                       options={optionsCategorias}
-                      onChange={(e) => {
-                        const selected = state.categorias.find(
-                          (c) => c.id === parseInt(e.value)
-                        );
-                        setFormData((prev) => ({
-                          ...prev,
-                          categoriaId: e.value,
-                          marca: selected ? selected.nome : "",
-                        }));
-                      }}
+                      onChange={handleCategoriaChange}
+                      value={optionsCategorias.find(
+                        (opt) => opt.value === formData.categoriaId
+                      )}
                     />
                   </div>
                 </div>
               </div>
+
+              {showSubcategoria && (
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Subcategoria</label>
+                  <div style={styles.categoryRow}>
+                    <div style={styles.categorySelect}>
+                      <Select
+                        styles={customStyles}
+                        placeholder="Selecione a subcategoria"
+                        options={optionsSubcategorias}
+                        onChange={handleSubcategoriaChange}
+                        value={optionsSubcategorias.find(
+                          (opt) => opt.value === formData.subcategoriaId
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={styles.formGroup}>
                 <label style={styles.formLabel}>Descrição</label>
@@ -1367,6 +1256,14 @@ const CadastrarProduto = () => {
           isEditing={state.editingVariacaoIndex !== null}
           images={state.images}
         />
+      )}
+
+      {/* Mensagem de Sucesso */}
+      {state.showSuccess && (
+        <div style={styles.successMessage}>
+          <FaCheck />
+          <span>Produto cadastrado com sucesso!</span>
+        </div>
       )}
     </div>
   );

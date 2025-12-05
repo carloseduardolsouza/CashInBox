@@ -3,32 +3,12 @@ import clientesFetch from "../../services/api/clientesFetch";
 import { useParams } from "react-router-dom";
 
 //biblioteca de paginas
-import { Tabs, Tab, Box, CircularProgress } from "@mui/material";
+import { Tabs, Tab, Box } from "@mui/material";
 
 //components
 import InformacoesGerais from "./Components/InformacoesGerais";
 import Table from "../../components/ui/tabelas/Table";
-
-// Dados simulados
-const clienteSimulado = {
-  id: 123,
-  nome: "Carlos eduardo lourenço de souza",
-  cpfCNPJ: "71247814181.0",
-  email: "joao.silva@email.com",
-  genero: "Masculino",
-  telefone: "34999887766",
-  data_nascimento: "1990-05-15",
-  categoria: 1,
-  endereco: {
-    pais: "Brasil",
-    estado: "Minas Gerais",
-    cidade: "Uberlândia",
-    bairro: "Centro",
-    rua: "Rua das Flores, 123",
-    complemento: "Apto 301",
-    cep: "38400000",
-  },
-};
+import Loading from "../../components/layout/Loading";
 
 const styles = {
   DetalhesCliente: {
@@ -54,14 +34,6 @@ const styles = {
   },
   ContainerGeral: {
     height: "100vh",
-  },
-  LoadingContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    width: "100vw",
-    background: "var(--background-color)",
   },
 };
 
@@ -182,11 +154,7 @@ function DetalhesCliente() {
   }, [id]);
 
   if (loading) {
-    return (
-      <Box sx={styles.LoadingContainer}>
-        <CircularProgress size={60} />
-      </Box>
-    );
+    return <Loading/>
   }
 
   return (

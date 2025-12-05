@@ -105,10 +105,32 @@ const editar = async (id , dados) => {
   }
 };
 
+
+
+
+const listaCategoria = async () => {
+  try {
+    const res = await fetch(API_URL + "/produto/categoria/lista");
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    console.error("Erro ao buscar categorias:", err);
+    throw err;
+  }
+}
+
 export default {
   lista,
   clienteID,
   cadastro,
   deletar,
-  editar
+  editar,
+
+  listaCategoria
 };

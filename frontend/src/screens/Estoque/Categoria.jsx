@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, ChevronRight, Plus, Edit2, Eye, Trash2 } from 'lucide-react';
+import estoqueFetch from '../../services/api/estoqueFetch';
 
 const styles = {
   container: {
@@ -143,31 +144,18 @@ const styles = {
 };
 
 const CategoriesScreen = () => {
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Wheys', subcategories: [
-      { id: 11, name: 'Whey Isolado' },
-      { id: 12, name: 'Whey Concentrado' }
-    ]},
-    { id: 2, name: 'Pré-Treino', subcategories: [] },
-    { id: 3, name: 'Creatina', subcategories: [] },
-    { id: 4, name: 'Aminoácidos', subcategories: [] },
-    { id: 5, name: 'Combos', subcategories: [] },
-    { id: 6, name: 'Termogênicos', subcategories: [] },
-    { id: 7, name: 'Cafeínas', subcategories: [] }
-  ]);
+  const [categories, setCategories] = useState([]);
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  // Fechar dropdown ao clicar fora
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('[data-dropdown]')) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    const buscarCategorias = async () => {
+      const response = await estoqueFetch.listaCategoria()
+      setCategories(response)
+    }
+
+    buscarCategorias()
   }, []);
 
   const toggleDropdown = (e, id) => {
@@ -183,77 +171,26 @@ const CategoriesScreen = () => {
     }));
   };
 
-  const handleCreateSubcategory = (categoryId) => {
-    const name = prompt('Nome da subcategoria:');
-    if (name) {
-      setCategories(categories.map(cat => 
-        cat.id === categoryId 
-          ? { ...cat, subcategories: [...cat.subcategories, { id: Date.now(), name }] }
-          : cat
-      ));
-      setExpandedCategories(prev => ({ ...prev, [categoryId]: true }));
-    }
+  const handleCreateSubcategory = () => {
     setOpenDropdown(null);
   };
 
   const handleEdit = (id) => {
-    const category = categories.find(c => c.id === id);
-    const newName = prompt('Editar nome da categoria:', category?.name);
-    if (newName && newName !== category?.name) {
-      setCategories(categories.map(cat => 
-        cat.id === id ? { ...cat, name: newName } : cat
-      ));
-    }
     setOpenDropdown(null);
   };
 
-  const handleEditSubcategory = (categoryId, subcategoryId) => {
-    const category = categories.find(c => c.id === categoryId);
-    const subcategory = category?.subcategories.find(s => s.id === subcategoryId);
-    const newName = prompt('Editar nome da subcategoria:', subcategory?.name);
-    if (newName && newName !== subcategory?.name) {
-      setCategories(categories.map(cat => 
-        cat.id === categoryId 
-          ? { 
-              ...cat, 
-              subcategories: cat.subcategories.map(sub => 
-                sub.id === subcategoryId ? { ...sub, name: newName } : sub
-              ) 
-            }
-          : cat
-      ));
-    }
-    setOpenDropdown(null);
-  };
-
-  const handleHide = (id) => {
-    alert(`Ocultar na loja: ${categories.find(c => c.id === id)?.name}`);
+  const handleEditSubcategory = () => {
     setOpenDropdown(null);
   };
 
   const handleDelete = (id) => {
-    const category = categories.find(c => c.id === id);
-    if (confirm(`Eliminar categoria "${category?.name}"?`)) {
-      setCategories(categories.filter(c => c.id !== id));
-    }
     setOpenDropdown(null);
   };
 
   const handleCreateCategory = () => {
-    const name = prompt('Nome da nova categoria:');
-    if (name) {
-      setCategories([...categories, { id: Date.now(), name, subcategories: [] }]);
-    }
   };
 
   const handleDeleteSubcategory = (categoryId, subcategoryId) => {
-    if (confirm('Eliminar subcategoria?')) {
-      setCategories(categories.map(cat => 
-        cat.id === categoryId 
-          ? { ...cat, subcategories: cat.subcategories.filter(sub => sub.id !== subcategoryId) }
-          : cat
-      ));
-    }
     setOpenDropdown(null);
   };
 
@@ -273,53 +210,54 @@ const CategoriesScreen = () => {
 
       <div style={styles.categoryList}>
         {categories.map((category) => (
-          <div key={category.id}>
+          <div key={category.id_categoria}>
+            {console.log(category)}
             <div style={styles.categoryItem}>
               <div 
                 style={styles.chevronContainer}
-                onClick={(e) => toggleCategory(e, category.id)}
+                onClick={(e) => toggleCategory(e, category.id_categoria)}
               >
                 <ChevronRight 
                   size={18} 
                   style={{
                     ...styles.chevron,
-                    ...(expandedCategories[category.id] ? styles.chevronExpanded : {})
+                    ...(expandedCategories[category.id_categoria] ? styles.chevronExpanded : {})
                   }} 
                 />
               </div>
-              <span style={styles.categoryName}>{category.name}</span>
-              {category.subcategories.length > 0 && (
+              <span style={styles.categoryName}>{category.nome}</span>
+              {category.subcategorias.length > 0 && (
                 <span style={styles.subcategoryCount}>
-                  {category.subcategories.length}
+                  {category.subcategorias.length}
                 </span>
               )}
               <button 
                 style={styles.moreButton}
-                onClick={(e) => toggleDropdown(e, category.id)}
+                onClick={(e) => toggleDropdown(e, category.id_categoria)}
                 data-dropdown
               >
                 <MoreVertical size={20} />
               </button>
 
-              {openDropdown === category.id && (
+              {openDropdown === category.id_categoria && (
                 <div style={styles.dropdown} data-dropdown>
                   <button 
                     style={styles.dropdownItem}
-                    onClick={() => handleCreateSubcategory(category.id)}
+                    onClick={() => handleCreateSubcategory(category.id_categoria)}
                   >
                     <Plus size={16} />
                     Criar subcategoria
                   </button>
                   <button 
                     style={styles.dropdownItem}
-                    onClick={() => handleEdit(category.id)}
+                    onClick={() => handleEdit(category.id_categoria)}
                   >
                     <Edit2 size={16} />
                     Editar
                   </button>
                   <button 
                     style={{...styles.dropdownItem, ...styles.dropdownItemDelete}}
-                    onClick={() => handleDelete(category.id)}
+                    onClick={() => handleDelete(category.id_categoria)}
                   >
                     <Trash2 size={16} />
                     Eliminar
@@ -328,24 +266,24 @@ const CategoriesScreen = () => {
               )}
             </div>
 
-            {expandedCategories[category.id] && category.subcategories.length > 0 && (
+            {expandedCategories[category.id_categoria] && category.subcategorias.length > 0 && (
               <div style={styles.subcategoryList}>
-                {category.subcategories.map((subcategory) => (
-                  <div key={subcategory.id} style={styles.subcategoryItem}>
-                    <span style={{...styles.categoryName, fontSize: '14px'}}>{subcategory.name}</span>
+                {category.subcategorias.map((subcategory) => (
+                  <div key={subcategory.id_subcategoria} style={styles.subcategoryItem}>
+                    <span style={{...styles.categoryName, fontSize: '14px'}}>{subcategory.nome}</span>
                     <button 
                       style={styles.moreButton}
-                      onClick={(e) => toggleDropdown(e, `sub-${subcategory.id}`)}
+                      onClick={(e) => toggleDropdown(e, `sub-${subcategory.id_subcategoria}`)}
                       data-dropdown
                     >
                       <MoreVertical size={18} />
                     </button>
 
-                    {openDropdown === `sub-${subcategory.id}` && (
+                    {openDropdown === `sub-${subcategory.id_subcategoria}` && (
                       <div style={styles.dropdown} data-dropdown>
                         <button 
                           style={styles.dropdownItem}
-                          onClick={() => handleEditSubcategory(category.id, subcategory.id)}
+                          onClick={() => handleEditSubcategory(category.id_categoria, subcategory.id_subcategoria)}
                         >
                           <Edit2 size={16} />
                           Editar
@@ -359,7 +297,7 @@ const CategoriesScreen = () => {
                         </button>
                         <button 
                           style={{...styles.dropdownItem, ...styles.dropdownItemDelete}}
-                          onClick={() => handleDeleteSubcategory(category.id, subcategory.id)}
+                          onClick={() => handleDeleteSubcategory(category.id_categoria, subcategory.id_subcategoria)}
                         >
                           <Trash2 size={16} />
                           Eliminar
