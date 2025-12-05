@@ -2,16 +2,12 @@ const { db } = require("../config/database");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const formate = require("../utils/formate")
+const formate = require("../utils/formate");
 
 // Caminho para uploads
 const userDataPath = path.join(os.homedir(), "AppData", "Roaming", "CashInBox");
 const uploadPath = path.join(userDataPath, "uploads", "produtos");
 
-/**
- * Remove uma imagem do disco
- * @param {string} filename - Nome do arquivo
- */
 const deleteImage = (filename) => {
   try {
     const fullPath = path.join(uploadPath, filename);
@@ -24,9 +20,6 @@ const deleteImage = (filename) => {
   }
 };
 
-/**
- * Cadastra um novo produto com variações e imagens
- */
 const cadastro = async (produtoData) => {
   return await db.transaction(async (trx) => {
     console.log("\n🔄 Iniciando transação de cadastro...");
@@ -80,6 +73,17 @@ const cadastro = async (produtoData) => {
           }
 
           console.log(`    ✅ Imagens da variação salvas`);
+
+          for (const img of variacaoImages) {
+            await trx("produto_imagens").insert({
+              id_produto: produtoId,
+              id_variacao: null, // Imagem é do produto, não de variação
+              caminho_arquivo: img.caminho_arquivo,
+              principal: img.principal || false,
+            });
+          }
+
+          console.log("✅ Imagens principais salvas");
         }
       }
     }
@@ -107,9 +111,6 @@ const cadastro = async (produtoData) => {
   });
 };
 
-/**
- * Lista todos os produtos com suas variações e imagens
- */
 const lista = async () => {
   // Busca produtos
   const produtos = await db("produtos")
@@ -164,9 +165,7 @@ const lista = async () => {
 
     // Imagens principais do produto (sem variação)
     const imagensProduto = imagens
-      .filter(
-        (img) => img.id_produto === produto.id_produto && !img.id_variacao
-      )
+      .filter((img) => img.id_produto === produto.id_produto)
       .map((img) => ({
         id_imagem: img.id_imagem,
         caminho_arquivo: `/uploads/${img.caminho_arquivo}`,
@@ -197,9 +196,6 @@ const lista = async () => {
   return resultado;
 };
 
-/**
- * Edita um produto existente
- */
 const editar = async (id, produtoData) => {
   return await db.transaction(async (trx) => {
     const { variacao, images, ...dadosProduto } = produtoData;
@@ -288,9 +284,6 @@ const editar = async (id, produtoData) => {
   });
 };
 
-/**
- * Deleta um produto
- */
 const deletar = async (id) => {
   return await db.transaction(async (trx) => {
     // Verifica se existe
@@ -315,8 +308,6 @@ const deletar = async (id) => {
     return true;
   });
 };
-
-
 
 const listaCategoria = async () => {
   // Busca todas as categorias
@@ -351,20 +342,12 @@ const cadastroCategoria = async (categoriaData) => {
     // 1. Criar cliente
     const [categoriaId] = await trx("categoria_produtos").insert({
       ...categoriaData,
-      nome: formate.formatNome(categoriaData.nome)
+      nome: formate.formatNome(categoriaData.nome),
     });
 
     return categoriaId;
   });
 };
-
-
-
-
-
-
-
-
 
 const listaSubcategoria = async () => {
   // Busca todas as subcategorias
@@ -378,7 +361,7 @@ const cadastroSubcategoria = async (subcategoriaData) => {
     // 1. Criar subcategoria
     const [subcategoriaId] = await trx("subcategoria_produtos").insert({
       ...subcategoriaData,
-      nome: formate.formatNome(subcategoriaData.nome)
+      nome: formate.formatNome(subcategoriaData.nome),
     });
 
     return subcategoriaId;
@@ -394,7 +377,6 @@ module.exports = {
   listaCategoria,
   cadastroCategoria,
 
-
   listaSubcategoria,
-  cadastroSubcategoria
+  cadastroSubcategoria,
 };

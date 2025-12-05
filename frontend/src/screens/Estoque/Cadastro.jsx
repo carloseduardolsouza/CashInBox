@@ -684,7 +684,7 @@ const CadastrarProduto = () => {
         formDataToSend.append("images", file);
       });
 
-      // 3. Preparar variações (sem as imagens)
+      // 3. Preparar variações
       const variacoesFormatadas = variacoes.map((variacao) => ({
         nome: variacao.nome || "",
         tipo: variacao.tipo || "",
