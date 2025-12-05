@@ -34,11 +34,29 @@ const cadastro = async (produtoData) => {
     });
     console.log(`✅ Produto criado com ID: ${produtoId}`);
 
-    // 2. Verificar se tem variações
+    // 2. SALVAR TODAS AS IMAGENS DO PRODUTO PRINCIPAL (SEMPRE)
+    if (Array.isArray(images) && images.length > 0) {
+      console.log(`\n🖼️  Salvando ${images.length} imagem(ns) do produto principal...`);
+      
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        await trx("produto_imagens").insert({
+          id_produto: produtoId,
+          id_variacao: null, // Imagem pertence ao produto, não à variação
+          caminho_arquivo: img.caminho_arquivo,
+          principal: i === 0 // Primeira imagem é a principal
+        });
+        console.log(`  ✓ Imagem ${i + 1}: ${img.caminho_arquivo}`);
+      }
+      
+      console.log("✅ Todas as imagens do produto salvas");
+    }
+
+    // 3. Verificar se tem variações
     const temVariacoes = Array.isArray(variacao) && variacao.length > 0;
     console.log(`📊 Variações: ${temVariacoes ? variacao.length : 0}`);
 
-    // 3. Processar VARIAÇÕES (se houver)
+    // 4. Processar VARIAÇÕES (se houver)
     if (temVariacoes) {
       console.log("\n🔄 Processando variações...");
 
@@ -57,11 +75,9 @@ const cadastro = async (produtoData) => {
 
         console.log(`    ✅ Variação criada com ID: ${variacaoId}`);
 
-        // Salva imagens da variação
+        // Salva imagens da variação (se existirem)
         if (Array.isArray(variacaoImages) && variacaoImages.length > 0) {
-          console.log(
-            `    🖼️  Salvando ${variacaoImages.length} imagem(ns)...`
-          );
+          console.log(`    🖼️  Salvando ${variacaoImages.length} imagem(ns) da variação...`);
 
           for (const img of variacaoImages) {
             await trx("produto_imagens").insert({
@@ -73,37 +89,8 @@ const cadastro = async (produtoData) => {
           }
 
           console.log(`    ✅ Imagens da variação salvas`);
-
-          for (const img of variacaoImages) {
-            await trx("produto_imagens").insert({
-              id_produto: produtoId,
-              id_variacao: null, // Imagem é do produto, não de variação
-              caminho_arquivo: img.caminho_arquivo,
-              principal: img.principal || false,
-            });
-          }
-
-          console.log("✅ Imagens principais salvas");
         }
       }
-    }
-
-    // 4. Processar IMAGENS PRINCIPAIS (se NÃO tiver variações ou tiver apenas 1)
-    else if (Array.isArray(images) && images.length > 0) {
-      console.log(
-        `\n🖼️  Salvando ${images.length} imagem(ns) principal(is)...`
-      );
-
-      for (const img of images) {
-        await trx("produto_imagens").insert({
-          id_produto: produtoId,
-          id_variacao: null, // Imagem é do produto, não de variação
-          caminho_arquivo: img.caminho_arquivo,
-          principal: img.principal || false,
-        });
-      }
-
-      console.log("✅ Imagens principais salvas");
     }
 
     console.log("\n✅ Transação concluída com sucesso!\n");
@@ -133,7 +120,7 @@ const lista = async () => {
   // Busca variações
   const variacoes = await db("produto_variacao").select("*");
 
-  // Busca imagens
+  // Busca TODAS as imagens
   const imagens = await db("produto_imagens").select("*");
 
   // Monta estrutura final
@@ -163,9 +150,12 @@ const lista = async () => {
         };
       });
 
-    // Imagens principais do produto (sem variação)
+    // ✅ TODAS as imagens do produto (incluindo as não vinculadas a variações)
     const imagensProduto = imagens
-      .filter((img) => img.id_produto === produto.id_produto)
+      .filter((img) => 
+        img.id_produto === produto.id_produto && 
+        img.id_variacao === null // Apenas imagens que pertencem diretamente ao produto
+      )
       .map((img) => ({
         id_imagem: img.id_imagem,
         caminho_arquivo: `/uploads/${img.caminho_arquivo}`,
@@ -189,7 +179,7 @@ const lista = async () => {
       id_subcategoria: produto.id_subcategoria,
       subcategoria_nome: produto.subcategoria_nome,
       variacao: variacoesProduto,
-      images: imagensProduto,
+      images: imagensProduto, // ✅ Todas as imagens do produto
     };
   });
 
@@ -243,7 +233,24 @@ const editar = async (id, produtoData) => {
     // Remove variações
     await trx("produto_variacao").where("id_produto", id).del();
 
-    // 4. Insere novas variações
+    // 4. SALVAR TODAS AS NOVAS IMAGENS DO PRODUTO
+    if (Array.isArray(images) && images.length > 0) {
+      console.log(`\n🖼️  Salvando ${images.length} nova(s) imagem(ns) do produto...`);
+      
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        await trx("produto_imagens").insert({
+          id_produto: id,
+          id_variacao: null,
+          caminho_arquivo: img.caminho_arquivo,
+          principal: i === 0
+        });
+      }
+      
+      console.log("✅ Todas as imagens do produto salvas");
+    }
+
+    // 5. Insere novas variações
     const temVariacoes = Array.isArray(variacao) && variacao.length > 0;
 
     if (temVariacoes) {
@@ -266,17 +273,6 @@ const editar = async (id, produtoData) => {
             });
           }
         }
-      }
-    }
-    // 5. Insere novas imagens principais
-    else if (Array.isArray(images) && images.length > 0) {
-      for (const img of images) {
-        await trx("produto_imagens").insert({
-          id_produto: id,
-          id_variacao: null,
-          caminho_arquivo: img.caminho_arquivo,
-          principal: img.principal || false,
-        });
       }
     }
 
@@ -339,7 +335,6 @@ const listaCategoria = async () => {
 
 const cadastroCategoria = async (categoriaData) => {
   return await db.transaction(async (trx) => {
-    // 1. Criar cliente
     const [categoriaId] = await trx("categoria_produtos").insert({
       ...categoriaData,
       nome: formate.formatNome(categoriaData.nome),
@@ -350,15 +345,12 @@ const cadastroCategoria = async (categoriaData) => {
 };
 
 const listaSubcategoria = async () => {
-  // Busca todas as subcategorias
   const subcategorias = await db("subcategoria_produtos").select("*");
-
   return subcategorias;
 };
 
 const cadastroSubcategoria = async (subcategoriaData) => {
   return await db.transaction(async (trx) => {
-    // 1. Criar subcategoria
     const [subcategoriaId] = await trx("subcategoria_produtos").insert({
       ...subcategoriaData,
       nome: formate.formatNome(subcategoriaData.nome),
@@ -373,10 +365,8 @@ module.exports = {
   lista,
   editar,
   deletar,
-
   listaCategoria,
   cadastroCategoria,
-
   listaSubcategoria,
   cadastroSubcategoria,
 };

@@ -35,66 +35,23 @@ function ListaProdutos() {
     }));
   }, []);
 
-  const getImagemPrincipal = useCallback(
-    (imagens, possuiVariacao, variacoes = []) => {
-      if (!possuiVariacao) {
-        if (!imagens?.length) return null;
-        const principal = imagens.find(
-          (img) =>
-            img.principal === true ||
-            img.principal === 1 ||
-            img.principal === "1"
-        );
-        return (
-          principal?.caminho_arquivo || imagens[0]?.caminho_arquivo || null
-        );
-      }
+  const getImagemPrincipal = useCallback((imagens) => {
+    if (!imagens?.length) return null;
+    const principal = imagens.find(
+      (img) =>
+        img.principal === true ||
+        img.principal === 1 ||
+        img.principal === "1"
+    );
+    return principal?.caminho_arquivo || imagens[0]?.caminho_arquivo || null;
+  }, []);
 
-      if (possuiVariacao && Array.isArray(variacoes)) {
-        for (const variacao of variacoes) {
-          if (!variacao?.images?.length) continue;
-          const principal = variacao.images.find(
-            (img) =>
-              img.principal === true ||
-              img.principal === 1 ||
-              img.principal === "1"
-          );
-          if (principal) return principal.caminho_arquivo;
-        }
-
-        for (const variacao of variacoes) {
-          if (variacao?.images?.[0]) return variacao.images[0].caminho_arquivo;
-        }
-      }
-
-      return null;
-    },
-    []
-  );
-
-  const getAllImages = useCallback(
-    (imagens, possuiVariacao, variacoes = []) => {
-      if (!possuiVariacao) {
-        if (!imagens?.length) return [];
-        return imagens.map(
-          (img) => `http://localhost:1122${img.caminho_arquivo}`
-        );
-      }
-
-      if (possuiVariacao && Array.isArray(variacoes)) {
-        for (const variacao of variacoes) {
-          if (variacao?.images?.length) {
-            return variacao.images.map(
-              (img) => `http://localhost:1122${img.caminho_arquivo}`
-            );
-          }
-        }
-      }
-
-      return [];
-    },
-    []
-  );
+  const getAllImages = useCallback((imagens) => {
+    if (!imagens?.length) return [];
+    return imagens.map(
+      (img) => `http://localhost:1122${img.caminho_arquivo}`
+    );
+  }, []);
 
   const listarProdutos = async () => {
     const produtos = await estoqueFetch.lista();
@@ -370,16 +327,32 @@ function ListaProdutos() {
       <div style={styles.grid}>
         {produtosFiltrados.map((prod) => {
           const temVariacoes = prod.variacao?.length > 0;
-          const imagemPrincipal = getImagemPrincipal(
-            prod.images,
-            temVariacoes,
-            prod.variacao
-          );
-          const todasImagens = getAllImages(
-            prod.images,
-            temVariacoes,
-            prod.variacao
-          );
+          
+          // Para produtos com variações, buscar primeira imagem das variações
+          let imagemPrincipal = null;
+          let todasImagens = [];
+          
+          if (temVariacoes) {
+            // Buscar primeira variação que tenha imagens
+            for (const variacao of prod.variacao) {
+              if (variacao.images?.length > 0) {
+                imagemPrincipal = getImagemPrincipal(variacao.images);
+                todasImagens = getAllImages(prod.images);
+                console.log(prod.images)
+                break;
+              }
+            }
+            // Fallback: usar imagens do produto principal
+            if (!imagemPrincipal && prod.images?.length > 0) {
+              imagemPrincipal = getImagemPrincipal(prod.images);
+              todasImagens = getAllImages(prod.images);
+            }
+          } else {
+            // Produto sem variações: usar imagens do produto
+            imagemPrincipal = getImagemPrincipal(prod.images);
+            todasImagens = getAllImages(prod.images);
+          }
+          
           const isExpanded = expandedProducts[prod.id_produto];
 
           const estoqueTotal = temVariacoes
@@ -419,6 +392,7 @@ function ListaProdutos() {
                   >
                     {todasImagens.length > 1 && (
                       <div style={styles.imageCounter}>
+                        {console.log(todasImagens)}
                         +{todasImagens.length}
                       </div>
                     )}
@@ -484,14 +458,9 @@ function ListaProdutos() {
 
                   {isExpanded &&
                     prod.variacao.map((variacao) => {
-                      const variacaoImagemPrincipal = getImagemPrincipal(
-                        variacao.images,
-                        false
-                      );
-                      const variacaoImagens = getAllImages(
-                        variacao.images,
-                        false
-                      );
+                      // Buscar imagens da variação específica
+                      const variacaoImagemPrincipal = getImagemPrincipal(variacao.images || []);
+                      const variacaoImagens = getAllImages(variacao.images || []);
 
                       return (
                         <div

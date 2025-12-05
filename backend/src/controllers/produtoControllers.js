@@ -70,8 +70,7 @@ const cadastro = async (req, res) => {
     const temVariacoes = Array.isArray(variacoesData) && variacoesData.length > 0;
     console.log(`📊 Tem variações: ${temVariacoes} (${variacoesData.length})`);
 
-    // 4. Processar imagens
-    // IMPORTANTE: O frontend envia TODAS as imagens com fieldname "images"
+    // 4. Processar TODAS as imagens enviadas
     const todasImagens = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach((file, index) => {
@@ -82,9 +81,15 @@ const cadastro = async (req, res) => {
 
     console.log(`\n📊 Total de imagens recebidas: ${todasImagens.length}`);
 
-    // 5. Separar imagens entre produto e variações
-    const imagensUsadasEmVariacoes = new Set();
+    // 5. Preparar imagens do produto (TODAS as imagens vão aqui)
+    const imagesProduto = todasImagens.map((filename, index) => ({
+      caminho_arquivo: filename,
+      principal: index === 0 // Primeira imagem é a principal
+    }));
+
+    // 6. Processar variações (se houver)
     const variacoes = [];
+    const imagensUsadasEmVariacoes = new Set();
 
     if (temVariacoes) {
       console.log("\n🔄 Processando variações...");
@@ -112,52 +117,28 @@ const cadastro = async (req, res) => {
           imagensUsadasEmVariacoes.add(imagemIndex);
           console.log(`  ✓ Variação "${variacao.nome}" -> Imagem ${imagemIndex}: ${nomeArquivo}`);
         } else {
-          console.log(`  ⚠️  Variação "${variacao.nome}" -> Sem imagem`);
+          console.log(`  ⚠️  Variação "${variacao.nome}" -> Sem imagem específica`);
         }
 
         variacoes.push(variacaoData);
       });
-    }
 
-    // 6. Imagens do produto principal (as que NÃO foram usadas nas variações)
-    const imagesProduto = [];
-    
-    if (!temVariacoes) {
-      // Se NÃO tem variações, TODAS as imagens são do produto
-      todasImagens.forEach((filename, index) => {
-        imagesProduto.push({
-          caminho_arquivo: filename,
-          principal: index === 0
-        });
-      });
-      console.log(`\n📸 Todas as ${imagesProduto.length} imagens atribuídas ao produto principal`);
-    } else {
-      // Se TEM variações, apenas as imagens NÃO usadas vão para o produto
-      todasImagens.forEach((filename, index) => {
-        if (!imagensUsadasEmVariacoes.has(index)) {
-          imagesProduto.push({
-            caminho_arquivo: filename,
-            principal: imagesProduto.length === 0
-          });
-        }
-      });
-      console.log(`\n📸 ${imagesProduto.length} imagens não usadas atribuídas ao produto principal`);
-      console.log(`🔗 ${imagensUsadasEmVariacoes.size} imagens vinculadas a variações`);
+      console.log(`\n🔗 ${imagensUsadasEmVariacoes.size} imagens vinculadas a variações`);
     }
 
     // 7. Monta objeto final
     const produtoCompleto = {
       ...dadosProduto,
-      images: imagesProduto,
+      images: imagesProduto, // ✅ TODAS as imagens do produto
       variacao: variacoes
     };
 
     console.log("\n✅ Resumo final:");
     console.log(`  Produto: ${produtoCompleto.nome}`);
-    console.log(`  Imagens produto principal: ${produtoCompleto.images.length}`);
+    console.log(`  Total de imagens do produto: ${produtoCompleto.images.length}`);
     console.log(`  Total de variações: ${produtoCompleto.variacao.length}`);
     produtoCompleto.variacao.forEach((v, i) => {
-      console.log(`    Variação ${i + 1}: ${v.nome} - ${v.images.length} imagem(ns)`);
+      console.log(`    Variação ${i + 1}: ${v.nome} - ${v.images.length} imagem(ns) específica(s)`);
     });
 
     // 8. Salva no banco de dados
@@ -224,7 +205,7 @@ const editar = async (req, res) => {
 
     const temVariacoes = Array.isArray(variacoesData) && variacoesData.length > 0;
 
-    // Processar imagens
+    // Processar TODAS as imagens
     const todasImagens = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach((file) => {
@@ -232,9 +213,15 @@ const editar = async (req, res) => {
       });
     }
 
-    // Separar imagens
-    const imagensUsadasEmVariacoes = new Set();
+    // Imagens do produto (TODAS)
+    const imagesProduto = todasImagens.map((filename, index) => ({
+      caminho_arquivo: filename,
+      principal: index === 0
+    }));
+
+    // Processar variações
     const variacoes = [];
+    const imagensUsadasEmVariacoes = new Set();
 
     if (temVariacoes) {
       variacoesData.forEach((variacao) => {
@@ -263,31 +250,10 @@ const editar = async (req, res) => {
       });
     }
 
-    // Imagens do produto principal
-    const imagesProduto = [];
-    
-    if (!temVariacoes) {
-      todasImagens.forEach((filename, index) => {
-        imagesProduto.push({
-          caminho_arquivo: filename,
-          principal: index === 0
-        });
-      });
-    } else {
-      todasImagens.forEach((filename, index) => {
-        if (!imagensUsadasEmVariacoes.has(index)) {
-          imagesProduto.push({
-            caminho_arquivo: filename,
-            principal: imagesProduto.length === 0
-          });
-        }
-      });
-    }
-
     // Objeto final
     const produtoCompleto = {
       ...dadosProduto,
-      images: imagesProduto,
+      images: imagesProduto, // ✅ TODAS as imagens
       variacao: variacoes
     };
 
@@ -456,12 +422,10 @@ module.exports = {
   lista,
   editar,
   deletar,
-
   cadastroCategoria,
   listaCategoria,
   editarCategoria,
   deletarCategoria,
-
   cadastroSubcategoria,
   listaSubcategoria,
   editarSubcategoria,
