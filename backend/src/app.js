@@ -28,12 +28,12 @@ app.use((req, res, next) => {
 
 // 📁 Configuração do caminho de uploads (pasta persistente)
 const userDataPath = path.join(os.homedir(), "AppData", "Roaming", "CashInBox");
-const uploadPath = path.join(userDataPath, "uploads");
+const uploadPath = path.join(userDataPath, "uploads" , "produtos");
 
 
 // 🖼️ Servir arquivos estáticos de uploads
 // Isso permite acessar imagens/arquivos via URL:
-// ex: http://localhost:3000/uploads/imagem.png
+// ex: http://localhost:1122/uploads/imagem.png
 app.use("/uploads", express.static(uploadPath));
 
 

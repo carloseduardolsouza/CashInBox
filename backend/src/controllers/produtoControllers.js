@@ -1,9 +1,5 @@
 const ProdutoModel = require("../models/produtoModels");
 
-/**
- * Lista todos os produtos
- * GET /produto/lista
- */
 const lista = async (req, res) => {
   try {
     const produtos = await ProdutoModel.lista();
@@ -23,17 +19,13 @@ const lista = async (req, res) => {
   }
 };
 
-/**
- * Cadastra um novo produto
- * POST /produto/cadastro
- */
 const cadastro = async (req, res) => {
   try {
     console.log("\n📦 Recebendo cadastro de produto...");
     console.log("Body:", req.body);
     console.log("Files:", req.files);
 
-    // 1. Parse dos dados do formulário
+    // 1. Parse dos dados do produto
     const dadosProduto = {
       nome: req.body.nome,
       descricao: req.body.descricao || "",
@@ -63,79 +55,112 @@ const cadastro = async (req, res) => {
       });
     }
 
-    // 3. Parse das imagens do produto principal
-    const images = [];
+    // 3. Parse das variações
+    let variacoesData = [];
+    if (req.body.variacoes) {
+      try {
+        variacoesData = typeof req.body.variacoes === 'string' 
+          ? JSON.parse(req.body.variacoes) 
+          : req.body.variacoes;
+      } catch (e) {
+        console.error("❌ Erro ao fazer parse das variações:", e);
+      }
+    }
+
+    const temVariacoes = Array.isArray(variacoesData) && variacoesData.length > 0;
+    console.log(`📊 Tem variações: ${temVariacoes} (${variacoesData.length})`);
+
+    // 4. Processar imagens
+    // IMPORTANTE: O frontend envia TODAS as imagens com fieldname "images"
+    const todasImagens = [];
     if (req.files && req.files.length > 0) {
-      // Imagens que NÃO pertencem a variações
-      req.files.forEach(file => {
-        if (!file.fieldname.includes('variacao')) {
-          images.push({
-            caminho_arquivo: file.filename,
-            principal: images.length === 0, // Primeira é principal
-          });
-        }
+      req.files.forEach((file, index) => {
+        todasImagens.push(file.filename);
+        console.log(`📸 Imagem ${index}: ${file.filename}`);
       });
     }
 
-    // 4. Parse das variações
+    console.log(`\n📊 Total de imagens recebidas: ${todasImagens.length}`);
+
+    // 5. Separar imagens entre produto e variações
+    const imagensUsadasEmVariacoes = new Set();
     const variacoes = [];
-    
-    // Verifica se existem variações no body
-    if (req.body.variacoes) {
-      let variacoesData;
+
+    if (temVariacoes) {
+      console.log("\n🔄 Processando variações...");
       
-      // Se vier como string JSON, faz parse
-      if (typeof req.body.variacoes === 'string') {
-        try {
-          variacoesData = JSON.parse(req.body.variacoes);
-        } catch (e) {
-          console.error("Erro ao fazer parse das variações:", e);
-          variacoesData = [];
+      variacoesData.forEach((variacao, index) => {
+        const variacaoData = {
+          nome: variacao.nome || "",
+          tipo: variacao.tipo || "",
+          cod_interno: variacao.cod_interno || "",
+          cod_barras: variacao.cod_barras || "",
+          estoque: parseFloat(variacao.estoque) || 0,
+          estoque_minimo: parseFloat(variacao.estoque_minimo) || 0,
+          images: []
+        };
+
+        // Verifica se esta variação tem uma imagem associada
+        const imagemIndex = variacao.imagemIndex;
+        
+        if (imagemIndex !== null && imagemIndex !== undefined && todasImagens[imagemIndex]) {
+          const nomeArquivo = todasImagens[imagemIndex];
+          variacaoData.images.push({
+            caminho_arquivo: nomeArquivo,
+            principal: true
+          });
+          imagensUsadasEmVariacoes.add(imagemIndex);
+          console.log(`  ✓ Variação "${variacao.nome}" -> Imagem ${imagemIndex}: ${nomeArquivo}`);
+        } else {
+          console.log(`  ⚠️  Variação "${variacao.nome}" -> Sem imagem`);
         }
-      } else {
-        variacoesData = req.body.variacoes;
-      }
 
-      // Processa cada variação
-      if (Array.isArray(variacoesData)) {
-        variacoesData.forEach((variacao, index) => {
-          const variacaoData = {
-            nome: variacao.nome || "",
-            tipo: variacao.tipo || "",
-            cod_interno: variacao.cod_interno || "",
-            cod_barras: variacao.cod_barras || "",
-            estoque: parseFloat(variacao.estoque) || 0,
-            estoque_minimo: parseFloat(variacao.estoque_minimo) || 0,
-            images: []
-          };
-
-          // Busca imagens específicas desta variação
-          if (req.files && req.files.length > 0) {
-            req.files.forEach(file => {
-              if (file.fieldname === `variacao_${index}_imagem`) {
-                variacaoData.images.push({
-                  caminho_arquivo: file.filename,
-                  principal: true,
-                });
-              }
-            });
-          }
-
-          variacoes.push(variacaoData);
-        });
-      }
+        variacoes.push(variacaoData);
+      });
     }
 
-    // 5. Monta objeto final para o Model
+    // 6. Imagens do produto principal (as que NÃO foram usadas nas variações)
+    const imagesProduto = [];
+    
+    if (!temVariacoes) {
+      // Se NÃO tem variações, TODAS as imagens são do produto
+      todasImagens.forEach((filename, index) => {
+        imagesProduto.push({
+          caminho_arquivo: filename,
+          principal: index === 0
+        });
+      });
+      console.log(`\n📸 Todas as ${imagesProduto.length} imagens atribuídas ao produto principal`);
+    } else {
+      // Se TEM variações, apenas as imagens NÃO usadas vão para o produto
+      todasImagens.forEach((filename, index) => {
+        if (!imagensUsadasEmVariacoes.has(index)) {
+          imagesProduto.push({
+            caminho_arquivo: filename,
+            principal: imagesProduto.length === 0
+          });
+        }
+      });
+      console.log(`\n📸 ${imagesProduto.length} imagens não usadas atribuídas ao produto principal`);
+      console.log(`🔗 ${imagensUsadasEmVariacoes.size} imagens vinculadas a variações`);
+    }
+
+    // 7. Monta objeto final
     const produtoCompleto = {
       ...dadosProduto,
-      images: images,
+      images: imagesProduto,
       variacao: variacoes
     };
 
-    console.log("\n✅ Dados processados:", JSON.stringify(produtoCompleto, null, 2));
+    console.log("\n✅ Resumo final:");
+    console.log(`  Produto: ${produtoCompleto.nome}`);
+    console.log(`  Imagens produto principal: ${produtoCompleto.images.length}`);
+    console.log(`  Total de variações: ${produtoCompleto.variacao.length}`);
+    produtoCompleto.variacao.forEach((v, i) => {
+      console.log(`    Variação ${i + 1}: ${v.nome} - ${v.images.length} imagem(ns)`);
+    });
 
-    // 6. Salva no banco de dados
+    // 8. Salva no banco de dados
     const produtoId = await ProdutoModel.cadastro(produtoCompleto);
 
     return res.status(201).json({
@@ -154,28 +179,126 @@ const cadastro = async (req, res) => {
   }
 };
 
-
-// Edita um produto existente
-// PUT /produto/editar/:id
 const editar = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log("\n📝 Editando produto ID:", id);
+    console.log("Body:", req.body);
+    console.log("Files:", req.files);
+
+    // Parse dos dados (similar ao cadastro)
+    const dadosProduto = {
+      nome: req.body.nome,
+      descricao: req.body.descricao || "",
+      cod_barras: req.body.cod_barras || "",
+      preco_custo: parseFloat(req.body.preco_custo) || 0,
+      preco_venda: parseFloat(req.body.preco_venda) || 0,
+      margem: parseFloat(req.body.margem) || 0,
+      id_categoria: req.body.id_categoria ? parseInt(req.body.id_categoria) : null,
+      id_subcategoria: req.body.id_subcategoria ? parseInt(req.body.id_subcategoria) : null,
+      estoque: parseFloat(req.body.estoque) || 0,
+      estoque_minimo: parseFloat(req.body.estoque_minimo) || 0,
+      ativo: req.body.ativo !== undefined ? req.body.ativo === 'true' : true,
+    };
+
     // Validações
-    if (!req.body.nome) {
+    if (!dadosProduto.nome || dadosProduto.nome.trim() === '') {
       return res.status(400).json({
         success: false,
         message: "Nome do produto é obrigatório",
       });
     }
 
-    // Atualiza o produto
-    await ProdutoModel.editar(id, req.body);
+    // Parse variações
+    let variacoesData = [];
+    if (req.body.variacoes) {
+      try {
+        variacoesData = typeof req.body.variacoes === 'string' 
+          ? JSON.parse(req.body.variacoes) 
+          : req.body.variacoes;
+      } catch (e) {
+        console.error("❌ Erro ao fazer parse das variações:", e);
+      }
+    }
+
+    const temVariacoes = Array.isArray(variacoesData) && variacoesData.length > 0;
+
+    // Processar imagens
+    const todasImagens = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file) => {
+        todasImagens.push(file.filename);
+      });
+    }
+
+    // Separar imagens
+    const imagensUsadasEmVariacoes = new Set();
+    const variacoes = [];
+
+    if (temVariacoes) {
+      variacoesData.forEach((variacao) => {
+        const variacaoData = {
+          nome: variacao.nome || "",
+          tipo: variacao.tipo || "",
+          cod_interno: variacao.cod_interno || "",
+          cod_barras: variacao.cod_barras || "",
+          estoque: parseFloat(variacao.estoque) || 0,
+          estoque_minimo: parseFloat(variacao.estoque_minimo) || 0,
+          images: []
+        };
+
+        const imagemIndex = variacao.imagemIndex;
+        
+        if (imagemIndex !== null && imagemIndex !== undefined && todasImagens[imagemIndex]) {
+          const nomeArquivo = todasImagens[imagemIndex];
+          variacaoData.images.push({
+            caminho_arquivo: nomeArquivo,
+            principal: true
+          });
+          imagensUsadasEmVariacoes.add(imagemIndex);
+        }
+
+        variacoes.push(variacaoData);
+      });
+    }
+
+    // Imagens do produto principal
+    const imagesProduto = [];
+    
+    if (!temVariacoes) {
+      todasImagens.forEach((filename, index) => {
+        imagesProduto.push({
+          caminho_arquivo: filename,
+          principal: index === 0
+        });
+      });
+    } else {
+      todasImagens.forEach((filename, index) => {
+        if (!imagensUsadasEmVariacoes.has(index)) {
+          imagesProduto.push({
+            caminho_arquivo: filename,
+            principal: imagesProduto.length === 0
+          });
+        }
+      });
+    }
+
+    // Objeto final
+    const produtoCompleto = {
+      ...dadosProduto,
+      images: imagesProduto,
+      variacao: variacoes
+    };
+
+    // Atualiza no banco
+    await ProdutoModel.editar(id, produtoCompleto);
 
     return res.status(200).json({
       success: true,
       message: "Produto atualizado com sucesso",
     });
+
   } catch (error) {
     console.error("❌ Erro ao editar produto:", error);
     
@@ -194,10 +317,6 @@ const editar = async (req, res) => {
   }
 };
 
-/**
- * Deleta um produto
- * DELETE /produto/deletar/:id
- */
 const deletar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -226,35 +345,33 @@ const deletar = async (req, res) => {
   }
 };
 
-const cadastroCategoria = async (req , res) => {
+const cadastroCategoria = async (req, res) => {
   try {
-      // Validações
-      if (!req.body.nome) {
-        return res.status(400).json({
-          success: false,
-          message: "Nome é obrigatório",
-        });
-      }
-  
-      // Criar categoria
-      const categoriaId = await ProdutoModel.cadastroCategoria(req.body);
-  
-      return res.status(201).json({
-        success: true,
-        message: "Categoria cadastrado com sucesso",
-        data: { id_categoria: categoriaId },
-      });
-    } catch (error) {
-      console.error("❌ Erro ao cadastrar categoria:", error);
-      return res.status(500).json({
+    if (!req.body.nome) {
+      return res.status(400).json({
         success: false,
-        message: "Erro ao cadastrar categoria",
-        error: error.message,
+        message: "Nome é obrigatório",
       });
     }
-}
 
-const listaCategoria = async (req , res) => {
+    const categoriaId = await ProdutoModel.cadastroCategoria(req.body);
+
+    return res.status(201).json({
+      success: true,
+      message: "Categoria cadastrada com sucesso",
+      data: { id_categoria: categoriaId },
+    });
+  } catch (error) {
+    console.error("❌ Erro ao cadastrar categoria:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao cadastrar categoria",
+      error: error.message,
+    });
+  }
+};
+
+const listaCategoria = async (req, res) => {
   try {
     const categorias = await ProdutoModel.listaCategoria();
 
@@ -271,45 +388,43 @@ const listaCategoria = async (req , res) => {
       error: error.message,
     });
   }
-}
+};
 
-const editarCategoria = (req , res) => {
+const editarCategoria = (req, res) => {
+  // Implementar quando necessário
+};
 
-}
+const deletarCategoria = (req, res) => {
+  // Implementar quando necessário
+};
 
-const deletarCategoria = (req , res) => {
-
-}
-
-const cadastroSubcategoria = async (req , res) => {
+const cadastroSubcategoria = async (req, res) => {
   try {
-      // Validações
-      if (!req.body.nome) {
-        return res.status(400).json({
-          success: false,
-          message: "Nome é obrigatório",
-        });
-      }
-  
-      // Criar subcategoria
-      const subcategoriaId = await ProdutoModel.cadastroSubcategoria(req.body);
-  
-      return res.status(201).json({
-        success: true,
-        message: "Subcategoria cadastrado com sucesso",
-        data: { id_subcategoria: subcategoriaId },
-      });
-    } catch (error) {
-      console.error("❌ Erro ao cadastrar subcategoria:", error);
-      return res.status(500).json({
+    if (!req.body.nome) {
+      return res.status(400).json({
         success: false,
-        message: "Erro ao cadastrar subcategoria",
-        error: error.message,
+        message: "Nome é obrigatório",
       });
     }
-}
 
-const listaSubcategoria = async (req , res) => {
+    const subcategoriaId = await ProdutoModel.cadastroSubcategoria(req.body);
+
+    return res.status(201).json({
+      success: true,
+      message: "Subcategoria cadastrada com sucesso",
+      data: { id_subcategoria: subcategoriaId },
+    });
+  } catch (error) {
+    console.error("❌ Erro ao cadastrar subcategoria:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao cadastrar subcategoria",
+      error: error.message,
+    });
+  }
+};
+
+const listaSubcategoria = async (req, res) => {
   try {
     const subcategorias = await ProdutoModel.listaSubcategoria();
 
@@ -326,15 +441,15 @@ const listaSubcategoria = async (req , res) => {
       error: error.message,
     });
   }
-}
+};
 
-const editarSubcategoria = (req , res) => {
+const editarSubcategoria = (req, res) => {
+  // Implementar quando necessário
+};
 
-}
-
-const deletarSubcategoria = (req , res) => {
-
-}
+const deletarSubcategoria = (req, res) => {
+  // Implementar quando necessário
+};
 
 module.exports = {
   cadastro,
