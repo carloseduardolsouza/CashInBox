@@ -105,8 +105,7 @@ const editar = async (id , dados) => {
   }
 };
 
-
-
+// Categorias
 
 const listaCategoria = async () => {
   try {
@@ -125,6 +124,68 @@ const listaCategoria = async () => {
   }
 }
 
+const cadastroCategoria = async (dados) => {
+  try {
+    const res = await fetch(API_URL + "/produto/categoria/cadastro", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao cadastrar categoria:", err);
+    throw err;
+  }
+}
+
+const editarCategoria = async (id , dados) => {
+
+}
+
+const deletarCategoria = async (id) => {
+  
+}
+
+// Subcategorias
+
+const cadastroSubCategoria = async (dados) => {
+  try {
+    const res = await fetch(API_URL + "/produto/subcategoria/cadastro", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao cadastrar subcategoria:", err);
+    throw err;
+  }
+}
+
+const editarSubcategoria = async (id , dados) => {
+
+}
+
+const deletarSubcategoria = async (id) => {
+
+}
+
 export default {
   lista,
   clienteID,
@@ -132,5 +193,12 @@ export default {
   deletar,
   editar,
 
-  listaCategoria
+  listaCategoria,
+  cadastroCategoria,
+  editarCategoria,
+  deletarCategoria,
+
+  cadastroSubCategoria,
+  editarSubcategoria,
+  deletarSubcategoria
 };

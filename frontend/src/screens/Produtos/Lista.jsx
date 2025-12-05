@@ -55,7 +55,6 @@ function ListaProdutos() {
 
   const listarProdutos = async () => {
     const produtos = await estoqueFetch.lista();
-    console.log(produtos);
     setProdutos(produtos);
   };
 
