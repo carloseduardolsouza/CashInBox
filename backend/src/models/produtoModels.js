@@ -8,6 +8,8 @@ const formate = require("../utils/formate");
 const userDataPath = path.join(os.homedir(), "AppData", "Roaming", "CashInBox");
 const uploadPath = path.join(userDataPath, "uploads", "produtos");
 
+// Produtos
+
 const deleteImage = (filename) => {
   try {
     const fullPath = path.join(uploadPath, filename);
@@ -305,6 +307,8 @@ const deletar = async (id) => {
   });
 };
 
+// Categorias
+
 const listaCategoria = async () => {
   // Busca todas as categorias
   const categorias = await db("categoria_produtos").select("*");
@@ -344,10 +348,41 @@ const cadastroCategoria = async (categoriaData) => {
   });
 };
 
-const listaSubcategoria = async () => {
-  const subcategorias = await db("subcategoria_produtos").select("*");
-  return subcategorias;
-};
+const deletarCategoria = async (id) => {
+  return await db.transaction(async (trx) => {
+    // Verifica se a categoria existe
+    const categoria = await trx("categoria_produtos").where("id_categoria", id).first();
+
+    if (!categoria) {
+      throw new Error("Categoria não encontrado");
+    }
+
+    // 1. Deletar subcategorias
+    await trx("subcategoria_produtos").where("id_categoria", id).del();
+
+    // 2. Deletar a categoria
+    await trx("categoria_produtos").where("id_categoria", id).del();
+
+    return true;
+  });
+}
+
+const editarCategoria = async (id , categoriaData) => {
+  return await db.transaction(async (trx) => {
+  
+      // 1. Atualiza dados da categoria
+      await trx("categoria_produtos")
+        .where("id_categoria", id)
+        .update({
+          nome: formate.formatNome(categoriaData.nome),
+          descricao: categoriaData.descricao,
+        });
+  
+      return true;
+    });
+}
+
+// Subcategorias
 
 const cadastroSubcategoria = async (subcategoriaData) => {
   return await db.transaction(async (trx) => {
@@ -360,13 +395,49 @@ const cadastroSubcategoria = async (subcategoriaData) => {
   });
 };
 
+const deletarSubcategoria = async (id) => {
+  return await db.transaction(async (trx) => {
+    // Verifica se a categoria existe
+    const subcategoria = await trx("subcategoria_produtos").where("id_subcategoria", id).first();
+
+    if (!subcategoria) {
+      throw new Error("SubCategoria não encontrado");
+    }
+
+    // 1. Deletar subcategorias
+    await trx("subcategoria_produtos").where("id_subcategoria", id).del();
+
+    return true;
+  });
+}
+
+const editarSubcategoria = async (id , subcategoriaData) => {
+  return await db.transaction(async (trx) => {
+  
+      // 1. Atualiza dados da categoria
+      await trx("subcategoria_produtos")
+        .where("id_subcategoria", id)
+        .update({
+          nome: formate.formatNome(subcategoriaData.nome),
+          descricao: subcategoriaData.descricao,
+        });
+  
+      return true;
+    });
+}
+
 module.exports = {
   cadastro,
   lista,
   editar,
   deletar,
+
   listaCategoria,
   cadastroCategoria,
-  listaSubcategoria,
+  deletarCategoria,
+  editarCategoria,
+
   cadastroSubcategoria,
+  deletarSubcategoria,
+  editarSubcategoria
 };

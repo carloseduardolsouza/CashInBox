@@ -311,6 +311,8 @@ const deletar = async (req, res) => {
   }
 };
 
+
+
 const cadastroCategoria = async (req, res) => {
   try {
     if (!req.body.nome) {
@@ -356,13 +358,61 @@ const listaCategoria = async (req, res) => {
   }
 };
 
-const editarCategoria = (req, res) => {
-  // Implementar quando necessário
+const editarCategoria = async (req, res) => {
+  try {
+      const { id } = req.params;
+  
+      // Verifica se o cliente existe
+      const categoria = await ProdutoModel.editarCategoria(id , req.body);
+      if (!categoria) {
+        return res.status(404).json({
+          success: false,
+          message: "Categoria não encontrado",
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: "Categoria atualizado com sucesso",
+      });
+    } catch (error) {
+      console.error("❌ Erro ao editar categoria:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao editar categoria",
+        error: error.message,
+      });
+    }
 };
 
-const deletarCategoria = (req, res) => {
-  // Implementar quando necessário
+const deletarCategoria = async (req, res) => {
+  try {
+      const { id } = req.params;
+  
+      // Verifica se o cliente existe
+      const categoria = await ProdutoModel.deletarCategoria(id);
+      if (!categoria) {
+        return res.status(404).json({
+          success: false,
+          message: "Categoria não encontrado",
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: "Categoria deletado com sucesso",
+      });
+    } catch (error) {
+      console.error("❌ Erro ao deletar categoria:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao deletar categoria",
+        error: error.message,
+      });
+    }
 };
+
+
 
 const cadastroSubcategoria = async (req, res) => {
   try {
@@ -390,31 +440,58 @@ const cadastroSubcategoria = async (req, res) => {
   }
 };
 
-const listaSubcategoria = async (req, res) => {
+const editarSubcategoria = async (req, res) => {
   try {
-    const subcategorias = await ProdutoModel.listaSubcategoria();
-
-    return res.status(200).json({
-      success: true,
-      data: subcategorias,
-      total: subcategorias.length,
-    });
-  } catch (error) {
-    console.error("❌ Erro ao listar subcategorias:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao listar subcategorias",
-      error: error.message,
-    });
-  }
+      const { id } = req.params;
+  
+      // Verifica se o cliente existe
+      const subcategoria = await ProdutoModel.editarSubcategoria(id , req.body);
+      if (!subcategoria) {
+        return res.status(404).json({
+          success: false,
+          message: "Subcategoria não encontrado",
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: "Subcategoria atualizado com sucesso",
+      });
+    } catch (error) {
+      console.error("❌ Erro ao editar Subcategoria:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao editar Subcategoria",
+        error: error.message,
+      });
+    }
 };
 
-const editarSubcategoria = (req, res) => {
-  // Implementar quando necessário
-};
-
-const deletarSubcategoria = (req, res) => {
-  // Implementar quando necessário
+const deletarSubcategoria = async (req, res) => {
+  try {
+      const { id } = req.params;
+  
+      // Verifica se o cliente existe
+      const categoria = await ProdutoModel.deletarCategoria(id);
+      if (!categoria) {
+        return res.status(404).json({
+          success: false,
+          message: "Categoria não encontrado",
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: "Categoria deletado com sucesso",
+      });
+    } catch (error) {
+      console.error("❌ Erro ao deletar categoria:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao deletar categoria",
+        error: error.message,
+      });
+    }
 };
 
 module.exports = {
@@ -422,12 +499,13 @@ module.exports = {
   lista,
   editar,
   deletar,
+
   cadastroCategoria,
   listaCategoria,
   editarCategoria,
   deletarCategoria,
+
   cadastroSubcategoria,
-  listaSubcategoria,
   editarSubcategoria,
   deletarSubcategoria
 };
