@@ -32,6 +32,7 @@ const cadastro = async (produtoData) => {
     console.log("📝 Inserindo produto principal...");
     const [produtoId] = await trx("produtos").insert({
       ...dadosProduto,
+      nome: formate.formatNome(dadosProduto.nome),
       created_at: trx.fn.now(),
     });
     console.log(`✅ Produto criado com ID: ${produtoId}`);
@@ -71,6 +72,7 @@ const cadastro = async (produtoData) => {
         // Insere a variação
         const [variacaoId] = await trx("produto_variacao").insert({
           ...dadosVariacao,
+          nome: formate.formatNome(dadosVariacao.nome),
           id_produto: produtoId,
           created_at: trx.fn.now(),
         });

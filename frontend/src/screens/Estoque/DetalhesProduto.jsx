@@ -473,7 +473,6 @@ const styles = {
   },
 };
 
-// Componente mock para simular o comportamento
 const ProductDetailScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState(0);
@@ -487,9 +486,9 @@ const ProductDetailScreen = () => {
   const [modalDeleteProduto, setModalDeleteProduto] = useState(false);
 
   const deletarProduto = async () => {
-    const res = await estoqueFetch.deletar(productData.id_produto)
-    navigate("/estoque/inventario")
-  }
+    const res = await estoqueFetch.deletar(productData.id_produto);
+    navigate("/estoque/inventario");
+  };
 
   const navigate = useNavigate();
 
@@ -518,22 +517,27 @@ const ProductDetailScreen = () => {
   const hasVariations = productData.variacao && productData.variacao.length > 0;
 
   const getCurrentImages = () => {
-    if (hasVariations && productData.variacao[selectedVariation]) {
-      return productData.variacao[selectedVariation].images || [];
-    }
     return productData.images || [];
   };
 
   const getCurrentEstoque = () => {
-    if (hasVariations && productData.variacao[selectedVariation]) {
-      return productData.variacao[selectedVariation].estoque;
+    if (hasVariations) {
+      let totalEstoque = 0
+      productData.variacao.map((dados) => {
+        totalEstoque += dados.estoque
+      })
+      return totalEstoque
     }
     return productData.estoque;
   };
 
   const getCurrentEstoqueMinimo = () => {
-    if (hasVariations && productData.variacao[selectedVariation]) {
-      return productData.variacao[selectedVariation].estoque_minimo;
+    if (hasVariations) {
+      let estoqueMin = 0
+      productData.variacao.map((dados) => {
+        estoqueMin += dados.estoque_minimo
+      })
+      return estoqueMin
     }
     return productData.estoque_minimo;
   };
@@ -793,7 +797,10 @@ const ProductDetailScreen = () => {
                 <Edit size={18} />
                 <span>Editar</span>
               </button>
-              <button style={{ ...styles.iconButton, ...styles.deleteButton }} onClick={() => setModalDeleteProduto(true)}>
+              <button
+                style={{ ...styles.iconButton, ...styles.deleteButton }}
+                onClick={() => setModalDeleteProduto(true)}
+              >
                 <Trash2 size={18} />
                 <span>Excluir</span>
               </button>
@@ -859,27 +866,7 @@ const ProductDetailScreen = () => {
             </div>
           )}
 
-          {hasVariations && (
-            <div style={styles.variationChips}>
-              {productData.variacao.map((v, index) => (
-                <div
-                  key={v.id_variacao}
-                  style={{
-                    ...styles.chip,
-                    ...(selectedVariation === index ? styles.chipActive : {}),
-                  }}
-                  onClick={() => {
-                    setSelectedVariation(index);
-                    setSelectedImageIndex(0);
-                  }}
-                >
-                  {v.nome}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {isEditing && !hasVariations && (
+          {isEditing && (
             <>
               <input
                 type="file"
@@ -1075,13 +1062,11 @@ const ProductDetailScreen = () => {
             <h2 style={styles.cardTitle}>
               <Archive size={18} />
               Estoque
-              {hasVariations &&
-                ` - ${productData.variacao[selectedVariation]?.nome || ""}`}
             </h2>
             <div style={styles.infoGrid}>
               <div style={styles.infoItem}>
                 <span style={styles.label}>Quantidade em Estoque</span>
-                {isEditing ? (
+                {isEditing && !hasVariations ? (
                   <input
                     type="number"
                     style={styles.input}
@@ -1111,7 +1096,7 @@ const ProductDetailScreen = () => {
               </div>
               <div style={styles.infoItem}>
                 <span style={styles.label}>Estoque Mínimo</span>
-                {isEditing ? (
+                {isEditing && !hasVariations ? (
                   <input
                     type="number"
                     style={styles.input}
@@ -1160,6 +1145,27 @@ const ProductDetailScreen = () => {
 
               {productData.variacao.map((variacao, index) => (
                 <div key={variacao.id_variacao} style={styles.variacaoCard}>
+                  <div
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      marginRight: "12px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={`http://localhost:1122${variacao.images[0].caminho_arquivo}`}
+                      alt={variacao.nome}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </div>
+
                   <div style={styles.variacaoInfo}>
                     <div style={styles.variacaoNome}>{variacao.nome}</div>
                     <div style={styles.variacaoDetalhes}>
@@ -1371,44 +1377,9 @@ const ProductDetailScreen = () => {
               </div>
 
               <div style={{ ...styles.infoItem, ...styles.fullWidth }}>
-                <label style={styles.label}>Imagens da Variação</label>
-                <input
-                  type="file"
-                  id="variationImages"
-                  multiple
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={(e) => handleImageUpload(e, true)}
-                />
-                <button
-                  style={styles.addImageButton}
-                  onClick={() =>
-                    document.getElementById("variationImages").click()
-                  }
-                >
-                  <ImageIcon size={18} />
-                  Adicionar Imagens
-                </button>
+                <label style={styles.label}>Imagens da Associada</label>
+                <select></select>
 
-                {newVariationImages.length > 0 && (
-                  <div style={styles.imagePreview}>
-                    {newVariationImages.map((img, index) => (
-                      <div key={index} style={styles.imagePreviewItem}>
-                        <img
-                          src={img.image}
-                          alt={`Nova ${index}`}
-                          style={styles.imagePreviewImg}
-                        />
-                        <button
-                          style={styles.removeImageBtn}
-                          onClick={() => removeNewImage(index, true)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
