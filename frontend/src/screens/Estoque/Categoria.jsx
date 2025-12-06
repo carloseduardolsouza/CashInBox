@@ -66,6 +66,16 @@ const styles = {
     borderRadius: "8px",
     position: "relative",
   },
+  editingCategoryItem: {
+    display: "flex",
+    alignItems: "center",
+    padding: "16px",
+    backgroundColor: "var(--background)",
+    border: "2px solid var(--primary-color)",
+    borderRadius: "8px",
+    position: "relative",
+    gap: "12px",
+  },
   newCategoryItem: {
     display: "flex",
     alignItems: "center",
@@ -199,6 +209,16 @@ const styles = {
     position: "relative",
     gap: "8px",
   },
+  editingSubcategoryItem: {
+    display: "flex",
+    alignItems: "center",
+    padding: "12px 16px",
+    backgroundColor: "var(--background-soft)",
+    border: "2px solid var(--primary-color)",
+    borderRadius: "6px",
+    position: "relative",
+    gap: "8px",
+  },
   newSubcategoryItem: {
     display: "flex",
     alignItems: "center",
@@ -224,6 +244,12 @@ const CategoriesScreen = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [openCreateSubcategoria, setOpenCreateSubcategoria] = useState(null);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+
+  // Estados para edição
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editingSubcategory, setEditingSubcategory] = useState(null);
+  const [editSubcategoryName, setEditSubcategoryName] = useState("");
 
   const [formCategoria, setFormCategoria] = useState({
     nome: "",
@@ -286,7 +312,6 @@ const CategoriesScreen = () => {
       nome: "",
       descricao: "",
     });
-    // Expande a categoria automaticamente
     setExpandedCategories((prev) => ({
       ...prev,
       [id]: true,
@@ -349,7 +374,9 @@ const CategoriesScreen = () => {
     };
 
     try {
-      const response = await estoqueFetch.cadastroSubCategoria(subcategoriaData);
+      const response = await estoqueFetch.cadastroSubCategoria(
+        subcategoriaData
+      );
       if (response.success) {
         buscarCategorias();
         setOpenCreateSubcategoria(null);
@@ -399,44 +426,115 @@ const CategoriesScreen = () => {
     }
   };
 
-  const handleEdit = async (id) => {
+  // Funções de edição de categoria
+  const handleStartEditCategory = (category) => {
     setOpenDropdown(null);
-    // Implementar lógica de edição de categoria
-    console.log("Editar categoria:", id);
-    // Você pode abrir um modal ou transformar o item em editável
+    setEditingCategory(category.id_categoria);
+    setEditCategoryName(category.nome);
   };
 
-  const handleEditSubcategory = async (categoryId, subcategoryId) => {
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
+    setEditCategoryName("");
+  };
+
+  const handleConfirmEditCategory = async () => {
+    if (!editCategoryName.trim()) {
+      return;
+    }
+
+    try {
+      const categoriaData = {
+        nome: editCategoryName,
+        descricao: "",
+      };
+      const response = await estoqueFetch.editarCategoria(
+        editingCategory,
+        categoriaData
+      );
+      buscarCategorias();
+      setEditingCategory(null);
+      setEditCategoryName("");
+    } catch (error) {
+      console.error("Erro ao editar categoria:", error);
+    }
+  };
+
+  const handleKeyPressEditCategory = (e) => {
+    if (e.key === "Enter") {
+      handleConfirmEditCategory();
+    } else if (e.key === "Escape") {
+      handleCancelEditCategory();
+    }
+  };
+
+  // Funções de edição de subcategoria
+  const handleStartEditSubcategory = (categoryId, subcategory) => {
     setOpenDropdown(null);
-    // Implementar lógica de edição de subcategoria
-    console.log("Editar subcategoria:", subcategoryId, "da categoria:", categoryId);
+    setEditingSubcategory(subcategory.id_subcategoria);
+    setEditSubcategoryName(subcategory.nome);
+  };
+
+  const handleCancelEditSubcategory = () => {
+    setEditingSubcategory(null);
+    setEditSubcategoryName("");
+  };
+
+  const handleConfirmEditSubcategory = async () => {
+    if (!editSubcategoryName.trim()) {
+      return;
+    }
+
+    try {
+      const subcategoriaData = {
+        nome: editSubcategoryName,
+        descricao: "",
+      };
+      const response = await estoqueFetch.editarSubcategoria(
+        editingSubcategory,
+        subcategoriaData
+      );
+      buscarCategorias();
+      setEditingSubcategory(null);
+      setEditSubcategoryName("");
+    } catch (error) {
+      console.error("Erro ao editar subcategoria:", error);
+    }
+  };
+
+  const handleKeyPressEditSubcategory = (e) => {
+    if (e.key === "Enter") {
+      handleConfirmEditSubcategory();
+    } else if (e.key === "Escape") {
+      handleCancelEditSubcategory();
+    }
+  };
+
+  const handleEdit = async (category) => {
+    handleStartEditCategory(category);
+  };
+
+  const handleEditSubcategory = async (categoryId, subcategory) => {
+    handleStartEditSubcategory(categoryId, subcategory);
   };
 
   const handleDelete = async (id) => {
     setOpenDropdown(null);
-    if (window.confirm("Tem certeza que deseja eliminar esta categoria?")) {
-      try {
-        const response = await estoqueFetch.deleteCategoria(id);
-        if (response.success) {
-          buscarCategorias();
-        }
-      } catch (error) {
-        console.error("Erro ao deletar categoria:", error);
-      }
+    try {
+      const response = await estoqueFetch.deletarCategoria(id);
+      buscarCategorias();
+    } catch (error) {
+      console.error("Erro ao deletar categoria:", error);
     }
   };
 
-  const handleDeleteSubcategory = async (categoryId, subcategoryId) => {
+  const handleDeleteSubcategory = async (subcategoryId) => {
     setOpenDropdown(null);
-    if (window.confirm("Tem certeza que deseja eliminar esta subcategoria?")) {
-      try {
-        const response = await estoqueFetch.deleteSubcategoria(subcategoryId);
-        if (response.success) {
-          buscarCategorias();
-        }
-      } catch (error) {
-        console.error("Erro ao deletar subcategoria:", error);
-      }
+    try {
+      const response = await estoqueFetch.deletarSubcategoria(subcategoryId);
+      buscarCategorias();
+    } catch (error) {
+      console.error("Erro ao deletar subcategoria:", error);
     }
   };
 
@@ -485,64 +583,99 @@ const CategoriesScreen = () => {
 
         {categories.map((category) => (
           <div key={category.id_categoria}>
-            <div style={styles.categoryItem}>
-              <div
-                style={styles.chevronContainer}
-                onClick={(e) => toggleCategory(e, category.id_categoria)}
-              >
-                <ChevronRight
-                  size={18}
-                  style={{
-                    ...styles.chevron,
-                    ...(expandedCategories[category.id_categoria]
-                      ? styles.chevronExpanded
-                      : {}),
-                  }}
-                />
-              </div>
-              <span style={styles.categoryName}>{category.nome}</span>
-              {category.subcategorias.length > 0 && (
-                <span style={styles.subcategoryCount}>
-                  {category.subcategorias.length}
-                </span>
-              )}
-              <button
-                style={styles.moreButton}
-                onClick={(e) => toggleDropdown(e, category.id_categoria)}
-                data-dropdown
-              >
-                <MoreVertical size={20} />
-              </button>
+            <div
+              style={
+                editingCategory === category.id_categoria
+                  ? styles.editingCategoryItem
+                  : styles.categoryItem
+              }
+            >
+              {editingCategory === category.id_categoria ? (
+                <>
+                  <input
+                    type="text"
+                    style={styles.categoryInput}
+                    value={editCategoryName}
+                    onChange={(e) => setEditCategoryName(e.target.value)}
+                    onKeyDown={handleKeyPressEditCategory}
+                    autoFocus
+                  />
+                  <button
+                    style={{ ...styles.actionButton, ...styles.cancelButton }}
+                    onClick={handleCancelEditCategory}
+                    title="Cancelar"
+                  >
+                    <X size={20} />
+                  </button>
+                  <button
+                    style={{ ...styles.actionButton, ...styles.confirmButton }}
+                    onClick={handleConfirmEditCategory}
+                    title="Salvar"
+                  >
+                    <Check size={20} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div
+                    style={styles.chevronContainer}
+                    onClick={(e) => toggleCategory(e, category.id_categoria)}
+                  >
+                    <ChevronRight
+                      size={18}
+                      style={{
+                        ...styles.chevron,
+                        ...(expandedCategories[category.id_categoria]
+                          ? styles.chevronExpanded
+                          : {}),
+                      }}
+                    />
+                  </div>
+                  <span style={styles.categoryName}>{category.nome}</span>
+                  {category.subcategorias.length > 0 && (
+                    <span style={styles.subcategoryCount}>
+                      {category.subcategorias.length}
+                    </span>
+                  )}
+                  <button
+                    style={styles.moreButton}
+                    onClick={(e) => toggleDropdown(e, category.id_categoria)}
+                    data-dropdown
+                  >
+                    <MoreVertical size={20} />
+                  </button>
 
-              {openDropdown === category.id_categoria && (
-                <div style={styles.dropdown} data-dropdown>
-                  <button
-                    style={styles.dropdownItem}
-                    onClick={() =>
-                      handleStartCreateSubcategory(category.id_categoria)
-                    }
-                  >
-                    <Plus size={16} />
-                    Criar subcategoria
-                  </button>
-                  <button
-                    style={styles.dropdownItem}
-                    onClick={() => handleEdit(category.id_categoria)}
-                  >
-                    <Edit2 size={16} />
-                    Editar
-                  </button>
-                  <button
-                    style={{
-                      ...styles.dropdownItem,
-                      ...styles.dropdownItemDelete,
-                    }}
-                    onClick={() => handleDelete(category.id_categoria)}
-                  >
-                    <Trash2 size={16} />
-                    Eliminar
-                  </button>
-                </div>
+                  {openDropdown === category.id_categoria && (
+                    <div style={styles.dropdown} data-dropdown>
+                      <button
+                        style={styles.dropdownItem}
+                        onClick={() =>
+                          handleStartCreateSubcategory(category.id_categoria)
+                        }
+                      >
+                        <Plus size={16} />
+                        Criar subcategoria
+                      </button>
+                      <button
+                        style={styles.dropdownItem}
+                        onClick={() => handleEdit(category)}
+                      >
+                        <Edit2 size={16} />
+                        Editar
+                      </button>
+                      <button
+                        style={{
+                          ...styles.dropdownItem,
+                          ...styles.dropdownItemDelete,
+                        }}
+                        onClick={() => handleDelete(category.id_categoria)}
+                      >
+                        <Trash2 size={16} />
+                        Eliminar
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -589,57 +722,100 @@ const CategoriesScreen = () => {
                     {category.subcategorias.map((subcategory) => (
                       <div
                         key={subcategory.id_subcategoria}
-                        style={styles.subcategoryItem}
+                        style={
+                          editingSubcategory === subcategory.id_subcategoria
+                            ? styles.editingSubcategoryItem
+                            : styles.subcategoryItem
+                        }
                       >
-                        <span
-                          style={{ ...styles.categoryName, fontSize: "14px" }}
-                        >
-                          {subcategory.nome}
-                        </span>
-                        <button
-                          style={styles.moreButton}
-                          onClick={(e) =>
-                            toggleDropdown(
-                              e,
-                              `sub-${subcategory.id_subcategoria}`
-                            )
-                          }
-                          data-dropdown
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-
-                        {openDropdown ===
-                          `sub-${subcategory.id_subcategoria}` && (
-                          <div style={styles.dropdown} data-dropdown>
-                            <button
-                              style={styles.dropdownItem}
-                              onClick={() =>
-                                handleEditSubcategory(
-                                  category.id_categoria,
-                                  subcategory.id_subcategoria
-                                )
+                        {editingSubcategory === subcategory.id_subcategoria ? (
+                          <>
+                            <input
+                              type="text"
+                              style={styles.subcategoryInput}
+                              value={editSubcategoryName}
+                              onChange={(e) =>
+                                setEditSubcategoryName(e.target.value)
                               }
+                              onKeyDown={handleKeyPressEditSubcategory}
+                              autoFocus
+                            />
+                            <button
+                              style={{
+                                ...styles.actionButton,
+                                ...styles.cancelButton,
+                              }}
+                              onClick={handleCancelEditSubcategory}
+                              title="Cancelar"
                             >
-                              <Edit2 size={16} />
-                              Editar
+                              <X size={20} />
                             </button>
                             <button
                               style={{
-                                ...styles.dropdownItem,
-                                ...styles.dropdownItemDelete,
+                                ...styles.actionButton,
+                                ...styles.confirmButton,
                               }}
-                              onClick={() =>
-                                handleDeleteSubcategory(
-                                  category.id_categoria,
-                                  subcategory.id_subcategoria
+                              onClick={handleConfirmEditSubcategory}
+                              title="Salvar"
+                            >
+                              <Check size={20} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              style={{
+                                ...styles.categoryName,
+                                fontSize: "14px",
+                              }}
+                            >
+                              {subcategory.nome}
+                            </span>
+                            <button
+                              style={styles.moreButton}
+                              onClick={(e) =>
+                                toggleDropdown(
+                                  e,
+                                  `sub-${subcategory.id_subcategoria}`
                                 )
                               }
+                              data-dropdown
                             >
-                              <Trash2 size={16} />
-                              Eliminar
+                              <MoreVertical size={18} />
                             </button>
-                          </div>
+
+                            {openDropdown ===
+                              `sub-${subcategory.id_subcategoria}` && (
+                              <div style={styles.dropdown} data-dropdown>
+                                <button
+                                  style={styles.dropdownItem}
+                                  onClick={() =>
+                                    handleEditSubcategory(
+                                      category.id_categoria,
+                                      subcategory
+                                    )
+                                  }
+                                >
+                                  <Edit2 size={16} />
+                                  Editar
+                                </button>
+                                <button
+                                  style={{
+                                    ...styles.dropdownItem,
+                                    ...styles.dropdownItemDelete,
+                                  }}
+                                  onClick={() =>
+                                    handleDeleteSubcategory(
+                                      subcategory.id_subcategoria
+                                    )
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                  Eliminar
+                                </button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     ))}
