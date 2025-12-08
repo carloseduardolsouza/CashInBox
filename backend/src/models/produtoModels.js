@@ -317,7 +317,7 @@ const editar = async (id, produtoData) => {
               nome: formate.formatNome(dadosVariacao.nome),
             });
 
-          // Remove imagens antigas da variação
+          // ⚠️ IMPORTANTE: Remove imagens antigas da variação
           const imagensAntigas = await trx("produto_imagens")
             .where("id_variacao", id_variacao)
             .select("caminho_arquivo");
@@ -325,17 +325,47 @@ const editar = async (id, produtoData) => {
           imagensAntigas.forEach((img) => deleteImage(img.caminho_arquivo));
           await trx("produto_imagens").where("id_variacao", id_variacao).del();
 
-          // Adiciona novas imagens
-          if (Array.isArray(variacaoImages) && variacaoImages.length > 0) {
-            for (const img of variacaoImages) {
+          // ✅ Adiciona nova imagem SE imagemIndex foi especificado
+          if (v.imagemIndex !== null && v.imagemIndex !== undefined) {
+            // Buscar TODAS as imagens disponíveis (existentes + novas)
+            const todasImagensDisponiveis = await trx("produto_imagens")
+              .where("id_produto", id)
+              .whereNull("id_variacao")
+              .select("id_imagem", "caminho_arquivo")
+              .orderBy("id_imagem", "asc");
+
+            // Adicionar novas imagens ao array (elas ainda não têm ID no banco)
+            const totalImagensExistentes = todasImagensDisponiveis.length;
+            
+            // Se imagemIndex aponta para uma imagem EXISTENTE
+            if (v.imagemIndex < totalImagensExistentes) {
+              const imagemSelecionada = todasImagensDisponiveis[v.imagemIndex];
+              
+              // Duplicar a imagem para a variação
               await trx("produto_imagens").insert({
                 id_produto: id,
                 id_variacao: id_variacao,
-                caminho_arquivo: img.caminho_arquivo,
-                principal: img.principal || false,
+                caminho_arquivo: imagemSelecionada.caminho_arquivo,
+                principal: true,
               });
+              
+              console.log(`    ✓ Imagem existente associada à variação: ${imagemSelecionada.caminho_arquivo}`);
+            } 
+            // Se imagemIndex aponta para uma NOVA imagem
+            else if (Array.isArray(images) && images.length > 0) {
+              const novaImagemIndex = v.imagemIndex - totalImagensExistentes;
+              
+              if (novaImagemIndex >= 0 && novaImagemIndex < images.length) {
+                await trx("produto_imagens").insert({
+                  id_produto: id,
+                  id_variacao: id_variacao,
+                  caminho_arquivo: images[novaImagemIndex].caminho_arquivo,
+                  principal: true,
+                });
+                
+                console.log(`    ✓ Nova imagem associada à variação: ${images[novaImagemIndex].caminho_arquivo}`);
+              }
             }
-            console.log(`    ✓ ${variacaoImages.length} imagem(ns) atualizada(s)`);
           }
 
         } else {
@@ -351,17 +381,41 @@ const editar = async (id, produtoData) => {
 
           console.log(`    ✓ Variação criada com ID: ${novoIdVariacao}`);
 
-          // Adiciona imagens da nova variação
-          if (Array.isArray(variacaoImages) && variacaoImages.length > 0) {
-            for (const img of variacaoImages) {
+          // ✅ Adiciona imagem SE imagemIndex foi especificado
+          if (v.imagemIndex !== null && v.imagemIndex !== undefined) {
+            const todasImagensDisponiveis = await trx("produto_imagens")
+              .where("id_produto", id)
+              .whereNull("id_variacao")
+              .select("id_imagem", "caminho_arquivo")
+              .orderBy("id_imagem", "asc");
+
+            const totalImagensExistentes = todasImagensDisponiveis.length;
+            
+            if (v.imagemIndex < totalImagensExistentes) {
+              const imagemSelecionada = todasImagensDisponiveis[v.imagemIndex];
+              
               await trx("produto_imagens").insert({
                 id_produto: id,
                 id_variacao: novoIdVariacao,
-                caminho_arquivo: img.caminho_arquivo,
-                principal: img.principal || false,
+                caminho_arquivo: imagemSelecionada.caminho_arquivo,
+                principal: true,
               });
+              
+              console.log(`    ✓ Imagem existente associada à nova variação`);
+            } else if (Array.isArray(images) && images.length > 0) {
+              const novaImagemIndex = v.imagemIndex - totalImagensExistentes;
+              
+              if (novaImagemIndex >= 0 && novaImagemIndex < images.length) {
+                await trx("produto_imagens").insert({
+                  id_produto: id,
+                  id_variacao: novoIdVariacao,
+                  caminho_arquivo: images[novaImagemIndex].caminho_arquivo,
+                  principal: true,
+                });
+                
+                console.log(`    ✓ Nova imagem associada à nova variação`);
+              }
             }
-            console.log(`    ✓ ${variacaoImages.length} imagem(ns) adicionada(s)`);
           }
         }
       }

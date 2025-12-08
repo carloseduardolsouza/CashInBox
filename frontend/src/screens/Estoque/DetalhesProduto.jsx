@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import estoqueFetch from "../../services/api/estoqueFetch";
+import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
+import AppContext from "../../context/AppContext";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -24,7 +27,6 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: "var(--background)",
     padding: "24px",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
     display: "flex",
@@ -181,7 +183,7 @@ const styles = {
     fontWeight: "500",
   },
   input: {
-    width: "100%",
+    width: "90%",
     padding: "10px 12px",
     border: "2px solid var(--surface-border)",
     borderRadius: "8px",
@@ -223,7 +225,7 @@ const styles = {
     fontSize: "24px",
     fontWeight: "600",
     padding: "8px",
-    width: "100%",
+    width: "90%",
   },
   badge: {
     display: "inline-block",
@@ -509,6 +511,7 @@ const ProductDetailScreen = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const fileInputRef = useRef(null);
+  const { adicionarAviso } = useContext(AppContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -541,8 +544,10 @@ const ProductDetailScreen = () => {
     try {
       const res = await fetch(`${API_URL}/produto/lista`);
       const data = await res.json();
-      const produto = data.data.find((p) => Number(p.id_produto) === Number(id));
-      
+      const produto = data.data.find(
+        (p) => Number(p.id_produto) === Number(id)
+      );
+
       if (produto) {
         setProductData(produto);
         setOriginalData(JSON.parse(JSON.stringify(produto)));
@@ -554,9 +559,7 @@ const ProductDetailScreen = () => {
 
   const deletarProduto = async () => {
     try {
-      await fetch(`${API_URL}/produto/deletar/${productData.id_produto}`, {
-        method: "DELETE",
-      });
+      await estoqueFetch.deletar(productData.id_produto);
       navigate("/estoque/inventario");
     } catch (error) {
       console.error("Erro ao deletar produto:", error);
@@ -596,7 +599,8 @@ const ProductDetailScreen = () => {
         preco_venda: parseFloat(newPrecoVenda.toFixed(2)),
       }));
     } else if (field === "margem") {
-      const newPrecoVenda = productData.preco_custo + (productData.preco_custo * numValue) / 100;
+      const newPrecoVenda =
+        productData.preco_custo + (productData.preco_custo * numValue) / 100;
       setProductData((prev) => ({
         ...prev,
         margem: numValue,
@@ -605,7 +609,8 @@ const ProductDetailScreen = () => {
     } else if (field === "preco_venda") {
       const newMargem =
         productData.preco_custo > 0
-          ? ((numValue - productData.preco_custo) / productData.preco_custo) * 100
+          ? ((numValue - productData.preco_custo) / productData.preco_custo) *
+            100
           : 0;
       setProductData((prev) => ({
         ...prev,
@@ -634,9 +639,9 @@ const ProductDetailScreen = () => {
       formData.append("ativo", productData.ativo ? true : false);
 
       const imagensExistentes = (productData.images || [])
-        .filter(img => img.id_imagem)
-        .map(img => img.id_imagem);
-      
+        .filter((img) => img.id_imagem)
+        .map((img) => img.id_imagem);
+
       formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
       formData.append("imagensDeletar", JSON.stringify(deletedImages));
 
@@ -652,7 +657,10 @@ const ProductDetailScreen = () => {
         cod_barras: v.cod_barras || "",
         estoque: v.estoque || 0,
         estoque_minimo: v.estoque_minimo || 0,
-        imagemIndex: v.imagemIndex !== null && v.imagemIndex !== undefined ? v.imagemIndex : null,
+        imagemIndex:
+          v.imagemIndex !== null && v.imagemIndex !== undefined
+            ? v.imagemIndex
+            : null,
       }));
 
       formData.append("variacoes", JSON.stringify(variacoesFormatadas));
@@ -663,13 +671,16 @@ const ProductDetailScreen = () => {
       console.log("- Novas imagens:", newImageFiles.length);
       console.log("- Variações:", variacoesFormatadas);
 
-      const response = await fetch(`${API_URL}/produto/editar/${productData.id_produto}`, {
-        method: "PUT",
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_URL}/produto/editar/${productData.id_produto}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
 
       if (response.ok) {
-        alert("Produto atualizado com sucesso!");
+        adicionarAviso("sucesso", "Produto atualizado com sucesso");
         setIsEditing(false);
         setNewImages([]);
         setNewImageFiles([]);
@@ -682,7 +693,7 @@ const ProductDetailScreen = () => {
       }
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
-      alert(`Erro ao salvar produto: ${error.message}`);
+      adicionarAviso("erro", "Falha ao atualizar produto , tenta novamente");
     } finally {
       setLoading(false);
     }
@@ -720,7 +731,10 @@ const ProductDetailScreen = () => {
       cod_barras: variacao.cod_barras,
       estoque: variacao.estoque,
       estoque_minimo: variacao.estoque_minimo,
-      imagemIndex: variacao.imagemIndex !== null && variacao.imagemIndex !== undefined ? variacao.imagemIndex : null,
+      imagemIndex:
+        variacao.imagemIndex !== null && variacao.imagemIndex !== undefined
+          ? variacao.imagemIndex
+          : null,
     });
     setEditingVariacaoIndex(index);
     setShowVariacaoModal(true);
@@ -728,15 +742,15 @@ const ProductDetailScreen = () => {
 
   const handleSaveVariacao = () => {
     if (!variacaoForm.nome.trim()) {
-      alert("Nome da variação é obrigatório");
+      adicionarAviso("aviso", "Nome da variação é obrigatório");
       return;
     }
 
     if (editingVariacaoIndex !== null) {
       const newVariacoes = [...productData.variacao];
-      newVariacoes[editingVariacaoIndex] = { 
-        ...newVariacoes[editingVariacaoIndex], 
-        ...variacaoForm 
+      newVariacoes[editingVariacaoIndex] = {
+        ...newVariacoes[editingVariacaoIndex],
+        ...variacaoForm,
       };
       setProductData((prev) => ({ ...prev, variacao: newVariacoes }));
     } else {
@@ -762,35 +776,41 @@ const ProductDetailScreen = () => {
   };
 
   const hasVariations = productData.variacao && productData.variacao.length > 0;
-  
+
   const existingImages = (productData.images || []).filter(
-    img => !deletedImages.includes(img.id_imagem)
+    (img) => !deletedImages.includes(img.id_imagem)
   );
-  const newImagesWithFlag = newImages.map((url, i) => ({ 
-    caminho_arquivo: url, 
+  const newImagesWithFlag = newImages.map((url, i) => ({
+    caminho_arquivo: url,
     isNew: true,
-    tempId: `new-${i}` 
+    tempId: `new-${i}`,
   }));
   const currentImages = [...existingImages, ...newImagesWithFlag];
   const currentImage = currentImages[selectedImageIndex];
 
   const getCurrentEstoque = () => {
     if (hasVariations) {
-      return productData.variacao.reduce((total, v) => total + (v.estoque || 0), 0);
+      return productData.variacao.reduce(
+        (total, v) => total + (v.estoque || 0),
+        0
+      );
     }
     return productData.estoque;
   };
 
   const getCurrentEstoqueMinimo = () => {
     if (hasVariations) {
-      return productData.variacao.reduce((total, v) => total + (v.estoque_minimo || 0), 0);
+      return productData.variacao.reduce(
+        (total, v) => total + (v.estoque_minimo || 0),
+        0
+      );
     }
     return productData.estoque_minimo;
   };
 
   const getImageForIndex = (index) => {
     if (index === null || index === undefined || index < 0) return null;
-    
+
     const allImages = [...currentImages];
     return allImages[index] || null;
   };
@@ -1160,7 +1180,7 @@ const ProductDetailScreen = () => {
 
               {productData.variacao.map((variacao, index) => {
                 const variacaoImage = getImageForIndex(variacao.imagemIndex);
-                
+
                 return (
                   <div key={variacao.id_variacao} style={styles.variacaoCard}>
                     {variacaoImage && (
@@ -1422,7 +1442,10 @@ const ProductDetailScreen = () => {
                         : {}),
                     }}
                     onClick={() =>
-                      setVariacaoForm((prev) => ({ ...prev, imagemIndex: null }))
+                      setVariacaoForm((prev) => ({
+                        ...prev,
+                        imagemIndex: null,
+                      }))
                     }
                   >
                     <div
@@ -1502,46 +1525,12 @@ const ProductDetailScreen = () => {
       )}
 
       {modalDeleteProduto && (
-        <div
-          style={styles.modalOverlay}
-          onClick={() => setModalDeleteProduto(false)}
-        >
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Confirmar Exclusão</h3>
-              <button
-                style={styles.closeButton}
-                onClick={() => setModalDeleteProduto(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <p style={{ color: "var(--text-primary)", marginBottom: "8px" }}>
-              Deseja confirmar a exclusão de:{" "}
-              <strong>{productData.nome}</strong>?
-            </p>
-            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
-              Esses dados não poderão ser recuperados posteriormente.
-            </p>
-            <div style={styles.modalActions}>
-              <button
-                style={styles.cancelButton}
-                onClick={() => setModalDeleteProduto(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                style={{
-                  ...styles.modalSaveButton,
-                  background: "var(--error-500)",
-                }}
-                onClick={deletarProduto}
-              >
-                Confirmar Exclusão
-              </button>
-            </div>
-          </div>
-        </div>
+        <CardConfirmacao
+          text={`Deseja confirmar a exclusão de: ${productData.nome}`}
+          subText={`Esses dados não poderão ser recuperados posteriormente.`}
+          onClose={() => setModalDeleteProduto(false)}
+          action={deletarProduto}
+        />
       )}
     </div>
   );
