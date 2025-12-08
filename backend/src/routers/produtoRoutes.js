@@ -9,6 +9,7 @@ router.get("/lista", produtoControllers.lista);
 
 // Upload de múltiplos arquivos (máximo 20 imagens)
 router.post("/cadastro", upload.array('images', 20), produtoControllers.cadastro);
+router.post("/novaImagem" , upload.array('images', 20) , produtoControllers.novaImagem)
 
 router.put("/editar/:id", upload.array('images', 20), produtoControllers.editar);
 router.delete("/deletar/:id", produtoControllers.deletar);

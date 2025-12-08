@@ -109,6 +109,10 @@ const cadastro = async (produtoData) => {
   });
 };
 
+const novaImagem = async () => {
+
+}
+
 const lista = async () => {
   // Busca produtos
   const produtos = await db("produtos")
@@ -587,6 +591,7 @@ const editarSubcategoria = async (id , subcategoriaData) => {
 
 module.exports = {
   cadastro,
+  novaImagem,
   lista,
   editar,
   deletar,

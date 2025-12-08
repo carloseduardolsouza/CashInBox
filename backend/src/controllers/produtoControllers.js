@@ -160,6 +160,10 @@ const cadastro = async (req, res) => {
   }
 };
 
+const novaImagem = async (req , res) => {
+
+}
+
 const editar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -525,6 +529,7 @@ const deletarSubcategoria = async (req, res) => {
 
 module.exports = {
   cadastro,
+  novaImagem,
   lista,
   editar,
   deletar,
