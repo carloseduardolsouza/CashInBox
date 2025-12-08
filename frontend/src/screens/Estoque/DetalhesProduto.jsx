@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
 import {
   ArrowLeft,
   Edit,
@@ -16,7 +15,8 @@ import {
   Image as ImageIcon,
   Camera,
 } from "lucide-react";
-import estoqueFetch from "../../services/api/estoqueFetch";
+
+const API_URL = "http://localhost:1122";
 
 const styles = {
   container: {
@@ -24,8 +24,7 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: "var(--background)",
     padding: "24px",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
     display: "flex",
@@ -76,7 +75,7 @@ const styles = {
   },
   saveButton: {
     backgroundColor: "var(--primary-color)",
-    color: "var(--text-inverse)",
+    color: "white",
     border: "none",
   },
   deleteButton: {
@@ -124,27 +123,6 @@ const styles = {
     marginBottom: "8px",
     opacity: 0.3,
   },
-  variationChips: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginBottom: "16px",
-  },
-  chip: {
-    padding: "8px 16px",
-    borderRadius: "20px",
-    border: "1px solid var(--surface-border)",
-    backgroundColor: "var(--background)",
-    cursor: "pointer",
-    fontSize: "14px",
-    color: "var(--text-secondary)",
-    transition: "all 0.2s",
-  },
-  chipActive: {
-    backgroundColor: "var(--primary-color)",
-    color: "var(--text-inverse)",
-    borderColor: "var(--primary-color)",
-  },
   addImageButton: {
     width: "100%",
     padding: "12px",
@@ -159,6 +137,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
+    marginTop: "12px",
   },
   infoSection: {
     display: "flex",
@@ -330,6 +309,32 @@ const styles = {
     justifyContent: "center",
     gap: "8px",
   },
+  thumbnailGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "8px",
+    marginTop: "8px",
+  },
+  thumbnail: {
+    width: "100%",
+    paddingTop: "100%",
+    position: "relative",
+    borderRadius: "8px",
+    overflow: "hidden",
+    cursor: "pointer",
+    border: "2px solid var(--surface-border)",
+  },
+  thumbnailActive: {
+    borderColor: "var(--primary-color)",
+  },
+  thumbnailImg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
   modalOverlay: {
     position: "fixed",
     top: 0,
@@ -445,54 +450,43 @@ const styles = {
     justifyContent: "center",
     fontSize: "12px",
   },
-  thumbnailGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "8px",
-    marginTop: "8px",
-  },
-  thumbnail: {
-    width: "100%",
-    paddingTop: "100%",
-    position: "relative",
-    borderRadius: "8px",
-    overflow: "hidden",
-    cursor: "pointer",
-    border: "2px solid var(--surface-border)",
-  },
-  thumbnailActive: {
-    borderColor: "var(--primary-color)",
-  },
-  thumbnailImg: {
+  removeMainImageBtn: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    top: "12px",
+    right: "12px",
+    background: "var(--error-500)",
+    color: "white",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    zIndex: 10,
+    transition: "all 0.2s",
   },
 };
 
 const ProductDetailScreen = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const fileInputRef = useRef(null);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedVariation, setSelectedVariation] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showVariacaoModal, setShowVariacaoModal] = useState(false);
   const [editingVariacaoIndex, setEditingVariacaoIndex] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [newProductImages, setNewProductImages] = useState([]);
-  const [newVariationImages, setNewVariationImages] = useState([]);
-
   const [modalDeleteProduto, setModalDeleteProduto] = useState(false);
 
-  const deletarProduto = async () => {
-    const res = await estoqueFetch.deletar(productData.id_produto);
-    navigate("/estoque/inventario");
-  };
-
-  const navigate = useNavigate();
-
   const [productData, setProductData] = useState({});
+  const [originalData, setOriginalData] = useState({});
+  const [newImages, setNewImages] = useState([]);
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [deletedImages, setDeletedImages] = useState([]);
 
   const [variacaoForm, setVariacaoForm] = useState({
     nome: "",
@@ -503,161 +497,59 @@ const ProductDetailScreen = () => {
     estoque_minimo: "",
   });
 
-  const { id } = useParams();
-
-  const buscarProdutoID = async () => {
-    const produtoResponsse = await estoqueFetch.produtoID(id);
-    setProductData(produtoResponsse);
-  };
-
   useEffect(() => {
     buscarProdutoID();
-  }, []);
+  }, [id]);
 
-  const hasVariations = productData.variacao && productData.variacao.length > 0;
-
-  const getCurrentImages = () => {
-    return productData.images || [];
-  };
-
-  const getCurrentEstoque = () => {
-    if (hasVariations) {
-      let totalEstoque = 0
-      productData.variacao.map((dados) => {
-        totalEstoque += dados.estoque
-      })
-      return totalEstoque
-    }
-    return productData.estoque;
-  };
-
-  const getCurrentEstoqueMinimo = () => {
-    if (hasVariations) {
-      let estoqueMin = 0
-      productData.variacao.map((dados) => {
-        estoqueMin += dados.estoque_minimo
-      })
-      return estoqueMin
-    }
-    return productData.estoque_minimo;
-  };
-
-  const getCurrentCodBarras = () => {
-    if (hasVariations && productData.variacao[selectedVariation]) {
-      return productData.variacao[selectedVariation].cod_barras;
-    }
-    return productData.cod_barras;
-  };
-
-  const getCurrentCodInterno = () => {
-    if (hasVariations && productData.variacao[selectedVariation]) {
-      return productData.variacao[selectedVariation].cod_interno;
-    }
-    return productData.cod_interno;
-  };
-
-  const handleImageUpload = (e, isVariation = false) => {
-    const files = Array.from(e.target.files);
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target.result;
-
-        if (isVariation) {
-          setNewVariationImages((prev) => [
-            ...prev,
-            { image: base64, principal: prev.length === 0 },
-          ]);
-        } else {
-          setNewProductImages((prev) => [
-            ...prev,
-            { image: base64, principal: prev.length === 0 },
-          ]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeNewImage = (index, isVariation = false) => {
-    if (isVariation) {
-      setNewVariationImages((prev) => prev.filter((_, i) => i !== index));
-    } else {
-      setNewProductImages((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleSave = async () => {
+  const buscarProdutoID = async () => {
     try {
-      setLoading(true);
-
-      const dataToSend = {
-        nome: productData.nome,
-        descricao: productData.descricao || "",
-        cod_barras: hasVariations ? "" : productData.cod_barras || "",
-        preco_custo: parseFloat(productData.preco_custo),
-        preco_venda: parseFloat(productData.preco_venda),
-        margem: parseFloat(productData.margem),
-        id_categoria: productData.id_categoria,
-        id_subcategoria: productData.id_subcategoria,
-        variacao: [],
-        images: [],
-      };
-
-      if (hasVariations) {
-        dataToSend.variacao = productData.variacao.map((v) => ({
-          nome: v.nome,
-          tipo: v.tipo || "",
-          cod_interno: v.cod_interno || "",
-          cod_barras: v.cod_barras || "",
-          estoque: parseInt(v.estoque) || 0,
-          estoque_minimo: parseInt(v.estoque_minimo) || 0,
-          images: v.images
-            ? v.images.map((img) => ({
-                image: img.caminho_arquivo || "",
-                principal: img.principal || false,
-              }))
-            : [],
-        }));
-      } else {
-        dataToSend.images = productData.images
-          ? productData.images.map((img) => ({
-              image: img.caminho_arquivo || "",
-              principal: img.principal || false,
-            }))
-          : [];
-
-        if (newProductImages.length > 0) {
-          dataToSend.images = [...dataToSend.images, ...newProductImages];
-        }
+      const res = await fetch(`${API_URL}/produto/lista`);
+      const data = await res.json();
+      const produto = data.data.find((p) => Number(p.id_produto) === Number(id));
+      
+      if (produto) {
+        setProductData(produto);
+        setOriginalData(JSON.parse(JSON.stringify(produto)));
       }
-
-      console.log(
-        "Dados a serem enviados:",
-        JSON.stringify(dataToSend, null, 2)
-      );
-
-      // Aqui você faria a chamada real para a API
-      // const response = await estoqueFetch.updateProduto(productData.id_produto, dataToSend);
-
-      alert("Produto atualizado com sucesso!");
-      setIsEditing(false);
-      setNewProductImages([]);
-      setNewVariationImages([]);
     } catch (error) {
-      console.error("Erro ao salvar produto:", error);
-      alert("Erro ao salvar produto");
-    } finally {
-      setLoading(false);
+      console.error("Erro ao buscar produto:", error);
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setNewProductImages([]);
-    setNewVariationImages([]);
-    // Aqui você recarregaria os dados originais
+  const deletarProduto = async () => {
+    try {
+      await fetch(`${API_URL}/produto/deletar/${productData.id_produto}`, {
+        method: "DELETE",
+      });
+      navigate("/estoque/inventario");
+    } catch (error) {
+      console.error("Erro ao deletar produto:", error);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newImageURLs = files.map((file) => URL.createObjectURL(file));
+    setNewImages([...newImages, ...newImageURLs]);
+    setNewImageFiles([...newImageFiles, ...files]);
+  };
+
+  const removeNewImage = (index) => {
+    setNewImages(newImages.filter((_, i) => i !== index));
+    setNewImageFiles(newImageFiles.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (imageId) => {
+    // Adiciona o ID da imagem à lista de imagens a serem deletadas
+    setDeletedImages([...deletedImages, imageId]);
+    
+    // Remove a imagem visualmente do productData
+    setProductData((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img.id_imagem !== imageId),
+    }));
   };
 
   const calculatePrices = (field, value) => {
@@ -671,8 +563,7 @@ const ProductDetailScreen = () => {
         preco_venda: parseFloat(newPrecoVenda.toFixed(2)),
       }));
     } else if (field === "margem") {
-      const newPrecoVenda =
-        productData.preco_custo + (productData.preco_custo * numValue) / 100;
+      const newPrecoVenda = productData.preco_custo + (productData.preco_custo * numValue) / 100;
       setProductData((prev) => ({
         ...prev,
         margem: numValue,
@@ -681,8 +572,7 @@ const ProductDetailScreen = () => {
     } else if (field === "preco_venda") {
       const newMargem =
         productData.preco_custo > 0
-          ? ((numValue - productData.preco_custo) / productData.preco_custo) *
-            100
+          ? ((numValue - productData.preco_custo) / productData.preco_custo) * 100
           : 0;
       setProductData((prev) => ({
         ...prev,
@@ -690,6 +580,84 @@ const ProductDetailScreen = () => {
         margem: parseFloat(newMargem.toFixed(2)),
       }));
     }
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+
+      // Dados básicos do produto
+      formData.append("nome", productData.nome);
+      formData.append("descricao", productData.descricao || "");
+      formData.append("cod_barras", productData.cod_barras || "");
+      formData.append("preco_custo", parseFloat(productData.preco_custo) || 0);
+      formData.append("preco_venda", parseFloat(productData.preco_venda) || 0);
+      formData.append("margem", parseFloat(productData.margem) || 0);
+      formData.append("id_categoria", productData.id_categoria || null);
+      formData.append("id_subcategoria", productData.id_subcategoria || null);
+      formData.append("estoque", productData.estoque || 0);
+      formData.append("estoque_minimo", productData.estoque_minimo || 0);
+      formData.append("ativo", productData.ativo);
+
+      // Adicionar IDs das imagens existentes que devem ser mantidas
+      const imagensExistentes = (productData.images || [])
+        .filter(img => img.id_imagem) // Apenas imagens que já existem no banco
+        .map(img => img.id_imagem);
+      
+      formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
+
+      // Adicionar IDs das imagens a serem deletadas
+      formData.append("imagensDeletar", JSON.stringify(deletedImages));
+
+      // Adicionar novas imagens
+      newImageFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      // Variações
+      const variacoesFormatadas = (productData.variacao || []).map((v) => ({
+        nome: v.nome || "",
+        tipo: v.tipo || "",
+        cod_interno: v.cod_interno || "",
+        cod_barras: v.cod_barras || "",
+        estoque: v.estoque || 0,
+        estoque_minimo: v.estoque_minimo || 0,
+        imagemIndex: null,
+      }));
+
+      formData.append("variacoes", JSON.stringify(variacoesFormatadas));
+
+      const response = await fetch(`${API_URL}/produto/editar/${productData.id_produto}`, {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert("Produto atualizado com sucesso!");
+        setIsEditing(false);
+        setNewImages([]);
+        setNewImageFiles([]);
+        setDeletedImages([]);
+        buscarProdutoID();
+      } else {
+        throw new Error("Erro ao atualizar produto");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar produto:", error);
+      alert("Erro ao salvar produto");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setProductData(JSON.parse(JSON.stringify(originalData)));
+    setNewImages([]);
+    setNewImageFiles([]);
+    setDeletedImages([]);
+    setIsEditing(false);
   };
 
   const openVariacaoModal = () => {
@@ -701,7 +669,6 @@ const ProductDetailScreen = () => {
       estoque: "",
       estoque_minimo: "",
     });
-    setNewVariationImages([]);
     setEditingVariacaoIndex(null);
     setShowVariacaoModal(true);
   };
@@ -716,7 +683,6 @@ const ProductDetailScreen = () => {
       estoque: variacao.estoque,
       estoque_minimo: variacao.estoque_minimo,
     });
-    setNewVariationImages([]);
     setEditingVariacaoIndex(index);
     setShowVariacaoModal(true);
   };
@@ -729,27 +695,19 @@ const ProductDetailScreen = () => {
 
     if (editingVariacaoIndex !== null) {
       const newVariacoes = [...productData.variacao];
-      newVariacoes[editingVariacaoIndex] = {
-        ...newVariacoes[editingVariacaoIndex],
-        ...variacaoForm,
-      };
+      newVariacoes[editingVariacaoIndex] = { ...newVariacoes[editingVariacaoIndex], ...variacaoForm };
       setProductData((prev) => ({ ...prev, variacao: newVariacoes }));
     } else {
       setProductData((prev) => ({
         ...prev,
         variacao: [
-          ...prev.variacao,
-          {
-            id_variacao: Date.now(),
-            ...variacaoForm,
-            images: newVariationImages.length > 0 ? newVariationImages : [],
-          },
+          ...(prev.variacao || []),
+          { id_variacao: Date.now(), ...variacaoForm, images: [] },
         ],
       }));
     }
 
     setShowVariacaoModal(false);
-    setNewVariationImages([]);
   };
 
   const handleDeleteVariacao = (index) => {
@@ -758,31 +716,40 @@ const ProductDetailScreen = () => {
         ...prev,
         variacao: prev.variacao.filter((_, i) => i !== index),
       }));
-      if (selectedVariation >= productData.variacao.length - 1) {
-        setSelectedVariation(Math.max(0, productData.variacao.length - 2));
-      }
     }
   };
 
-  const currentImages = getCurrentImages();
-  const currentImage = currentImages[selectedImageIndex]?.caminho_arquivo;
+  const hasVariations = productData.variacao && productData.variacao.length > 0;
+  
+  // Combina imagens existentes (não deletadas) com novas imagens
+  const existingImages = (productData.images || []).filter(img => !deletedImages.includes(img.id_imagem));
+  const newImagesWithFlag = newImages.map((url, i) => ({ 
+    caminho_arquivo: url, 
+    isNew: true,
+    tempId: `new-${i}` 
+  }));
+  const currentImages = [...existingImages, ...newImagesWithFlag];
+  const currentImage = currentImages[selectedImageIndex];
+
+  const getCurrentEstoque = () => {
+    if (hasVariations) {
+      return productData.variacao.reduce((total, v) => total + (v.estoque || 0), 0);
+    }
+    return productData.estoque;
+  };
+
+  const getCurrentEstoqueMinimo = () => {
+    if (hasVariations) {
+      return productData.variacao.reduce((total, v) => total + (v.estoque_minimo || 0), 0);
+    }
+    return productData.estoque_minimo;
+  };
 
   return (
     <div style={styles.container}>
-      {modalDeleteProduto && (
-        <CardConfirmacao
-          text={`Deseja confirma a exclusão de: ${productData.nome} ?`}
-          subText={`esses dados não poderam ser recuperados posteriormente`}
-          onClose={() => setModalDeleteProduto(false)}
-          action={deletarProduto}
-        />
-      )}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <button
-            style={styles.backButton}
-            onClick={() => navigate("/estoque/inventario")}
-          >
+          <button style={styles.backButton} onClick={() => navigate("/estoque/inventario")}>
             <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
           <h1 style={styles.title}>Detalhes do Produto</h1>
@@ -790,10 +757,7 @@ const ProductDetailScreen = () => {
         <div style={styles.headerRight}>
           {!isEditing ? (
             <>
-              <button
-                style={styles.iconButton}
-                onClick={() => setIsEditing(true)}
-              >
+              <button style={styles.iconButton} onClick={() => setIsEditing(true)}>
                 <Edit size={18} />
                 <span>Editar</span>
               </button>
@@ -828,11 +792,35 @@ const ProductDetailScreen = () => {
         <div style={styles.imageSection}>
           <div style={styles.mainImage}>
             {currentImage ? (
-              <img
-                src={`http://localhost:1122${currentImage}`}
-                alt="Produto"
-                style={styles.productImage}
-              />
+              <>
+                <img
+                  src={currentImage.isNew ? currentImage.caminho_arquivo : `${API_URL}${currentImage.caminho_arquivo}`}
+                  alt="Produto"
+                  style={styles.productImage}
+                />
+                {isEditing && (
+                  <button
+                    style={styles.removeMainImageBtn}
+                    onClick={() => {
+                      if (currentImage.isNew) {
+                        // Remove imagem nova
+                        const newIndex = newImages.findIndex(img => img === currentImage.caminho_arquivo);
+                        if (newIndex !== -1) {
+                          removeNewImage(newIndex);
+                          setSelectedImageIndex(Math.max(0, selectedImageIndex - 1));
+                        }
+                      } else {
+                        // Remove imagem existente
+                        removeExistingImage(currentImage.id_imagem);
+                        setSelectedImageIndex(Math.max(0, selectedImageIndex - 1));
+                      }
+                    }}
+                    title="Remover imagem"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </>
             ) : (
               <div style={styles.noImage}>
                 <div style={styles.noImageIcon}>
@@ -847,20 +835,48 @@ const ProductDetailScreen = () => {
             <div style={styles.thumbnailGrid}>
               {currentImages.map((img, index) => (
                 <div
-                  key={img.id_imagem || index}
+                  key={img.id_imagem || img.tempId || index}
                   style={{
                     ...styles.thumbnail,
-                    ...(selectedImageIndex === index
-                      ? styles.thumbnailActive
-                      : {}),
+                    ...(selectedImageIndex === index ? styles.thumbnailActive : {}),
+                    position: 'relative',
                   }}
-                  onClick={() => setSelectedImageIndex(index)}
                 >
-                  <img
-                    src={`http://localhost:1122${img.caminho_arquivo}`}
-                    alt={`Thumbnail ${index + 1}`}
-                    style={styles.thumbnailImg}
-                  />
+                  <div
+                    onClick={() => setSelectedImageIndex(index)}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    <img
+                      src={img.isNew ? img.caminho_arquivo : `${API_URL}${img.caminho_arquivo}`}
+                      alt={`Thumbnail ${index + 1}`}
+                      style={styles.thumbnailImg}
+                    />
+                  </div>
+                  {isEditing && (
+                    <button
+                      style={styles.removeImageBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (img.isNew) {
+                          const newIndex = newImages.findIndex(newImg => newImg === img.caminho_arquivo);
+                          if (newIndex !== -1) {
+                            removeNewImage(newIndex);
+                            if (selectedImageIndex >= currentImages.length - 1) {
+                              setSelectedImageIndex(Math.max(0, currentImages.length - 2));
+                            }
+                          }
+                        } else {
+                          removeExistingImage(img.id_imagem);
+                          if (selectedImageIndex >= currentImages.length - 1) {
+                            setSelectedImageIndex(Math.max(0, currentImages.length - 2));
+                          }
+                        }
+                      }}
+                      title="Remover"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -869,40 +885,17 @@ const ProductDetailScreen = () => {
           {isEditing && (
             <>
               <input
+                ref={fileInputRef}
                 type="file"
-                id="productImages"
                 multiple
                 accept="image/*"
                 style={{ display: "none" }}
-                onChange={(e) => handleImageUpload(e, false)}
+                onChange={handleImageChange}
               />
-              <button
-                style={styles.addImageButton}
-                onClick={() => document.getElementById("productImages").click()}
-              >
+              <button style={styles.addImageButton} onClick={() => fileInputRef.current?.click()}>
                 <ImageIcon size={18} />
                 Adicionar Imagens
               </button>
-
-              {newProductImages.length > 0 && (
-                <div style={styles.imagePreview}>
-                  {newProductImages.map((img, index) => (
-                    <div key={index} style={styles.imagePreviewItem}>
-                      <img
-                        src={img.image}
-                        alt={`Nova ${index}`}
-                        style={styles.imagePreviewImg}
-                      />
-                      <button
-                        style={styles.removeImageBtn}
-                        onClick={() => removeNewImage(index, false)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -919,13 +912,8 @@ const ProductDetailScreen = () => {
                 {isEditing ? (
                   <input
                     style={styles.input}
-                    value={productData.nome}
-                    onChange={(e) =>
-                      setProductData((prev) => ({
-                        ...prev,
-                        nome: e.target.value,
-                      }))
-                    }
+                    value={productData.nome || ""}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, nome: e.target.value }))}
                   />
                 ) : (
                   <span style={styles.value}>{productData.nome}</span>
@@ -937,26 +925,14 @@ const ProductDetailScreen = () => {
                 {isEditing ? (
                   <select
                     style={styles.input}
-                    value={productData.ativo}
-                    onChange={(e) =>
-                      setProductData((prev) => ({
-                        ...prev,
-                        ativo: parseInt(e.target.value),
-                      }))
-                    }
+                    value={productData.ativo ? 1 : 0}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, ativo: parseInt(e.target.value) === 1 }))}
                   >
                     <option value={1}>Ativo</option>
                     <option value={0}>Inativo</option>
                   </select>
                 ) : (
-                  <span
-                    style={{
-                      ...styles.badge,
-                      ...(productData.ativo
-                        ? styles.badgeSuccess
-                        : styles.badgeError),
-                    }}
-                  >
+                  <span style={{ ...styles.badge, ...(productData.ativo ? styles.badgeSuccess : styles.badgeError) }}>
                     {productData.ativo ? "Ativo" : "Inativo"}
                   </span>
                 )}
@@ -967,73 +943,22 @@ const ProductDetailScreen = () => {
                 {isEditing ? (
                   <input
                     style={styles.input}
-                    value={getCurrentCodBarras() || ""}
-                    onChange={(e) => {
-                      if (hasVariations) {
-                        const newVariacoes = [...productData.variacao];
-                        newVariacoes[selectedVariation].cod_barras =
-                          e.target.value;
-                        setProductData((prev) => ({
-                          ...prev,
-                          variacao: newVariacoes,
-                        }));
-                      } else {
-                        setProductData((prev) => ({
-                          ...prev,
-                          cod_barras: e.target.value,
-                        }));
-                      }
-                    }}
+                    value={productData.cod_barras || ""}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, cod_barras: e.target.value }))}
                   />
                 ) : (
-                  <span style={styles.value}>
-                    {getCurrentCodBarras() || "—"}
-                  </span>
-                )}
-              </div>
-
-              <div style={styles.infoItem}>
-                <span style={styles.label}>Código Interno</span>
-                {isEditing ? (
-                  <input
-                    style={styles.input}
-                    value={getCurrentCodInterno() || ""}
-                    onChange={(e) => {
-                      if (hasVariations) {
-                        const newVariacoes = [...productData.variacao];
-                        newVariacoes[selectedVariation].cod_interno =
-                          e.target.value;
-                        setProductData((prev) => ({
-                          ...prev,
-                          variacao: newVariacoes,
-                        }));
-                      } else {
-                        setProductData((prev) => ({
-                          ...prev,
-                          cod_interno: e.target.value,
-                        }));
-                      }
-                    }}
-                  />
-                ) : (
-                  <span style={styles.value}>
-                    {getCurrentCodInterno() || "—"}
-                  </span>
+                  <span style={styles.value}>{productData.cod_barras || "—"}</span>
                 )}
               </div>
 
               <div style={styles.infoItem}>
                 <span style={styles.label}>Categoria</span>
-                <span style={styles.value}>
-                  {productData.categoria_nome || "—"}
-                </span>
+                <span style={styles.value}>{productData.categoria_nome || "—"}</span>
               </div>
 
               <div style={styles.infoItem}>
                 <span style={styles.label}>Subcategoria</span>
-                <span style={styles.value}>
-                  {productData.subcategoria_nome || "—"}
-                </span>
+                <span style={styles.value}>{productData.subcategoria_nome || "—"}</span>
               </div>
 
               <div style={{ ...styles.infoItem, gridColumn: "1 / -1" }}>
@@ -1041,18 +966,11 @@ const ProductDetailScreen = () => {
                 {isEditing ? (
                   <textarea
                     style={{ ...styles.input, ...styles.textarea }}
-                    value={productData.descricao}
-                    onChange={(e) =>
-                      setProductData((prev) => ({
-                        ...prev,
-                        descricao: e.target.value,
-                      }))
-                    }
+                    value={productData.descricao || ""}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, descricao: e.target.value }))}
                   />
                 ) : (
-                  <span style={styles.value}>
-                    {productData.descricao || "—"}
-                  </span>
+                  <span style={styles.value}>{productData.descricao || "—"}</span>
                 )}
               </div>
             </div>
@@ -1070,28 +988,11 @@ const ProductDetailScreen = () => {
                   <input
                     type="number"
                     style={styles.input}
-                    value={getCurrentEstoque()}
-                    onChange={(e) => {
-                      if (hasVariations) {
-                        const newVariacoes = [...productData.variacao];
-                        newVariacoes[selectedVariation].estoque =
-                          parseInt(e.target.value) || 0;
-                        setProductData((prev) => ({
-                          ...prev,
-                          variacao: newVariacoes,
-                        }));
-                      } else {
-                        setProductData((prev) => ({
-                          ...prev,
-                          estoque: parseInt(e.target.value) || 0,
-                        }));
-                      }
-                    }}
+                    value={productData.estoque || 0}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, estoque: parseInt(e.target.value) || 0 }))}
                   />
                 ) : (
-                  <span style={styles.value}>
-                    {getCurrentEstoque()} unidades
-                  </span>
+                  <span style={styles.value}>{getCurrentEstoque()} unidades</span>
                 )}
               </div>
               <div style={styles.infoItem}>
@@ -1100,28 +1001,11 @@ const ProductDetailScreen = () => {
                   <input
                     type="number"
                     style={styles.input}
-                    value={getCurrentEstoqueMinimo()}
-                    onChange={(e) => {
-                      if (hasVariations) {
-                        const newVariacoes = [...productData.variacao];
-                        newVariacoes[selectedVariation].estoque_minimo =
-                          parseInt(e.target.value) || 0;
-                        setProductData((prev) => ({
-                          ...prev,
-                          variacao: newVariacoes,
-                        }));
-                      } else {
-                        setProductData((prev) => ({
-                          ...prev,
-                          estoque_minimo: parseInt(e.target.value) || 0,
-                        }));
-                      }
-                    }}
+                    value={productData.estoque_minimo || 0}
+                    onChange={(e) => setProductData((prev) => ({ ...prev, estoque_minimo: parseInt(e.target.value) || 0 }))}
                   />
                 ) : (
-                  <span style={styles.value}>
-                    {getCurrentEstoqueMinimo()} unidades
-                  </span>
+                  <span style={styles.value}>{getCurrentEstoqueMinimo()} unidades</span>
                 )}
               </div>
             </div>
@@ -1129,14 +1013,7 @@ const ProductDetailScreen = () => {
 
           {hasVariations && (
             <div style={styles.card}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "16px",
-                }}
-              >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <h2 style={{ ...styles.cardTitle, marginBottom: 0 }}>
                   <Tag size={18} />
                   Variações do Produto
@@ -1145,51 +1022,32 @@ const ProductDetailScreen = () => {
 
               {productData.variacao.map((variacao, index) => (
                 <div key={variacao.id_variacao} style={styles.variacaoCard}>
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      marginRight: "12px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <img
-                      src={`http://localhost:1122${variacao.images[0].caminho_arquivo}`}
-                      alt={variacao.nome}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
+                  {variacao.images && variacao.images.length > 0 && (
+                    <div style={{ width: "60px", height: "60px", borderRadius: "8px", overflow: "hidden", marginRight: "12px", flexShrink: 0 }}>
+                      <img
+                        src={`${API_URL}${variacao.images[0].caminho_arquivo}`}
+                        alt={variacao.nome}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                  )}
 
                   <div style={styles.variacaoInfo}>
                     <div style={styles.variacaoNome}>{variacao.nome}</div>
                     <div style={styles.variacaoDetalhes}>
                       {variacao.tipo && `Tipo: ${variacao.tipo}`}
-                      {variacao.cod_interno &&
-                        ` • Cód. Interno: ${variacao.cod_interno}`}
+                      {variacao.cod_interno && ` • Cód. Interno: ${variacao.cod_interno}`}
                     </div>
                     <div style={styles.variacaoDetalhes}>
-                      Estoque: {variacao.estoque} • Mín:{" "}
-                      {variacao.estoque_minimo}
+                      Estoque: {variacao.estoque} • Mín: {variacao.estoque_minimo}
                     </div>
                   </div>
                   {isEditing && (
                     <div style={styles.variacaoActions}>
-                      <button
-                        style={styles.editButton}
-                        onClick={() => handleEditVariacao(index)}
-                      >
+                      <button style={styles.editButton} onClick={() => handleEditVariacao(index)}>
                         <Edit size={14} />
                       </button>
-                      <button
-                        style={styles.deleteVariacaoButton}
-                        onClick={() => handleDeleteVariacao(index)}
-                      >
+                      <button style={styles.deleteVariacaoButton} onClick={() => handleDeleteVariacao(index)}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -1198,10 +1056,7 @@ const ProductDetailScreen = () => {
               ))}
 
               {isEditing && (
-                <button
-                  style={styles.addVariacaoButton}
-                  onClick={openVariacaoModal}
-                >
+                <button style={styles.addVariacaoButton} onClick={openVariacaoModal}>
                   <Plus size={18} />
                   Adicionar Variação
                 </button>
@@ -1222,11 +1077,11 @@ const ProductDetailScreen = () => {
               type="number"
               step="0.01"
               style={{ ...styles.input, ...styles.metricInput }}
-              value={productData.preco_custo}
+              value={productData.preco_custo || 0}
               onChange={(e) => calculatePrices("preco_custo", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>R$ {productData.preco_custo}</div>
+            <div style={styles.metricValue}>R$ {parseFloat(productData.preco_custo || 0).toFixed(2)}</div>
           )}
         </div>
 
@@ -1240,11 +1095,11 @@ const ProductDetailScreen = () => {
               type="number"
               step="0.01"
               style={{ ...styles.input, ...styles.metricInput }}
-              value={productData.margem}
+              value={productData.margem || 0}
               onChange={(e) => calculatePrices("margem", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>{productData.margem}%</div>
+            <div style={styles.metricValue}>{parseFloat(productData.margem || 0).toFixed(2)}%</div>
           )}
         </div>
 
@@ -1258,31 +1113,23 @@ const ProductDetailScreen = () => {
               type="number"
               step="0.01"
               style={{ ...styles.input, ...styles.metricInput }}
-              value={productData.preco_venda}
+              value={productData.preco_venda || 0}
               onChange={(e) => calculatePrices("preco_venda", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>R$ {productData.preco_venda}</div>
+            <div style={styles.metricValue}>R$ {parseFloat(productData.preco_venda || 0).toFixed(2)}</div>
           )}
         </div>
       </div>
 
       {showVariacaoModal && (
-        <div
-          style={styles.modalOverlay}
-          onClick={() => setShowVariacaoModal(false)}
-        >
+        <div style={styles.modalOverlay} onClick={() => setShowVariacaoModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>
-                {editingVariacaoIndex !== null
-                  ? "Editar Variação"
-                  : "Nova Variação"}
+                {editingVariacaoIndex !== null ? "Editar Variação" : "Nova Variação"}
               </h3>
-              <button
-                style={styles.closeButton}
-                onClick={() => setShowVariacaoModal(false)}
-              >
+              <button style={styles.closeButton} onClick={() => setShowVariacaoModal(false)}>
                 <X size={20} />
               </button>
             </div>
@@ -1294,12 +1141,7 @@ const ProductDetailScreen = () => {
                   style={styles.input}
                   placeholder="Ex: Chocolate, Baunilha..."
                   value={variacaoForm.nome}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      nome: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, nome: e.target.value }))}
                 />
               </div>
 
@@ -1309,12 +1151,7 @@ const ProductDetailScreen = () => {
                   style={styles.input}
                   placeholder="Ex: Sabor, Cor..."
                   value={variacaoForm.tipo}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      tipo: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, tipo: e.target.value }))}
                 />
               </div>
 
@@ -1323,12 +1160,7 @@ const ProductDetailScreen = () => {
                 <input
                   style={styles.input}
                   value={variacaoForm.cod_interno}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      cod_interno: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, cod_interno: e.target.value }))}
                 />
               </div>
 
@@ -1337,12 +1169,7 @@ const ProductDetailScreen = () => {
                 <input
                   style={styles.input}
                   value={variacaoForm.cod_barras}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      cod_barras: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, cod_barras: e.target.value }))}
                 />
               </div>
 
@@ -1352,12 +1179,7 @@ const ProductDetailScreen = () => {
                   type="number"
                   style={styles.input}
                   value={variacaoForm.estoque}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      estoque: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, estoque: e.target.value }))}
                 />
               </div>
 
@@ -1367,34 +1189,47 @@ const ProductDetailScreen = () => {
                   type="number"
                   style={styles.input}
                   value={variacaoForm.estoque_minimo}
-                  onChange={(e) =>
-                    setVariacaoForm((prev) => ({
-                      ...prev,
-                      estoque_minimo: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, estoque_minimo: e.target.value }))}
                 />
-              </div>
-
-              <div style={{ ...styles.infoItem, ...styles.fullWidth }}>
-                <label style={styles.label}>Imagens da Associada</label>
-                <select></select>
-
               </div>
             </div>
 
             <div style={styles.modalActions}>
-              <button
-                style={styles.cancelButton}
-                onClick={() => setShowVariacaoModal(false)}
-              >
+              <button style={styles.cancelButton} onClick={() => setShowVariacaoModal(false)}>
+                Cancelar
+              </button>
+              <button style={styles.modalSaveButton} onClick={handleSaveVariacao}>
+                Salvar Variação
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalDeleteProduto && (
+        <div style={styles.modalOverlay} onClick={() => setModalDeleteProduto(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.modalTitle}>Confirmar Exclusão</h3>
+              <button style={styles.closeButton} onClick={() => setModalDeleteProduto(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ color: "var(--text-primary)", marginBottom: "8px" }}>
+              Deseja confirmar a exclusão de: <strong>{productData.nome}</strong>?
+            </p>
+            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+              Esses dados não poderão ser recuperados posteriormente.
+            </p>
+            <div style={styles.modalActions}>
+              <button style={styles.cancelButton} onClick={() => setModalDeleteProduto(false)}>
                 Cancelar
               </button>
               <button
-                style={styles.modalSaveButton}
-                onClick={handleSaveVariacao}
+                style={{ ...styles.modalSaveButton, background: "var(--error-500)" }}
+                onClick={deletarProduto}
               >
-                Salvar Variação
+                Confirmar Exclusão
               </button>
             </div>
           </div>
