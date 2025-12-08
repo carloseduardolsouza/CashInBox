@@ -245,14 +245,15 @@ const editar = async (req, res) => {
     // Preparar imagens do produto
     const imagesProduto = novasImagens.map((filename, index) => ({
       caminho_arquivo: filename,
-      principal: index === 0 && imagensExistentes.length === 0 // Primeira imagem nova é principal se não há existentes
+      principal: index === 0 && imagensExistentes.length === 0
     }));
 
-    // Processar variações
+    // Processar variações MANTENDO OS IDs EXISTENTES
     const variacoes = [];
     if (temVariacoes) {
       variacoesData.forEach((variacao) => {
         const variacaoData = {
+          id_variacao: variacao.id_variacao || null, // ✅ PRESERVA O ID SE EXISTIR
           nome: variacao.nome || "",
           tipo: variacao.tipo || "",
           cod_interno: variacao.cod_interno || "",
@@ -276,13 +277,13 @@ const editar = async (req, res) => {
       });
     }
 
-    // Objeto final com informações de gerenciamento de imagens
+    // Objeto final
     const produtoCompleto = {
       ...dadosProduto,
       images: imagesProduto,
       variacao: variacoes,
-      imagensExistentes, // IDs das imagens a manter
-      imagensDeletar // IDs das imagens a deletar
+      imagensExistentes,
+      imagensDeletar
     };
 
     // Atualiza no banco

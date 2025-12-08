@@ -506,10 +506,8 @@ const ProductDetailScreen = () => {
     try {
       const res = await fetch(`${API_URL}/produto/lista`);
       const data = await res.json();
-      const produto = data.data.find(
-        (p) => Number(p.id_produto) === Number(id)
-      );
-
+      const produto = data.data.find((p) => Number(p.id_produto) === Number(id));
+      
       if (produto) {
         setProductData(produto);
         setOriginalData(JSON.parse(JSON.stringify(produto)));
@@ -547,7 +545,7 @@ const ProductDetailScreen = () => {
   const removeExistingImage = (imageId) => {
     // Adiciona o ID da imagem à lista de imagens a serem deletadas
     setDeletedImages([...deletedImages, imageId]);
-
+    
     // Remove a imagem visualmente do productData
     setProductData((prev) => ({
       ...prev,
@@ -566,8 +564,7 @@ const ProductDetailScreen = () => {
         preco_venda: parseFloat(newPrecoVenda.toFixed(2)),
       }));
     } else if (field === "margem") {
-      const newPrecoVenda =
-        productData.preco_custo + (productData.preco_custo * numValue) / 100;
+      const newPrecoVenda = productData.preco_custo + (productData.preco_custo * numValue) / 100;
       setProductData((prev) => ({
         ...prev,
         margem: numValue,
@@ -576,8 +573,7 @@ const ProductDetailScreen = () => {
     } else if (field === "preco_venda") {
       const newMargem =
         productData.preco_custo > 0
-          ? ((numValue - productData.preco_custo) / productData.preco_custo) *
-            100
+          ? ((numValue - productData.preco_custo) / productData.preco_custo) * 100
           : 0;
       setProductData((prev) => ({
         ...prev,
@@ -608,9 +604,9 @@ const ProductDetailScreen = () => {
 
       // IDs das imagens existentes que devem ser mantidas
       const imagensExistentes = (productData.images || [])
-        .filter((img) => img.id_imagem) // Apenas imagens que já existem no banco
-        .map((img) => img.id_imagem);
-
+        .filter(img => img.id_imagem) // Apenas imagens que já existem no banco
+        .map(img => img.id_imagem);
+      
       formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
 
       // IDs das imagens a serem deletadas
@@ -621,8 +617,9 @@ const ProductDetailScreen = () => {
         formData.append("images", file);
       });
 
-      // Variações
+      // ✅ Variações COM id_variacao PRESERVADO
       const variacoesFormatadas = (productData.variacao || []).map((v) => ({
+        id_variacao: v.id_variacao || null, // ✅ ENVIA O ID SE EXISTIR
         nome: v.nome || "",
         tipo: v.tipo || "",
         cod_interno: v.cod_interno || "",
@@ -639,14 +636,12 @@ const ProductDetailScreen = () => {
       console.log("- Imagens existentes:", imagensExistentes.length);
       console.log("- Imagens a deletar:", deletedImages.length);
       console.log("- Novas imagens:", newImageFiles.length);
+      console.log("- Variações:", variacoesFormatadas.map(v => ({ id: v.id_variacao, nome: v.nome })));
 
-      const response = await fetch(
-        `${API_URL}/produto/editar/${productData.id_produto}`,
-        {
-          method: "PUT",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_URL}/produto/editar/${productData.id_produto}`, {
+        method: "PUT",
+        body: formData,
+      });
 
       if (response.ok) {
         alert("Produto atualizado com sucesso!");
@@ -712,9 +707,9 @@ const ProductDetailScreen = () => {
 
     if (editingVariacaoIndex !== null) {
       const newVariacoes = [...productData.variacao];
-      newVariacoes[editingVariacaoIndex] = {
-        ...newVariacoes[editingVariacaoIndex],
-        ...variacaoForm,
+      newVariacoes[editingVariacaoIndex] = { 
+        ...newVariacoes[editingVariacaoIndex], 
+        ...variacaoForm 
       };
       setProductData((prev) => ({ ...prev, variacao: newVariacoes }));
     } else {
@@ -740,35 +735,29 @@ const ProductDetailScreen = () => {
   };
 
   const hasVariations = productData.variacao && productData.variacao.length > 0;
-
+  
   // Combina imagens existentes (não deletadas) com novas imagens
   const existingImages = (productData.images || []).filter(
-    (img) => !deletedImages.includes(img.id_imagem)
+    img => !deletedImages.includes(img.id_imagem)
   );
-  const newImagesWithFlag = newImages.map((url, i) => ({
-    caminho_arquivo: url,
+  const newImagesWithFlag = newImages.map((url, i) => ({ 
+    caminho_arquivo: url, 
     isNew: true,
-    tempId: `new-${i}`,
+    tempId: `new-${i}` 
   }));
   const currentImages = [...existingImages, ...newImagesWithFlag];
   const currentImage = currentImages[selectedImageIndex];
 
   const getCurrentEstoque = () => {
     if (hasVariations) {
-      return productData.variacao.reduce(
-        (total, v) => total + (v.estoque || 0),
-        0
-      );
+      return productData.variacao.reduce((total, v) => total + (v.estoque || 0), 0);
     }
     return productData.estoque;
   };
 
   const getCurrentEstoqueMinimo = () => {
     if (hasVariations) {
-      return productData.variacao.reduce(
-        (total, v) => total + (v.estoque_minimo || 0),
-        0
-      );
+      return productData.variacao.reduce((total, v) => total + (v.estoque_minimo || 0), 0);
     }
     return productData.estoque_minimo;
   };
