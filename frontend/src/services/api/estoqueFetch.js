@@ -85,12 +85,9 @@ const deletar = async (id) => {
 
 const editar = async (id , dados) => {
   try {
-    const res = await fetch(API_URL + `/cliente/editar/${id}`, {
+    const res = await fetch(API_URL + `/produto/editar/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(dados)
+      body: dados
     });
 
     if (!res.ok) {
@@ -100,7 +97,7 @@ const editar = async (id , dados) => {
 
     return await res.json(); // retorna o JSON da API
   } catch (err) {
-    console.error("Erro ao editar cliente:", err);
+    console.error("Erro ao editar produto:", err);
     throw err;
   }
 };

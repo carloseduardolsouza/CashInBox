@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
+import Select from "react-select";
 import estoqueFetch from "../../services/api/estoqueFetch";
 import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
 import AppContext from "../../context/AppContext";
@@ -542,15 +543,12 @@ const ProductDetailScreen = () => {
 
   const buscarProdutoID = async () => {
     try {
-      const res = await fetch(`${API_URL}/produto/lista`);
-      const data = await res.json();
-      const produto = data.data.find(
-        (p) => Number(p.id_produto) === Number(id)
-      );
+      const res = await estoqueFetch.produtoID(id);
+      console.log(res);
 
-      if (produto) {
-        setProductData(produto);
-        setOriginalData(JSON.parse(JSON.stringify(produto)));
+      if (res) {
+        setProductData(res);
+        setOriginalData(JSON.parse(JSON.stringify(res)));
       }
     } catch (error) {
       console.error("Erro ao buscar produto:", error);
@@ -671,15 +669,12 @@ const ProductDetailScreen = () => {
       console.log("- Novas imagens:", newImageFiles.length);
       console.log("- Variações:", variacoesFormatadas);
 
-      const response = await fetch(
-        `${API_URL}/produto/editar/${productData.id_produto}`,
-        {
-          method: "PUT",
-          body: formData,
-        }
+      const response = await estoqueFetch.editar(
+        productData.id_produto,
+        formData
       );
 
-      if (response.ok) {
+      if (response.success) {
         adicionarAviso("sucesso", "Produto atualizado com sucesso");
         setIsEditing(false);
         setNewImages([]);
@@ -789,30 +784,65 @@ const ProductDetailScreen = () => {
   const currentImage = currentImages[selectedImageIndex];
 
   const getCurrentEstoque = () => {
+    let estoqueVariacao = 0;
     if (hasVariations) {
-      return productData.variacao.reduce(
-        (total, v) => total + (v.estoque || 0),
-        0
-      );
+      productData.variacao.map((dados) => {
+        estoqueVariacao += dados.estoque;
+      });
+      return estoqueVariacao;
     }
     return productData.estoque;
   };
 
   const getCurrentEstoqueMinimo = () => {
+    let estoqueMinimoVariacao = 0;
     if (hasVariations) {
-      return productData.variacao.reduce(
-        (total, v) => total + (v.estoque_minimo || 0),
-        0
-      );
+      productData.variacao.map((dados) => {
+        estoqueMinimoVariacao += dados.estoque_minimo;
+      });
+      return estoqueMinimoVariacao;
     }
     return productData.estoque_minimo;
   };
 
   const getImageForIndex = (index) => {
     if (index === null || index === undefined || index < 0) return null;
+    console.log(currentImages);
 
     const allImages = [...currentImages];
     return allImages[index] || null;
+  };
+
+  const customStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "var(--surface-strong)",
+      borderColor: "var(--surface-border)",
+      padding: "6px",
+      borderRadius: "12px",
+      boxShadow: "none",
+      ":hover": {
+        borderColor: "var(--surface-border)",
+      },
+    }),
+    singleValue: (base, state) => ({
+      ...base,
+      color: "var(--text-primary)",
+      fontWeight: 600,
+    }),
+    menu: (base) => ({
+      ...base,
+      background: "var(--surface-strong)",
+      borderRadius: "10px",
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused
+        ? "var(--surface-strong)"
+        : "transparent",
+      color: "var(--text-primary)",
+      cursor: "pointer",
+    }),
   };
 
   return (
@@ -1077,19 +1107,33 @@ const ProductDetailScreen = () => {
                 )}
               </div>
 
-              <div style={styles.infoItem}>
-                <span style={styles.label}>Categoria</span>
-                <span style={styles.value}>
-                  {productData.categoria_nome || "—"}
-                </span>
-              </div>
+              {isEditing ? (
+                <div style={styles.infoItem}>
+                  <span style={styles.label}>Categoria</span>
+                  <Select styles={customStyles}/>
+                </div>
+              ) : (
+                <div style={styles.infoItem}>
+                  <span style={styles.label}>Categoria</span>
+                  <span style={styles.value}>
+                    {productData.categoria_nome || "—"}
+                  </span>
+                </div>
+              )}
 
-              <div style={styles.infoItem}>
-                <span style={styles.label}>Subcategoria</span>
-                <span style={styles.value}>
-                  {productData.subcategoria_nome || "—"}
-                </span>
-              </div>
+              {isEditing ? (
+                <div style={styles.infoItem}>
+                  <span style={styles.label}>Subcategoria</span>
+                  <Select styles={customStyles}/>
+                </div>
+              ) : (
+                <div style={styles.infoItem}>
+                  <span style={styles.label}>Subcategoria</span>
+                  <span style={styles.value}>
+                    {productData.subcategoria_nome || "—"}
+                  </span>
+                </div>
+              )}
 
               <div style={{ ...styles.infoItem, gridColumn: "1 / -1" }}>
                 <span style={styles.label}>Descrição</span>

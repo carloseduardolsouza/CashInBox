@@ -3,6 +3,7 @@ import { FaTrash, FaSearch, FaShoppingCart } from "react-icons/fa";
 import format from "../../utils/formatters";
 import estoqueFetch from "../../services/api/estoqueFetch";
 import Select from "react-select";
+import FaturarVenda from "./components/FaturarVenda";
 
 const styles = {
   container: {
@@ -452,71 +453,7 @@ function Pdv() {
     setValorTotal((prevValorTotal) => prevValorTotal - valorMenos);
   };
 
-  const calcularValorFinal = () => {
-    let valorFinal = valorTotal;
-
-    // Aplicar desconto
-    if (desconto.valor > 0) {
-      if (desconto.tipo === "porcentagem") {
-        valorFinal -= (valorTotal * desconto.valor) / 100;
-      } else {
-        valorFinal -= desconto.valor;
-      }
-    }
-
-    // Aplicar acréscimo
-    if (acrescimo.valor > 0) {
-      if (acrescimo.tipo === "porcentagem") {
-        valorFinal += (valorTotal * acrescimo.valor) / 100;
-      } else {
-        valorFinal += acrescimo.valor;
-      }
-    }
-
-    return Math.max(0, valorFinal);
-  };
-
-  const finalizarVenda = () => {
-    const valorLiquido = calcularValorFinal();
-
-    const vendaData = {
-      data: new Date().toISOString(),
-      valor_bruto: valorTotal,
-      valor_liquido: valorLiquido,
-      status: "finalizada",
-      desconto_real:
-        desconto.tipo === "real"
-          ? desconto.valor
-          : (valorTotal * desconto.valor) / 100,
-      desconto_porcentagem:
-        desconto.tipo === "porcentagem" ? desconto.valor : 0,
-      acrescimo_real:
-        acrescimo.tipo === "real"
-          ? acrescimo.valor
-          : (valorTotal * acrescimo.valor) / 100,
-      acrescimo_porcentagem:
-        acrescimo.tipo === "porcentagem" ? acrescimo.valor : 0,
-      id_usuario: 1, // Simulado
-      id_funcionario: 1, // Simulado
-      pagamento: [
-        {
-          forma: formaPagamento,
-          valor: valorPagamento || valorLiquido,
-          data_pagamento: new Date().toISOString(),
-        },
-      ],
-      produtos: arrayVenda.map((item) => ({
-        id_produto: item.id_produto,
-        id_variacao: item.id_variacao,
-        quantidade: item.quantidade,
-        preco_unitario: item.preco_unitario,
-        subtotal: item.subtotal,
-      })),
-    };
-
-    console.log("Venda Finalizada:", JSON.stringify(vendaData, null, 2));
-
-    // Resetar tudo
+  const resetarTudo = () => {
     setArrayVenda([]);
     setValorTotal(0);
     setMostrarModalFinalizar(false);
@@ -720,7 +657,7 @@ function Pdv() {
               opacity: arrayVenda.length === 0 ? 0.5 : 1,
               cursor: arrayVenda.length === 0 ? "not-allowed" : "pointer",
             }}
-            onClick={() => finalizarVenda()}
+            onClick={() => setMostrarModalFinalizar(true)}
             disabled={arrayVenda.length === 0}
           >
             <FaShoppingCart />
@@ -728,6 +665,7 @@ function Pdv() {
           </button>
         </div>
       </div>
+      {mostrarModalFinalizar && <FaturarVenda onClose={() => setMostrarModalFinalizar(false)} reset={resetarTudo}/>}
     </div>
   );
 }
