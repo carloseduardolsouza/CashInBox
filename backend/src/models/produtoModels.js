@@ -12,13 +12,21 @@ const uploadPath = path.join(userDataPath, "uploads", "produtos");
 
 const deleteImage = (filename) => {
   try {
-    const fullPath = path.join(uploadPath, filename);
+    // Remove apenas o nome do arquivo, não o caminho completo
+    const cleanFilename = filename.replace('/uploads/', '').replace(/^\//, '');
+    const fullPath = path.join(uploadPath, cleanFilename);
+    
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
-      console.log(`✅ Imagem deletada: ${filename}`);
+      console.log(`✅ Imagem deletada: ${cleanFilename}`);
+      return true;
+    } else {
+      console.log(`⚠️  Imagem não encontrada: ${cleanFilename}`);
+      return false;
     }
   } catch (error) {
     console.error(`❌ Erro ao deletar imagem ${filename}:`, error);
+    return false;
   }
 };
 
@@ -192,7 +200,9 @@ const lista = async () => {
 
 const editar = async (id, produtoData) => {
   return await db.transaction(async (trx) => {
-    const { variacao, images, ...dadosProduto } = produtoData;
+    console.log("\n🔄 Iniciando transação de edição...");
+
+    const { variacao, images, imagensExistentes, imagensDeletar, ...dadosProduto } = produtoData;
 
     // 1. Verifica se o produto existe
     const produtoExiste = await trx("produtos").where("id_produto", id).first();
@@ -201,45 +211,53 @@ const editar = async (id, produtoData) => {
     }
 
     // 2. Atualiza dados do produto
-    await trx("produtos").where("id_produto", id).update(dadosProduto);
+    console.log("📝 Atualizando dados do produto...");
+    await trx("produtos").where("id_produto", id).update({
+      ...dadosProduto,
+      nome: formate.formatNome(dadosProduto.nome),
+    });
 
-    // 3. Remove variações e imagens antigas
-    const variacoesAntigas = await trx("produto_variacao")
-      .where("id_produto", id)
-      .select("id_variacao");
+    // 3. GERENCIAMENTO DE IMAGENS DO PRODUTO PRINCIPAL
+    console.log("\n🖼️  Gerenciando imagens do produto...");
 
-    // Remove imagens das variações
-    for (const v of variacoesAntigas) {
-      const imagensVariacao = await trx("produto_imagens")
-        .where("id_variacao", v.id_variacao)
-        .select("caminho_arquivo");
+    // 3.1 Deletar imagens marcadas para exclusão
+    if (Array.isArray(imagensDeletar) && imagensDeletar.length > 0) {
+      console.log(`🗑️  Deletando ${imagensDeletar.length} imagem(ns)...`);
+      
+      for (const idImagem of imagensDeletar) {
+        // Busca o caminho da imagem antes de deletar
+        const imagemParaDeletar = await trx("produto_imagens")
+          .where("id_imagem", idImagem)
+          .first();
 
-      // Deleta arquivos físicos
-      imagensVariacao.forEach((img) => deleteImage(img.caminho_arquivo));
-
-      // Remove do banco
-      await trx("produto_imagens").where("id_variacao", v.id_variacao).del();
+        if (imagemParaDeletar) {
+          // Deleta o arquivo físico
+          deleteImage(imagemParaDeletar.caminho_arquivo);
+          
+          // Remove do banco
+          await trx("produto_imagens")
+            .where("id_imagem", idImagem)
+            .del();
+          
+          console.log(`  ✓ Imagem ${idImagem} deletada`);
+        }
+      }
     }
 
-    // Remove imagens principais antigas
-    const imagensAntigas = await trx("produto_imagens")
-      .where("id_produto", id)
-      .whereNull("id_variacao")
-      .select("caminho_arquivo");
+    // 3.2 Manter imagens existentes (não fazer nada, elas já estão no banco)
+    console.log(`✅ Mantendo ${imagensExistentes?.length || 0} imagem(ns) existente(s)`);
 
-    imagensAntigas.forEach((img) => deleteImage(img.caminho_arquivo));
-
-    await trx("produto_imagens")
-      .where("id_produto", id)
-      .whereNull("id_variacao")
-      .del();
-
-    // Remove variações
-    await trx("produto_variacao").where("id_produto", id).del();
-
-    // 4. SALVAR TODAS AS NOVAS IMAGENS DO PRODUTO
+    // 3.3 Adicionar novas imagens
     if (Array.isArray(images) && images.length > 0) {
-      console.log(`\n🖼️  Salvando ${images.length} nova(s) imagem(ns) do produto...`);
+      console.log(`\n📸 Adicionando ${images.length} nova(s) imagem(ns)...`);
+      
+      // Verifica se há imagens existentes
+      const imagensAtuais = await trx("produto_imagens")
+        .where("id_produto", id)
+        .whereNull("id_variacao")
+        .select("id_imagem");
+
+      const temImagensExistentes = imagensAtuais.length > 0;
       
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
@@ -247,26 +265,56 @@ const editar = async (id, produtoData) => {
           id_produto: id,
           id_variacao: null,
           caminho_arquivo: img.caminho_arquivo,
-          principal: i === 0
+          principal: !temImagensExistentes && i === 0 // Primeira nova imagem é principal se não há existentes
         });
+        console.log(`  ✓ Imagem ${i + 1} adicionada: ${img.caminho_arquivo}`);
       }
-      
-      console.log("✅ Todas as imagens do produto salvas");
     }
 
-    // 5. Insere novas variações
+    // 4. GERENCIAMENTO DE VARIAÇÕES
+    console.log("\n🔄 Gerenciando variações...");
+
+    // 4.1 Remove variações antigas e suas imagens
+    const variacoesAntigas = await trx("produto_variacao")
+      .where("id_produto", id)
+      .select("id_variacao");
+
+    if (variacoesAntigas.length > 0) {
+      console.log(`🗑️  Removendo ${variacoesAntigas.length} variação(ões) antiga(s)...`);
+
+      for (const v of variacoesAntigas) {
+        // Busca e deleta imagens das variações
+        const imagensVariacao = await trx("produto_imagens")
+          .where("id_variacao", v.id_variacao)
+          .select("caminho_arquivo");
+
+        imagensVariacao.forEach((img) => deleteImage(img.caminho_arquivo));
+
+        await trx("produto_imagens").where("id_variacao", v.id_variacao).del();
+      }
+
+      await trx("produto_variacao").where("id_produto", id).del();
+    }
+
+    // 4.2 Insere novas variações
     const temVariacoes = Array.isArray(variacao) && variacao.length > 0;
 
     if (temVariacoes) {
+      console.log(`📦 Adicionando ${variacao.length} nova(s) variação(ões)...`);
+
       for (const v of variacao) {
         const { images: variacaoImages, ...dadosVariacao } = v;
 
         const [variacaoId] = await trx("produto_variacao").insert({
           ...dadosVariacao,
+          nome: formate.formatNome(dadosVariacao.nome),
           id_produto: id,
           created_at: trx.fn.now(),
         });
 
+        console.log(`  ✓ Variação "${dadosVariacao.nome}" criada com ID: ${variacaoId}`);
+
+        // Adiciona imagens da variação
         if (Array.isArray(variacaoImages) && variacaoImages.length > 0) {
           for (const img of variacaoImages) {
             await trx("produto_imagens").insert({
@@ -276,10 +324,12 @@ const editar = async (id, produtoData) => {
               principal: img.principal || false,
             });
           }
+          console.log(`    ✓ ${variacaoImages.length} imagem(ns) da variação adicionada(s)`);
         }
       }
     }
 
+    console.log("\n✅ Transação de edição concluída com sucesso!\n");
     return true;
   });
 };

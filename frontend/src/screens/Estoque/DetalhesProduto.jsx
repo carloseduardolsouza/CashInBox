@@ -24,7 +24,8 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: "var(--background)",
     padding: "24px",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
     display: "flex",
@@ -505,8 +506,10 @@ const ProductDetailScreen = () => {
     try {
       const res = await fetch(`${API_URL}/produto/lista`);
       const data = await res.json();
-      const produto = data.data.find((p) => Number(p.id_produto) === Number(id));
-      
+      const produto = data.data.find(
+        (p) => Number(p.id_produto) === Number(id)
+      );
+
       if (produto) {
         setProductData(produto);
         setOriginalData(JSON.parse(JSON.stringify(produto)));
@@ -544,7 +547,7 @@ const ProductDetailScreen = () => {
   const removeExistingImage = (imageId) => {
     // Adiciona o ID da imagem à lista de imagens a serem deletadas
     setDeletedImages([...deletedImages, imageId]);
-    
+
     // Remove a imagem visualmente do productData
     setProductData((prev) => ({
       ...prev,
@@ -563,7 +566,8 @@ const ProductDetailScreen = () => {
         preco_venda: parseFloat(newPrecoVenda.toFixed(2)),
       }));
     } else if (field === "margem") {
-      const newPrecoVenda = productData.preco_custo + (productData.preco_custo * numValue) / 100;
+      const newPrecoVenda =
+        productData.preco_custo + (productData.preco_custo * numValue) / 100;
       setProductData((prev) => ({
         ...prev,
         margem: numValue,
@@ -572,7 +576,8 @@ const ProductDetailScreen = () => {
     } else if (field === "preco_venda") {
       const newMargem =
         productData.preco_custo > 0
-          ? ((numValue - productData.preco_custo) / productData.preco_custo) * 100
+          ? ((numValue - productData.preco_custo) / productData.preco_custo) *
+            100
           : 0;
       setProductData((prev) => ({
         ...prev,
@@ -595,23 +600,23 @@ const ProductDetailScreen = () => {
       formData.append("preco_custo", parseFloat(productData.preco_custo) || 0);
       formData.append("preco_venda", parseFloat(productData.preco_venda) || 0);
       formData.append("margem", parseFloat(productData.margem) || 0);
-      formData.append("id_categoria", productData.id_categoria || null);
-      formData.append("id_subcategoria", productData.id_subcategoria || null);
+      formData.append("id_categoria", productData.id_categoria || "");
+      formData.append("id_subcategoria", productData.id_subcategoria || "");
       formData.append("estoque", productData.estoque || 0);
       formData.append("estoque_minimo", productData.estoque_minimo || 0);
-      formData.append("ativo", productData.ativo);
+      formData.append("ativo", productData.ativo ? true : false);
 
-      // Adicionar IDs das imagens existentes que devem ser mantidas
+      // IDs das imagens existentes que devem ser mantidas
       const imagensExistentes = (productData.images || [])
-        .filter(img => img.id_imagem) // Apenas imagens que já existem no banco
-        .map(img => img.id_imagem);
-      
+        .filter((img) => img.id_imagem) // Apenas imagens que já existem no banco
+        .map((img) => img.id_imagem);
+
       formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
 
-      // Adicionar IDs das imagens a serem deletadas
+      // IDs das imagens a serem deletadas
       formData.append("imagensDeletar", JSON.stringify(deletedImages));
 
-      // Adicionar novas imagens
+      // Novas imagens
       newImageFiles.forEach((file) => {
         formData.append("images", file);
       });
@@ -629,10 +634,19 @@ const ProductDetailScreen = () => {
 
       formData.append("variacoes", JSON.stringify(variacoesFormatadas));
 
-      const response = await fetch(`${API_URL}/produto/editar/${productData.id_produto}`, {
-        method: "PUT",
-        body: formData,
-      });
+      // Log para debug
+      console.log("📤 Enviando atualização:");
+      console.log("- Imagens existentes:", imagensExistentes.length);
+      console.log("- Imagens a deletar:", deletedImages.length);
+      console.log("- Novas imagens:", newImageFiles.length);
+
+      const response = await fetch(
+        `${API_URL}/produto/editar/${productData.id_produto}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
 
       if (response.ok) {
         alert("Produto atualizado com sucesso!");
@@ -640,13 +654,15 @@ const ProductDetailScreen = () => {
         setNewImages([]);
         setNewImageFiles([]);
         setDeletedImages([]);
-        buscarProdutoID();
+        setSelectedImageIndex(0);
+        await buscarProdutoID(); // Recarrega os dados
       } else {
-        throw new Error("Erro ao atualizar produto");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao atualizar produto");
       }
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
-      alert("Erro ao salvar produto");
+      alert(`Erro ao salvar produto: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -657,6 +673,7 @@ const ProductDetailScreen = () => {
     setNewImages([]);
     setNewImageFiles([]);
     setDeletedImages([]);
+    setSelectedImageIndex(0);
     setIsEditing(false);
   };
 
@@ -695,7 +712,10 @@ const ProductDetailScreen = () => {
 
     if (editingVariacaoIndex !== null) {
       const newVariacoes = [...productData.variacao];
-      newVariacoes[editingVariacaoIndex] = { ...newVariacoes[editingVariacaoIndex], ...variacaoForm };
+      newVariacoes[editingVariacaoIndex] = {
+        ...newVariacoes[editingVariacaoIndex],
+        ...variacaoForm,
+      };
       setProductData((prev) => ({ ...prev, variacao: newVariacoes }));
     } else {
       setProductData((prev) => ({
@@ -720,27 +740,35 @@ const ProductDetailScreen = () => {
   };
 
   const hasVariations = productData.variacao && productData.variacao.length > 0;
-  
+
   // Combina imagens existentes (não deletadas) com novas imagens
-  const existingImages = (productData.images || []).filter(img => !deletedImages.includes(img.id_imagem));
-  const newImagesWithFlag = newImages.map((url, i) => ({ 
-    caminho_arquivo: url, 
+  const existingImages = (productData.images || []).filter(
+    (img) => !deletedImages.includes(img.id_imagem)
+  );
+  const newImagesWithFlag = newImages.map((url, i) => ({
+    caminho_arquivo: url,
     isNew: true,
-    tempId: `new-${i}` 
+    tempId: `new-${i}`,
   }));
   const currentImages = [...existingImages, ...newImagesWithFlag];
   const currentImage = currentImages[selectedImageIndex];
 
   const getCurrentEstoque = () => {
     if (hasVariations) {
-      return productData.variacao.reduce((total, v) => total + (v.estoque || 0), 0);
+      return productData.variacao.reduce(
+        (total, v) => total + (v.estoque || 0),
+        0
+      );
     }
     return productData.estoque;
   };
 
   const getCurrentEstoqueMinimo = () => {
     if (hasVariations) {
-      return productData.variacao.reduce((total, v) => total + (v.estoque_minimo || 0), 0);
+      return productData.variacao.reduce(
+        (total, v) => total + (v.estoque_minimo || 0),
+        0
+      );
     }
     return productData.estoque_minimo;
   };
@@ -749,7 +777,10 @@ const ProductDetailScreen = () => {
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <button style={styles.backButton} onClick={() => navigate("/estoque/inventario")}>
+          <button
+            style={styles.backButton}
+            onClick={() => navigate("/estoque/inventario")}
+          >
             <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
           <h1 style={styles.title}>Detalhes do Produto</h1>
@@ -757,7 +788,10 @@ const ProductDetailScreen = () => {
         <div style={styles.headerRight}>
           {!isEditing ? (
             <>
-              <button style={styles.iconButton} onClick={() => setIsEditing(true)}>
+              <button
+                style={styles.iconButton}
+                onClick={() => setIsEditing(true)}
+              >
                 <Edit size={18} />
                 <span>Editar</span>
               </button>
@@ -794,7 +828,11 @@ const ProductDetailScreen = () => {
             {currentImage ? (
               <>
                 <img
-                  src={currentImage.isNew ? currentImage.caminho_arquivo : `${API_URL}${currentImage.caminho_arquivo}`}
+                  src={
+                    currentImage.isNew
+                      ? currentImage.caminho_arquivo
+                      : `${API_URL}${currentImage.caminho_arquivo}`
+                  }
                   alt="Produto"
                   style={styles.productImage}
                 />
@@ -804,15 +842,21 @@ const ProductDetailScreen = () => {
                     onClick={() => {
                       if (currentImage.isNew) {
                         // Remove imagem nova
-                        const newIndex = newImages.findIndex(img => img === currentImage.caminho_arquivo);
+                        const newIndex = newImages.findIndex(
+                          (img) => img === currentImage.caminho_arquivo
+                        );
                         if (newIndex !== -1) {
                           removeNewImage(newIndex);
-                          setSelectedImageIndex(Math.max(0, selectedImageIndex - 1));
+                          setSelectedImageIndex(
+                            Math.max(0, selectedImageIndex - 1)
+                          );
                         }
                       } else {
                         // Remove imagem existente
                         removeExistingImage(currentImage.id_imagem);
-                        setSelectedImageIndex(Math.max(0, selectedImageIndex - 1));
+                        setSelectedImageIndex(
+                          Math.max(0, selectedImageIndex - 1)
+                        );
                       }
                     }}
                     title="Remover imagem"
@@ -838,16 +882,22 @@ const ProductDetailScreen = () => {
                   key={img.id_imagem || img.tempId || index}
                   style={{
                     ...styles.thumbnail,
-                    ...(selectedImageIndex === index ? styles.thumbnailActive : {}),
-                    position: 'relative',
+                    ...(selectedImageIndex === index
+                      ? styles.thumbnailActive
+                      : {}),
+                    position: "relative",
                   }}
                 >
                   <div
                     onClick={() => setSelectedImageIndex(index)}
-                    style={{ width: '100%', height: '100%' }}
+                    style={{ width: "100%", height: "100%" }}
                   >
                     <img
-                      src={img.isNew ? img.caminho_arquivo : `${API_URL}${img.caminho_arquivo}`}
+                      src={
+                        img.isNew
+                          ? img.caminho_arquivo
+                          : `${API_URL}${img.caminho_arquivo}`
+                      }
                       alt={`Thumbnail ${index + 1}`}
                       style={styles.thumbnailImg}
                     />
@@ -858,17 +908,26 @@ const ProductDetailScreen = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (img.isNew) {
-                          const newIndex = newImages.findIndex(newImg => newImg === img.caminho_arquivo);
+                          const newIndex = newImages.findIndex(
+                            (newImg) => newImg === img.caminho_arquivo
+                          );
                           if (newIndex !== -1) {
                             removeNewImage(newIndex);
-                            if (selectedImageIndex >= currentImages.length - 1) {
-                              setSelectedImageIndex(Math.max(0, currentImages.length - 2));
+                            if (
+                              selectedImageIndex >=
+                              currentImages.length - 1
+                            ) {
+                              setSelectedImageIndex(
+                                Math.max(0, currentImages.length - 2)
+                              );
                             }
                           }
                         } else {
                           removeExistingImage(img.id_imagem);
                           if (selectedImageIndex >= currentImages.length - 1) {
-                            setSelectedImageIndex(Math.max(0, currentImages.length - 2));
+                            setSelectedImageIndex(
+                              Math.max(0, currentImages.length - 2)
+                            );
                           }
                         }
                       }}
@@ -892,7 +951,10 @@ const ProductDetailScreen = () => {
                 style={{ display: "none" }}
                 onChange={handleImageChange}
               />
-              <button style={styles.addImageButton} onClick={() => fileInputRef.current?.click()}>
+              <button
+                style={styles.addImageButton}
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <ImageIcon size={18} />
                 Adicionar Imagens
               </button>
@@ -913,7 +975,12 @@ const ProductDetailScreen = () => {
                   <input
                     style={styles.input}
                     value={productData.nome || ""}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, nome: e.target.value }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        nome: e.target.value,
+                      }))
+                    }
                   />
                 ) : (
                   <span style={styles.value}>{productData.nome}</span>
@@ -926,13 +993,25 @@ const ProductDetailScreen = () => {
                   <select
                     style={styles.input}
                     value={productData.ativo ? 1 : 0}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, ativo: parseInt(e.target.value) === 1 }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        ativo: parseInt(e.target.value) === 1,
+                      }))
+                    }
                   >
                     <option value={1}>Ativo</option>
                     <option value={0}>Inativo</option>
                   </select>
                 ) : (
-                  <span style={{ ...styles.badge, ...(productData.ativo ? styles.badgeSuccess : styles.badgeError) }}>
+                  <span
+                    style={{
+                      ...styles.badge,
+                      ...(productData.ativo
+                        ? styles.badgeSuccess
+                        : styles.badgeError),
+                    }}
+                  >
                     {productData.ativo ? "Ativo" : "Inativo"}
                   </span>
                 )}
@@ -944,21 +1023,32 @@ const ProductDetailScreen = () => {
                   <input
                     style={styles.input}
                     value={productData.cod_barras || ""}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, cod_barras: e.target.value }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        cod_barras: e.target.value,
+                      }))
+                    }
                   />
                 ) : (
-                  <span style={styles.value}>{productData.cod_barras || "—"}</span>
+                  <span style={styles.value}>
+                    {productData.cod_barras || "—"}
+                  </span>
                 )}
               </div>
 
               <div style={styles.infoItem}>
                 <span style={styles.label}>Categoria</span>
-                <span style={styles.value}>{productData.categoria_nome || "—"}</span>
+                <span style={styles.value}>
+                  {productData.categoria_nome || "—"}
+                </span>
               </div>
 
               <div style={styles.infoItem}>
                 <span style={styles.label}>Subcategoria</span>
-                <span style={styles.value}>{productData.subcategoria_nome || "—"}</span>
+                <span style={styles.value}>
+                  {productData.subcategoria_nome || "—"}
+                </span>
               </div>
 
               <div style={{ ...styles.infoItem, gridColumn: "1 / -1" }}>
@@ -967,10 +1057,17 @@ const ProductDetailScreen = () => {
                   <textarea
                     style={{ ...styles.input, ...styles.textarea }}
                     value={productData.descricao || ""}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, descricao: e.target.value }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        descricao: e.target.value,
+                      }))
+                    }
                   />
                 ) : (
-                  <span style={styles.value}>{productData.descricao || "—"}</span>
+                  <span style={styles.value}>
+                    {productData.descricao || "—"}
+                  </span>
                 )}
               </div>
             </div>
@@ -989,10 +1086,17 @@ const ProductDetailScreen = () => {
                     type="number"
                     style={styles.input}
                     value={productData.estoque || 0}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, estoque: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        estoque: parseInt(e.target.value) || 0,
+                      }))
+                    }
                   />
                 ) : (
-                  <span style={styles.value}>{getCurrentEstoque()} unidades</span>
+                  <span style={styles.value}>
+                    {getCurrentEstoque()} unidades
+                  </span>
                 )}
               </div>
               <div style={styles.infoItem}>
@@ -1002,10 +1106,17 @@ const ProductDetailScreen = () => {
                     type="number"
                     style={styles.input}
                     value={productData.estoque_minimo || 0}
-                    onChange={(e) => setProductData((prev) => ({ ...prev, estoque_minimo: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setProductData((prev) => ({
+                        ...prev,
+                        estoque_minimo: parseInt(e.target.value) || 0,
+                      }))
+                    }
                   />
                 ) : (
-                  <span style={styles.value}>{getCurrentEstoqueMinimo()} unidades</span>
+                  <span style={styles.value}>
+                    {getCurrentEstoqueMinimo()} unidades
+                  </span>
                 )}
               </div>
             </div>
@@ -1013,7 +1124,14 @@ const ProductDetailScreen = () => {
 
           {hasVariations && (
             <div style={styles.card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                }}
+              >
                 <h2 style={{ ...styles.cardTitle, marginBottom: 0 }}>
                   <Tag size={18} />
                   Variações do Produto
@@ -1023,11 +1141,24 @@ const ProductDetailScreen = () => {
               {productData.variacao.map((variacao, index) => (
                 <div key={variacao.id_variacao} style={styles.variacaoCard}>
                   {variacao.images && variacao.images.length > 0 && (
-                    <div style={{ width: "60px", height: "60px", borderRadius: "8px", overflow: "hidden", marginRight: "12px", flexShrink: 0 }}>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        marginRight: "12px",
+                        flexShrink: 0,
+                      }}
+                    >
                       <img
                         src={`${API_URL}${variacao.images[0].caminho_arquivo}`}
                         alt={variacao.nome}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
                       />
                     </div>
                   )}
@@ -1036,18 +1167,26 @@ const ProductDetailScreen = () => {
                     <div style={styles.variacaoNome}>{variacao.nome}</div>
                     <div style={styles.variacaoDetalhes}>
                       {variacao.tipo && `Tipo: ${variacao.tipo}`}
-                      {variacao.cod_interno && ` • Cód. Interno: ${variacao.cod_interno}`}
+                      {variacao.cod_interno &&
+                        ` • Cód. Interno: ${variacao.cod_interno}`}
                     </div>
                     <div style={styles.variacaoDetalhes}>
-                      Estoque: {variacao.estoque} • Mín: {variacao.estoque_minimo}
+                      Estoque: {variacao.estoque} • Mín:{" "}
+                      {variacao.estoque_minimo}
                     </div>
                   </div>
                   {isEditing && (
                     <div style={styles.variacaoActions}>
-                      <button style={styles.editButton} onClick={() => handleEditVariacao(index)}>
+                      <button
+                        style={styles.editButton}
+                        onClick={() => handleEditVariacao(index)}
+                      >
                         <Edit size={14} />
                       </button>
-                      <button style={styles.deleteVariacaoButton} onClick={() => handleDeleteVariacao(index)}>
+                      <button
+                        style={styles.deleteVariacaoButton}
+                        onClick={() => handleDeleteVariacao(index)}
+                      >
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -1056,7 +1195,10 @@ const ProductDetailScreen = () => {
               ))}
 
               {isEditing && (
-                <button style={styles.addVariacaoButton} onClick={openVariacaoModal}>
+                <button
+                  style={styles.addVariacaoButton}
+                  onClick={openVariacaoModal}
+                >
                   <Plus size={18} />
                   Adicionar Variação
                 </button>
@@ -1081,7 +1223,9 @@ const ProductDetailScreen = () => {
               onChange={(e) => calculatePrices("preco_custo", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>R$ {parseFloat(productData.preco_custo || 0).toFixed(2)}</div>
+            <div style={styles.metricValue}>
+              R$ {parseFloat(productData.preco_custo || 0).toFixed(2)}
+            </div>
           )}
         </div>
 
@@ -1099,7 +1243,9 @@ const ProductDetailScreen = () => {
               onChange={(e) => calculatePrices("margem", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>{parseFloat(productData.margem || 0).toFixed(2)}%</div>
+            <div style={styles.metricValue}>
+              {parseFloat(productData.margem || 0).toFixed(2)}%
+            </div>
           )}
         </div>
 
@@ -1117,19 +1263,29 @@ const ProductDetailScreen = () => {
               onChange={(e) => calculatePrices("preco_venda", e.target.value)}
             />
           ) : (
-            <div style={styles.metricValue}>R$ {parseFloat(productData.preco_venda || 0).toFixed(2)}</div>
+            <div style={styles.metricValue}>
+              R$ {parseFloat(productData.preco_venda || 0).toFixed(2)}
+            </div>
           )}
         </div>
       </div>
 
       {showVariacaoModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowVariacaoModal(false)}>
+        <div
+          style={styles.modalOverlay}
+          onClick={() => setShowVariacaoModal(false)}
+        >
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>
-                {editingVariacaoIndex !== null ? "Editar Variação" : "Nova Variação"}
+                {editingVariacaoIndex !== null
+                  ? "Editar Variação"
+                  : "Nova Variação"}
               </h3>
-              <button style={styles.closeButton} onClick={() => setShowVariacaoModal(false)}>
+              <button
+                style={styles.closeButton}
+                onClick={() => setShowVariacaoModal(false)}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -1141,7 +1297,12 @@ const ProductDetailScreen = () => {
                   style={styles.input}
                   placeholder="Ex: Chocolate, Baunilha..."
                   value={variacaoForm.nome}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, nome: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      nome: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -1151,7 +1312,12 @@ const ProductDetailScreen = () => {
                   style={styles.input}
                   placeholder="Ex: Sabor, Cor..."
                   value={variacaoForm.tipo}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, tipo: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      tipo: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -1160,7 +1326,12 @@ const ProductDetailScreen = () => {
                 <input
                   style={styles.input}
                   value={variacaoForm.cod_interno}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, cod_interno: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      cod_interno: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -1169,7 +1340,12 @@ const ProductDetailScreen = () => {
                 <input
                   style={styles.input}
                   value={variacaoForm.cod_barras}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, cod_barras: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      cod_barras: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -1179,7 +1355,12 @@ const ProductDetailScreen = () => {
                   type="number"
                   style={styles.input}
                   value={variacaoForm.estoque}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, estoque: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      estoque: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -1189,16 +1370,27 @@ const ProductDetailScreen = () => {
                   type="number"
                   style={styles.input}
                   value={variacaoForm.estoque_minimo}
-                  onChange={(e) => setVariacaoForm((prev) => ({ ...prev, estoque_minimo: e.target.value }))}
+                  onChange={(e) =>
+                    setVariacaoForm((prev) => ({
+                      ...prev,
+                      estoque_minimo: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
 
             <div style={styles.modalActions}>
-              <button style={styles.cancelButton} onClick={() => setShowVariacaoModal(false)}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setShowVariacaoModal(false)}
+              >
                 Cancelar
               </button>
-              <button style={styles.modalSaveButton} onClick={handleSaveVariacao}>
+              <button
+                style={styles.modalSaveButton}
+                onClick={handleSaveVariacao}
+              >
                 Salvar Variação
               </button>
             </div>
@@ -1207,26 +1399,39 @@ const ProductDetailScreen = () => {
       )}
 
       {modalDeleteProduto && (
-        <div style={styles.modalOverlay} onClick={() => setModalDeleteProduto(false)}>
+        <div
+          style={styles.modalOverlay}
+          onClick={() => setModalDeleteProduto(false)}
+        >
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>Confirmar Exclusão</h3>
-              <button style={styles.closeButton} onClick={() => setModalDeleteProduto(false)}>
+              <button
+                style={styles.closeButton}
+                onClick={() => setModalDeleteProduto(false)}
+              >
                 <X size={20} />
               </button>
             </div>
             <p style={{ color: "var(--text-primary)", marginBottom: "8px" }}>
-              Deseja confirmar a exclusão de: <strong>{productData.nome}</strong>?
+              Deseja confirmar a exclusão de:{" "}
+              <strong>{productData.nome}</strong>?
             </p>
             <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
               Esses dados não poderão ser recuperados posteriormente.
             </p>
             <div style={styles.modalActions}>
-              <button style={styles.cancelButton} onClick={() => setModalDeleteProduto(false)}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setModalDeleteProduto(false)}
+              >
                 Cancelar
               </button>
               <button
-                style={{ ...styles.modalSaveButton, background: "var(--error-500)" }}
+                style={{
+                  ...styles.modalSaveButton,
+                  background: "var(--error-500)",
+                }}
                 onClick={deletarProduto}
               >
                 Confirmar Exclusão

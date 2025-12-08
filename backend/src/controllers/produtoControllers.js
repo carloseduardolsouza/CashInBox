@@ -168,7 +168,7 @@ const editar = async (req, res) => {
     console.log("Body:", req.body);
     console.log("Files:", req.files);
 
-    // Parse dos dados (similar ao cadastro)
+    // Parse dos dados do produto
     const dadosProduto = {
       nome: req.body.nome,
       descricao: req.body.descricao || "",
@@ -180,7 +180,7 @@ const editar = async (req, res) => {
       id_subcategoria: req.body.id_subcategoria ? parseInt(req.body.id_subcategoria) : null,
       estoque: parseFloat(req.body.estoque) || 0,
       estoque_minimo: parseFloat(req.body.estoque_minimo) || 0,
-      ativo: req.body.ativo !== undefined ? req.body.ativo === 'true' : true,
+      ativo: req.body.ativo !== undefined ? req.body.ativo === 'true' || req.body.ativo === true : true,
     };
 
     // Validações
@@ -190,6 +190,33 @@ const editar = async (req, res) => {
         message: "Nome do produto é obrigatório",
       });
     }
+
+    // Parse das IDs de imagens a manter
+    let imagensExistentes = [];
+    if (req.body.imagensExistentes) {
+      try {
+        imagensExistentes = typeof req.body.imagensExistentes === 'string'
+          ? JSON.parse(req.body.imagensExistentes)
+          : req.body.imagensExistentes;
+      } catch (e) {
+        console.error("❌ Erro ao fazer parse de imagensExistentes:", e);
+      }
+    }
+
+    // Parse das IDs de imagens a deletar
+    let imagensDeletar = [];
+    if (req.body.imagensDeletar) {
+      try {
+        imagensDeletar = typeof req.body.imagensDeletar === 'string'
+          ? JSON.parse(req.body.imagensDeletar)
+          : req.body.imagensDeletar;
+      } catch (e) {
+        console.error("❌ Erro ao fazer parse de imagensDeletar:", e);
+      }
+    }
+
+    console.log(`📊 Imagens existentes a manter: ${imagensExistentes.length}`);
+    console.log(`🗑️  Imagens a deletar: ${imagensDeletar.length}`);
 
     // Parse variações
     let variacoesData = [];
@@ -205,24 +232,24 @@ const editar = async (req, res) => {
 
     const temVariacoes = Array.isArray(variacoesData) && variacoesData.length > 0;
 
-    // Processar TODAS as imagens
-    const todasImagens = [];
+    // Processar novas imagens enviadas
+    const novasImagens = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach((file) => {
-        todasImagens.push(file.filename);
+        novasImagens.push(file.filename);
       });
     }
 
-    // Imagens do produto (TODAS)
-    const imagesProduto = todasImagens.map((filename, index) => ({
+    console.log(`📸 Novas imagens enviadas: ${novasImagens.length}`);
+
+    // Preparar imagens do produto
+    const imagesProduto = novasImagens.map((filename, index) => ({
       caminho_arquivo: filename,
-      principal: index === 0
+      principal: index === 0 && imagensExistentes.length === 0 // Primeira imagem nova é principal se não há existentes
     }));
 
     // Processar variações
     const variacoes = [];
-    const imagensUsadasEmVariacoes = new Set();
-
     if (temVariacoes) {
       variacoesData.forEach((variacao) => {
         const variacaoData = {
@@ -237,24 +264,25 @@ const editar = async (req, res) => {
 
         const imagemIndex = variacao.imagemIndex;
         
-        if (imagemIndex !== null && imagemIndex !== undefined && todasImagens[imagemIndex]) {
-          const nomeArquivo = todasImagens[imagemIndex];
+        if (imagemIndex !== null && imagemIndex !== undefined && novasImagens[imagemIndex]) {
+          const nomeArquivo = novasImagens[imagemIndex];
           variacaoData.images.push({
             caminho_arquivo: nomeArquivo,
             principal: true
           });
-          imagensUsadasEmVariacoes.add(imagemIndex);
         }
 
         variacoes.push(variacaoData);
       });
     }
 
-    // Objeto final
+    // Objeto final com informações de gerenciamento de imagens
     const produtoCompleto = {
       ...dadosProduto,
-      images: imagesProduto, // ✅ TODAS as imagens
-      variacao: variacoes
+      images: imagesProduto,
+      variacao: variacoes,
+      imagensExistentes, // IDs das imagens a manter
+      imagensDeletar // IDs das imagens a deletar
     };
 
     // Atualiza no banco
