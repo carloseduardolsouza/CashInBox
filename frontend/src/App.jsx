@@ -18,6 +18,7 @@ import Home from "./screens/Home";
 
 //Funcionarios
 import ListaFuncionarios from "./screens/Funcionarios/Lista";
+import CadastroFuncionario from "./screens/Funcionarios/cadastro";
 
 //Vendas
 import HistoricoVendas from "./screens/Vendas/Historico";
@@ -99,6 +100,7 @@ function MainLayout() {
         <Route path="/" element={<Home theme={theme} setTheme={setTheme} />} />
 
         <Route path="/funcionarios/lista" element={<ListaFuncionarios/>} />
+        <Route path="/funcionarios/cadastro" element={<CadastroFuncionario/>} />
 
         <Route path="/vendas/historico" element={<HistoricoVendas />} />
         <Route path="/vendas/orcamentos" element={<OrcamentosVendas />} />
@@ -133,9 +135,6 @@ function MainLayout() {
         <Route path="/relatorios/estoque" element={<RelatorioEstoque/>} />
         <Route path="/relatorios/despesas" element={<RelatorioDespesas/>} />
         <Route path="/relatorios/clientes" element={<RelatorioClientes/>} />
-
-        <Route path="/funcionarios" element={<h1>Produtos</h1>} />
-        <Route path="/funcionarios/lista" element={<h1>Produtos</h1>} />
 
         <Route path="/configuracoes" element={<Configuracoes/>} />
         <Route path="/configuracoes/boletos" element={<Boletos/>} />

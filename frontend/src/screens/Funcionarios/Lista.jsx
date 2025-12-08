@@ -1,58 +1,62 @@
-import { Link , useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import format from "../../utils/formatters"
 
 import Table from "../../components/ui/tabelas/Table";
+import funcionariosFetch from "../../services/api/funcionariosFetch";
+import { useState, useEffect } from "react";
 
 //Icones
 import { FaSearch } from "react-icons/fa";
 import { FaCircleInfo } from "react-icons/fa6";
 
-function ListaFuncionarios() {
-  const styles = {
-    container: {
-      marginLeft: "44px",
-      padding: "10px",
-    },
-    titleContainer: {
-      color: "var(--text-primary)",
-      marginBottom: "10px",
-    },
-    buttonAdicionarFuncionario: {
-      backgroundColor: "var(--primary-color)",
-      border: "none",
-      height: "35px",
-      color: "var(--text-inverse)",
-      cursor: "pointer",
-      fontWeight: "bold",
-      padding: "10px 20px",
-      borderRadius: "20px",
-      textDecoration: "none",
-      fontSize: "15px",
-    },
-    inputSearch: {
-      marginLeft: "10px",
-      borderRadius: "6px",
-      padding: "8px",
-      width: "260px",
-      border: "2px solid var(--neutral-600)",
-      backgroundColor: "var(--background-soft)",
-      fontSize: "15px",
-    },
-    buttonSearch: {
-      border: "none",
-      fontSize: "17px",
-      cursor: "pointer",
-      borderRadius: "6px",
-      width: "38px",
-      height: "38px",
-      marginLeft: "3px",
-      color: "var(--text-inverse)",
-      backgroundColor: "var(--warning-500)",
-    },
-    formListaFuncionarios : {
-        marginBottom: "15px"
-    }
-  };
+const styles = {
+  container: {
+    marginLeft: "44px",
+    padding: "10px",
+  },
+  titleContainer: {
+    color: "var(--text-primary)",
+    marginBottom: "10px",
+  },
+  buttonAdicionarFuncionario: {
+    backgroundColor: "var(--primary-color)",
+    border: "none",
+    height: "35px",
+    color: "var(--text-inverse)",
+    cursor: "pointer",
+    fontWeight: "bold",
+    padding: "10px 20px",
+    borderRadius: "20px",
+    textDecoration: "none",
+    fontSize: "15px",
+  },
+  inputSearch: {
+    marginLeft: "10px",
+    borderRadius: "6px",
+    padding: "8px",
+    width: "260px",
+    border: "2px solid var(--neutral-600)",
+    backgroundColor: "var(--background-soft)",
+    fontSize: "15px",
+  },
+  buttonSearch: {
+    border: "none",
+    fontSize: "17px",
+    cursor: "pointer",
+    borderRadius: "6px",
+    width: "38px",
+    height: "38px",
+    marginLeft: "3px",
+    color: "var(--text-inverse)",
+    backgroundColor: "var(--warning-500)",
+  },
+  formListaFuncionarios: {
+    marginBottom: "15px",
+  },
+};
 
+function ListaFuncionarios() {
+  const [funcionarios , setFuncionarios] = useState([])
   // Exemplo de uso
   const columns = [
     { header: "Nome", key: "nome" },
@@ -63,35 +67,14 @@ function ListaFuncionarios() {
     { header: "Comissão d/mês", key: "comissao_mes" },
   ];
 
-  const data = [
-    {
-      id: 1,
-      nome: "João Silva",
-      telefone : "",
-      email: "",
-      data_nascimento: "",
-      comissao_mes: 150,
-      cargo: "Vendedor"
-    },
-    {
-      id: 2,
-      nome: "João Silva",
-      telefone : "",
-      email: "",
-      data_nascimento: "",
-      comissao_mes: 150,
-      cargo: "Entregador"
-    },
-    {
-      id: 3,
-      nome: "João Silva",
-      telefone : "(62) 9 9336-2090",
-      email: "",
-      data_nascimento: "",
-      comissao_mes: 150,
-      cargo: "Gerente"
-    },
-  ];
+  const listaFuncionario = async () => {
+    const funcionariosResult = await funcionariosFetch.lista()
+    setFuncionarios(funcionariosResult)
+  }
+
+  useEffect(() => {
+    listaFuncionario()
+  },[])
 
   const navigate = useNavigate();
 
@@ -100,11 +83,18 @@ function ListaFuncionarios() {
       label: <FaCircleInfo />,
       type: "details",
       onClick: (row, index) => {
-        navigate(`/clientes/detalhes/${row.id}`);
+        navigate(`/funcionarios/detalhes/${row.id_funcionario}`);
       },
     },
   ];
 
+  const data = funcionarios.map((dados) => {
+    return {
+      ...dados,
+      telefone: format.formatarTelefone(dados.telefone),
+      data_nascimento: format.formatDate(dados.data_nascimento)
+    }
+  })
 
   return (
     <div style={styles.container}>
