@@ -9,11 +9,14 @@ exports.up = async function(knex) {
     table.string('telefone', 20);
     table.string('email', 150);
     table.string('cargo', 100);
+    table.string('genero', 200);
+    table.text('observacoes');
     table.date('data_admissao');
     table.date('data_demissao');
     table.date('data_nascimento');
     table.text('endereco');
     table.boolean('ativo').defaultTo(true);
+    table.timestamp('created_at').defaultTo(knex.fn.now());
     
     table.index('cpf');
     table.index('nome');

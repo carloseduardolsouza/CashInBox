@@ -4,11 +4,8 @@ const os = require("os");
 
 // Importa todas as rotas da aplicação
 const clientesRoutes = require("./routers/clientesRoutes");
+const funcionariosRoutes = require("./routers/funcionariosRoutes");
 const produtoRoutes = require("./routers/produtoRoutes");
-const vendaRoutes = require("./routers/vendaRoutes");
-const contaRoutes = require("./routers/contaRoutes");
-const caixaRoutes = require("./routers/caixaRoutes");
-const configuracaoRoutes = require("./routers/configuracaoRoutes");
 
 // Inicializa o app Express
 const app = express();
@@ -44,10 +41,7 @@ app.use(express.json());
 // 🔁 Rotas da API
 
 app.use("/cliente", clientesRoutes);
+app.use("/funcionario", funcionariosRoutes);
 app.use("/produto", produtoRoutes);
-app.use("/venda", vendaRoutes);
-app.use("/conta", contaRoutes);
-app.use("/caixa", caixaRoutes);
-app.use("/configuracao", configuracaoRoutes);
 
 module.exports = app;
