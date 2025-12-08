@@ -24,8 +24,7 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: "var(--background)",
     padding: "24px",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
     display: "flex",
@@ -416,25 +415,6 @@ const styles = {
     fontSize: "14px",
     fontWeight: "600",
   },
-  imagePreview: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop: "8px",
-  },
-  imagePreviewItem: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "8px",
-    overflow: "hidden",
-    position: "relative",
-    border: "2px solid var(--surface-border)",
-  },
-  imagePreviewImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
   removeImageBtn: {
     position: "absolute",
     top: "4px",
@@ -469,6 +449,60 @@ const styles = {
     zIndex: 10,
     transition: "all 0.2s",
   },
+  imagePreviewModal: {
+    marginTop: "16px",
+    padding: "16px",
+    background: "var(--background-soft)",
+    borderRadius: "8px",
+    border: "2px solid var(--surface-border)",
+  },
+  imagePreviewTitle: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "var(--text-primary)",
+    marginBottom: "12px",
+  },
+  imagePreviewGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "8px",
+  },
+  imagePreviewItem: {
+    position: "relative",
+    paddingTop: "100%",
+    borderRadius: "8px",
+    overflow: "hidden",
+    cursor: "pointer",
+    border: "2px solid var(--surface-border)",
+    transition: "all 0.2s",
+  },
+  imagePreviewItemSelected: {
+    borderColor: "var(--primary-color)",
+    boxShadow: "0 0 0 2px var(--primary-color)",
+  },
+  imagePreviewImg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  selectedBadge: {
+    position: "absolute",
+    top: "4px",
+    right: "4px",
+    background: "var(--primary-color)",
+    color: "white",
+    borderRadius: "50%",
+    width: "20px",
+    height: "20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
 };
 
 const ProductDetailScreen = () => {
@@ -496,6 +530,7 @@ const ProductDetailScreen = () => {
     cod_barras: "",
     estoque: "",
     estoque_minimo: "",
+    imagemIndex: null,
   });
 
   useEffect(() => {
@@ -543,10 +578,7 @@ const ProductDetailScreen = () => {
   };
 
   const removeExistingImage = (imageId) => {
-    // Adiciona o ID da imagem à lista de imagens a serem deletadas
     setDeletedImages([...deletedImages, imageId]);
-    
-    // Remove a imagem visualmente do productData
     setProductData((prev) => ({
       ...prev,
       images: prev.images.filter((img) => img.id_imagem !== imageId),
@@ -589,7 +621,6 @@ const ProductDetailScreen = () => {
 
       const formData = new FormData();
 
-      // Dados básicos do produto
       formData.append("nome", productData.nome);
       formData.append("descricao", productData.descricao || "");
       formData.append("cod_barras", productData.cod_barras || "");
@@ -602,41 +633,35 @@ const ProductDetailScreen = () => {
       formData.append("estoque_minimo", productData.estoque_minimo || 0);
       formData.append("ativo", productData.ativo ? true : false);
 
-      // IDs das imagens existentes que devem ser mantidas
       const imagensExistentes = (productData.images || [])
-        .filter(img => img.id_imagem) // Apenas imagens que já existem no banco
+        .filter(img => img.id_imagem)
         .map(img => img.id_imagem);
       
       formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
-
-      // IDs das imagens a serem deletadas
       formData.append("imagensDeletar", JSON.stringify(deletedImages));
 
-      // Novas imagens
       newImageFiles.forEach((file) => {
         formData.append("images", file);
       });
 
-      // ✅ Variações COM id_variacao PRESERVADO
       const variacoesFormatadas = (productData.variacao || []).map((v) => ({
-        id_variacao: v.id_variacao || null, // ✅ ENVIA O ID SE EXISTIR
+        id_variacao: v.id_variacao || null,
         nome: v.nome || "",
         tipo: v.tipo || "",
         cod_interno: v.cod_interno || "",
         cod_barras: v.cod_barras || "",
         estoque: v.estoque || 0,
         estoque_minimo: v.estoque_minimo || 0,
-        imagemIndex: null,
+        imagemIndex: v.imagemIndex !== null && v.imagemIndex !== undefined ? v.imagemIndex : null,
       }));
 
       formData.append("variacoes", JSON.stringify(variacoesFormatadas));
 
-      // Log para debug
       console.log("📤 Enviando atualização:");
       console.log("- Imagens existentes:", imagensExistentes.length);
       console.log("- Imagens a deletar:", deletedImages.length);
       console.log("- Novas imagens:", newImageFiles.length);
-      console.log("- Variações:", variacoesFormatadas.map(v => ({ id: v.id_variacao, nome: v.nome })));
+      console.log("- Variações:", variacoesFormatadas);
 
       const response = await fetch(`${API_URL}/produto/editar/${productData.id_produto}`, {
         method: "PUT",
@@ -650,7 +675,7 @@ const ProductDetailScreen = () => {
         setNewImageFiles([]);
         setDeletedImages([]);
         setSelectedImageIndex(0);
-        await buscarProdutoID(); // Recarrega os dados
+        await buscarProdutoID();
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || "Erro ao atualizar produto");
@@ -680,6 +705,7 @@ const ProductDetailScreen = () => {
       cod_barras: "",
       estoque: "",
       estoque_minimo: "",
+      imagemIndex: null,
     });
     setEditingVariacaoIndex(null);
     setShowVariacaoModal(true);
@@ -694,6 +720,7 @@ const ProductDetailScreen = () => {
       cod_barras: variacao.cod_barras,
       estoque: variacao.estoque,
       estoque_minimo: variacao.estoque_minimo,
+      imagemIndex: variacao.imagemIndex !== null && variacao.imagemIndex !== undefined ? variacao.imagemIndex : null,
     });
     setEditingVariacaoIndex(index);
     setShowVariacaoModal(true);
@@ -736,7 +763,6 @@ const ProductDetailScreen = () => {
 
   const hasVariations = productData.variacao && productData.variacao.length > 0;
   
-  // Combina imagens existentes (não deletadas) com novas imagens
   const existingImages = (productData.images || []).filter(
     img => !deletedImages.includes(img.id_imagem)
   );
@@ -760,6 +786,13 @@ const ProductDetailScreen = () => {
       return productData.variacao.reduce((total, v) => total + (v.estoque_minimo || 0), 0);
     }
     return productData.estoque_minimo;
+  };
+
+  const getImageForIndex = (index) => {
+    if (index === null || index === undefined || index < 0) return null;
+    
+    const allImages = [...currentImages];
+    return allImages[index] || null;
   };
 
   return (
@@ -830,7 +863,6 @@ const ProductDetailScreen = () => {
                     style={styles.removeMainImageBtn}
                     onClick={() => {
                       if (currentImage.isNew) {
-                        // Remove imagem nova
                         const newIndex = newImages.findIndex(
                           (img) => img === currentImage.caminho_arquivo
                         );
@@ -841,7 +873,6 @@ const ProductDetailScreen = () => {
                           );
                         }
                       } else {
-                        // Remove imagem existente
                         removeExistingImage(currentImage.id_imagem);
                         setSelectedImageIndex(
                           Math.max(0, selectedImageIndex - 1)
@@ -1127,61 +1158,69 @@ const ProductDetailScreen = () => {
                 </h2>
               </div>
 
-              {productData.variacao.map((variacao, index) => (
-                <div key={variacao.id_variacao} style={styles.variacaoCard}>
-                  {variacao.images && variacao.images.length > 0 && (
-                    <div
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        marginRight: "12px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={`${API_URL}${variacao.images[0].caminho_arquivo}`}
-                        alt={variacao.nome}
+              {productData.variacao.map((variacao, index) => {
+                const variacaoImage = getImageForIndex(variacao.imagemIndex);
+                
+                return (
+                  <div key={variacao.id_variacao} style={styles.variacaoCard}>
+                    {variacaoImage && (
+                      <div
                         style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                          width: "60px",
+                          height: "60px",
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                          marginRight: "12px",
+                          flexShrink: 0,
                         }}
-                      />
-                    </div>
-                  )}
+                      >
+                        <img
+                          src={
+                            variacaoImage.isNew
+                              ? variacaoImage.caminho_arquivo
+                              : `${API_URL}${variacaoImage.caminho_arquivo}`
+                          }
+                          alt={variacao.nome}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                    )}
 
-                  <div style={styles.variacaoInfo}>
-                    <div style={styles.variacaoNome}>{variacao.nome}</div>
-                    <div style={styles.variacaoDetalhes}>
-                      {variacao.tipo && `Tipo: ${variacao.tipo}`}
-                      {variacao.cod_interno &&
-                        ` • Cód. Interno: ${variacao.cod_interno}`}
+                    <div style={styles.variacaoInfo}>
+                      <div style={styles.variacaoNome}>{variacao.nome}</div>
+                      <div style={styles.variacaoDetalhes}>
+                        {variacao.tipo && `Tipo: ${variacao.tipo}`}
+                        {variacao.cod_interno &&
+                          ` • Cód. Interno: ${variacao.cod_interno}`}
+                      </div>
+                      <div style={styles.variacaoDetalhes}>
+                        Estoque: {variacao.estoque} • Mín:{" "}
+                        {variacao.estoque_minimo}
+                      </div>
                     </div>
-                    <div style={styles.variacaoDetalhes}>
-                      Estoque: {variacao.estoque} • Mín:{" "}
-                      {variacao.estoque_minimo}
-                    </div>
+                    {isEditing && (
+                      <div style={styles.variacaoActions}>
+                        <button
+                          style={styles.editButton}
+                          onClick={() => handleEditVariacao(index)}
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          style={styles.deleteVariacaoButton}
+                          onClick={() => handleDeleteVariacao(index)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  {isEditing && (
-                    <div style={styles.variacaoActions}>
-                      <button
-                        style={styles.editButton}
-                        onClick={() => handleEditVariacao(index)}
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        style={styles.deleteVariacaoButton}
-                        onClick={() => handleDeleteVariacao(index)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               {isEditing && (
                 <button
@@ -1324,7 +1363,7 @@ const ProductDetailScreen = () => {
                 />
               </div>
 
-              <div style={styles.infoItem}>
+              <div style={{ ...styles.infoItem, ...styles.fullWidth }}>
                 <label style={styles.label}>Código de Barras</label>
                 <input
                   style={styles.input}
@@ -1368,6 +1407,81 @@ const ProductDetailScreen = () => {
                 />
               </div>
             </div>
+
+            {currentImages.length > 0 && (
+              <div style={styles.imagePreviewModal}>
+                <div style={styles.imagePreviewTitle}>
+                  Selecionar Imagem para Variação
+                </div>
+                <div style={styles.imagePreviewGrid}>
+                  <div
+                    style={{
+                      ...styles.imagePreviewItem,
+                      ...(variacaoForm.imagemIndex === null
+                        ? styles.imagePreviewItemSelected
+                        : {}),
+                    }}
+                    onClick={() =>
+                      setVariacaoForm((prev) => ({ ...prev, imagemIndex: null }))
+                    }
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "var(--background-soft)",
+                        color: "var(--text-muted)",
+                        fontSize: "12px",
+                        textAlign: "center",
+                        padding: "8px",
+                      }}
+                    >
+                      Sem imagem
+                    </div>
+                    {variacaoForm.imagemIndex === null && (
+                      <div style={styles.selectedBadge}>✓</div>
+                    )}
+                  </div>
+
+                  {currentImages.map((img, index) => (
+                    <div
+                      key={img.id_imagem || img.tempId || index}
+                      style={{
+                        ...styles.imagePreviewItem,
+                        ...(variacaoForm.imagemIndex === index
+                          ? styles.imagePreviewItemSelected
+                          : {}),
+                      }}
+                      onClick={() =>
+                        setVariacaoForm((prev) => ({
+                          ...prev,
+                          imagemIndex: index,
+                        }))
+                      }
+                    >
+                      <img
+                        src={
+                          img.isNew
+                            ? img.caminho_arquivo
+                            : `${API_URL}${img.caminho_arquivo}`
+                        }
+                        alt={`Opção ${index + 1}`}
+                        style={styles.imagePreviewImg}
+                      />
+                      {variacaoForm.imagemIndex === index && (
+                        <div style={styles.selectedBadge}>✓</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={styles.modalActions}>
               <button
