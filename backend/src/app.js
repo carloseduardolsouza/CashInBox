@@ -6,6 +6,7 @@ const os = require("os");
 const clientesRoutes = require("./routers/clientesRoutes");
 const funcionariosRoutes = require("./routers/funcionariosRoutes");
 const produtoRoutes = require("./routers/produtoRoutes");
+const vendaRoutes = require("./routers/vendaRoutes");
 
 // Inicializa o app Express
 const app = express();
@@ -43,5 +44,6 @@ app.use(express.json());
 app.use("/cliente", clientesRoutes);
 app.use("/funcionario", funcionariosRoutes);
 app.use("/produto", produtoRoutes);
+app.use("/venda" , vendaRoutes)
 
 module.exports = app;

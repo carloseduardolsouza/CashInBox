@@ -1,5 +1,8 @@
-import { useState, useCallback, useMemo } from "react";
-import format from "../../utils/formatters"
+import { useState, useCallback, useMemo, useEffect } from "react";
+import vendaFetch from "../../services/api/vendaFetch";
+import { useParams } from "react-router-dom";
+import format from "../../utils/formatters";
+import Loading from "../../components/layout/Loading";
 import {
   FaRegUser,
   FaFilePdf,
@@ -304,9 +307,24 @@ const dadosSimulados = {
 const DetalhesVenda = () => {
   const [escolherNotas, setEscolherNotas] = useState(false);
   const [escolherEditar, setEscolherEditar] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [dataVenda, setDataVenda] = useState({});
+
+  const { id } = useParams();
+
+  const buscarVenda = async () => {
+    const res = await vendaFetch.vendaID(id);
+    setDataVenda(res);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    buscarVenda();
+  }, [id]);
 
   const handleEnviarWhatsApp = useCallback(() => {
-    return
+    return;
   }, []);
 
   const handleDownloadNota = useCallback((tipo) => {
@@ -319,39 +337,44 @@ const DetalhesVenda = () => {
 
   const handleEditarVenda = useCallback(() => {
     setEscolherEditar(false);
-  }, [])
-
-  const handleCancelarVenda = useCallback(() => {
-    return
   }, []);
 
-  const TabelaProdutos = useMemo(
-    () => (
-      <table style={styles.table}>
-        <thead style={styles.tableHeader}>
-          <tr>
-            <th style={styles.th}>Produto</th>
-            <th style={styles.th}>Valor Unitário</th>
-            <th style={styles.th}>Quantidade</th>
-            <th style={styles.th}>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dadosSimulados.produtos.map((produto) => (
-            <tr key={produto.id}>
-              <td style={styles.td}>{produto.produto_nome}</td>
+  const handleCancelarVenda = useCallback(() => {
+    return;
+  }, []);
+
+  const TabelaProdutos = () => (
+    <table style={styles.table}>
+      <thead style={styles.tableHeader}>
+        <tr>
+          <th style={styles.th}>Produto</th>
+          <th style={styles.th}>Valor Unitário</th>
+          <th style={styles.th}>Quantidade</th>
+          <th style={styles.th}>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dataVenda.itens.map((produto) => {
+          return (
+            <tr key={produto.id_item}>
+              <td style={styles.td}>{produto.nome_produto}</td>
               <td style={styles.td}>
                 {format.formatarCurrency(produto.preco_unitario)}
               </td>
               <td style={styles.td}>{produto.quantidade}</td>
-              <td style={styles.td}>{format.formatarCurrency(produto.valor_total)}</td>
+              <td style={styles.td}>
+                {format.formatarCurrency(produto.subtotal)}
+              </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    ),
-    []
+          );
+        })}
+      </tbody>
+    </table>
   );
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div style={styles.container}>
@@ -382,19 +405,23 @@ const DetalhesVenda = () => {
             <div style={styles.clientInfo}>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Nome: </span>
-                {dadosSimulados.cliente.nome}
+                {dataVenda.cliente.nome}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Telefone: </span>
-                {format.formatarTelefone(dadosSimulados.cliente.telefone)}
+                {format.formatarTelefone(dataVenda.cliente.telefone)}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>CPF: </span>
-                {format.formatCPF(dadosSimulados.cliente.cpf_cnpj)}
+                {format.formatCPF(dataVenda.cliente.cpfCNPJ)}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Endereço: </span>
-                {dadosSimulados.cliente.endereco}
+                {dataVenda.cliente.endereco[0].bairro +
+                  " - " +
+                  dataVenda.cliente.endereco[0].rua +
+                  " - " +
+                  dataVenda.cliente.endereco[0].complemento}
               </p>
             </div>
           </div>
@@ -411,7 +438,7 @@ const DetalhesVenda = () => {
             >
               Produtos
             </h3>
-            {TabelaProdutos}
+            {<TabelaProdutos />}
           </div>
         </div>
 
@@ -420,12 +447,11 @@ const DetalhesVenda = () => {
           {/* Valor Total */}
           <div style={styles.totalSection}>
             <h2 style={styles.totalValue}>
-              {format.formatarCurrency(dadosSimulados.venda.valor_total)}
+              {format.formatarCurrency(dataVenda.valor_liquido)}
             </h2>
             <p style={styles.vendaInfo}>
-              Venda #{dadosSimulados.venda.id} •{" "}
-              {format.formatDate(dadosSimulados.venda.data_venda)} •{" "}
-              {format.formatarHora(dadosSimulados.venda.data_venda)}
+              Venda #{dataVenda.id_venda} • {format.formatDate(dataVenda.data)}{" "}
+              • {format.formatarHora(dataVenda.data)}
             </p>
           </div>
 
@@ -433,29 +459,37 @@ const DetalhesVenda = () => {
           <div style={styles.detailsSection}>
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Total Bruto:</span>
-              <span>{format.formatarCurrency(dadosSimulados.venda.total_bruto)}</span>
+              <span>{format.formatarCurrency(dataVenda.valor_bruto)}</span>
             </div>
 
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Descontos:</span>
-              <span>{format.formatarCurrency(dadosSimulados.venda.descontos)}</span>
+              <span>
+                {`${format.formatarCurrency(dataVenda.desconto_real)} / ${
+                  dataVenda.desconto_porcentagem
+                } %`}
+              </span>
             </div>
 
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Acréscimos:</span>
-              <span>{format.formatarCurrency(dadosSimulados.venda.acrescimos)}</span>
+              <span>
+                {`${format.formatarCurrency(dataVenda.acrescimo_real)} / ${
+                  dataVenda.acrescimo_porcentagem
+                } %`}
+              </span>
             </div>
 
             <div style={{ ...styles.detailItem, marginTop: "16px" }}>
               <span style={styles.detailLabel}>Status:</span>
               <span style={styles.statusBadge}>
-                {dadosSimulados.venda.status}
+                {dataVenda.status}
               </span>
             </div>
 
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Vendedor:</span>
-              <span>{dadosSimulados.venda.nome_funcionario}</span>
+              <span>{dataVenda.vendedor.nome}</span>
             </div>
 
             <div
@@ -467,7 +501,7 @@ const DetalhesVenda = () => {
               }}
             >
               <span style={styles.detailLabel}>Pagamentos:</span>
-              {dadosSimulados.pagamentos.map((pag) => (
+              {dataVenda.pagamentos.map((pag) => (
                 <div
                   key={pag.id}
                   style={{
@@ -476,7 +510,7 @@ const DetalhesVenda = () => {
                     paddingLeft: "8px",
                   }}
                 >
-                  • {format.formatarCurrency(pag.valor)} - {pag.tipo_pagamento}
+                  • {format.formatarCurrency(pag.valor)} - {pag.forma}
                 </div>
               ))}
             </div>
@@ -547,10 +581,7 @@ const DetalhesVenda = () => {
                     Amortizar Crediário
                   </div>
 
-                  <div
-                    style={styles.dropdownItem}
-                    onClick={handleEditarVenda}
-                  >
+                  <div style={styles.dropdownItem} onClick={handleEditarVenda}>
                     <FaEdit size={14} />
                     Editar Venda
                   </div>

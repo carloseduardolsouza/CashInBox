@@ -665,7 +665,13 @@ function Pdv() {
           </button>
         </div>
       </div>
-      {mostrarModalFinalizar && <FaturarVenda onClose={() => setMostrarModalFinalizar(false)} reset={resetarTudo}/>}
+      {mostrarModalFinalizar && (
+        <FaturarVenda
+          onClose={() => setMostrarModalFinalizar(false)}
+          reset={resetarTudo}
+          produtos={arrayVenda}
+        />
+      )}
     </div>
   );
 }

@@ -10,20 +10,8 @@ import {
 } from "react-icons/fa";
 import Select from "react-select";
 import clientesFetch from "../../../services/api/clientesFetch";
-
-// Simulação de dados da API
-const mockClientes = [
-  { id: 1, nome: "João Silva" },
-  { id: 2, nome: "Maria Santos" },
-  { id: 3, nome: "Pedro Oliveira" },
-  { id: 4, nome: "Ana Costa" },
-];
-
-const mockFuncionarios = [
-  { id: 1, nome: "Carlos Vendedor" },
-  { id: 2, nome: "Juliana Atendente" },
-  { id: 3, nome: "Roberto Gerente" },
-];
+import funcionariosFetch from "../../../services/api/funcionariosFetch";
+import vendaFetch from "../../../services/api/vendaFetch";
 
 const mockConfigCaixa = {
   formas_pagamentos: [
@@ -35,30 +23,6 @@ const mockConfigCaixa = {
   ],
   limite_desconto: 20,
 };
-
-const mockVenda = [
-  {
-    id: 1,
-    nome: "Produto A",
-    quantidade: 2,
-    valor_unitario: 50,
-    valor_total: 100,
-  },
-  {
-    id: 2,
-    nome: "Produto B",
-    quantidade: 1,
-    valor_unitario: 150,
-    valor_total: 150,
-  },
-  {
-    id: 3,
-    nome: "Produto C",
-    quantidade: 3,
-    valor_unitario: 30,
-    valor_total: 90,
-  },
-];
 
 const styles = {
   overlay: {
@@ -283,10 +247,10 @@ const styles = {
   },
 };
 
-function FaturarVenda({ onClose, reset }) {
+function FaturarVenda({ onClose, reset, produtos }) {
   const { adicionarAviso } = useContext(AppContext);
   const [configCaixa] = useState(mockConfigCaixa);
-  const [venda] = useState(mockVenda);
+  const [venda] = useState(produtos);
 
   const [valorCompra, setValorCompra] = useState(0);
   const [descontoReais, setDescontoReais] = useState(0);
@@ -312,8 +276,14 @@ function FaturarVenda({ onClose, reset }) {
     setClientes(clientes);
   };
 
+  const buscarFuncionarios = async () => {
+    const funcionarios = await funcionariosFetch.lista();
+    setVendedores(funcionarios);
+  };
+
   useEffect(() => {
     buscarClientes();
+    buscarFuncionarios();
   }, []);
 
   const [numParcelas, setNumParcelas] = useState(1);
@@ -366,7 +336,10 @@ function FaturarVenda({ onClose, reset }) {
   };
 
   useEffect(() => {
-    const total = venda.reduce((acc, item) => acc + item.valor_total, 0);
+    const total = parseFloat(
+      venda.reduce((acc, item) => acc + item.subtotal, 0).toFixed(2)
+    );
+
     setValorCompra(total);
     setTotalPagar(total);
     setFaltaPagar(total);
@@ -421,7 +394,7 @@ function FaturarVenda({ onClose, reset }) {
 
   const faturarVenda = (tipo) => {
     if (descontoPorcentagem > configCaixa.limite_desconto) {
-      adicionarAviso("alert" , "Desconto excede o limite permitido")
+      adicionarAviso("alert", "Desconto excede o limite permitido");
       return;
     }
     if (
@@ -433,14 +406,14 @@ function FaturarVenda({ onClose, reset }) {
       return;
     }
     if (formaPagementoAtual === "Crediário Próprio" && !id_cliente) {
-      adicionarAviso("alert" , "Escolha um cliente para venda no crediário")
+      adicionarAviso("alert", "Escolha um cliente para venda no crediário");
       return;
     }
     if (
       formaPagementoAtual === "Crediário Próprio" &&
       parcelasGeradas.length === 0
     ) {
-      adicionarAviso("alert" , "Gere pelo menos 1 parcela")
+      adicionarAviso("alert", "Gere pelo menos 1 parcela");
       return;
     }
 
@@ -450,46 +423,40 @@ function FaturarVenda({ onClose, reset }) {
         break;
     }
 
-    adicionarAviso("sucesso" , `${tipo === "nota" ? "Nota Fiscal" : "Orçamento"} gerado com sucesso!`)
+    adicionarAviso(
+      "sucesso",
+      `${tipo === "nota" ? "Nota Fiscal" : "Orçamento"} gerado com sucesso!`
+    );
   };
 
-  const finalizarVenda = () => {
-    /*const vendaData = {
+  const finalizarVenda = async () => {
+    const vendaData = {
       data: new Date().toISOString(),
-      valor_bruto: valorTotal,
-      valor_liquido: valorLiquido,
+      valor_bruto: valorCompra,
+      valor_liquido: totalPagar,
       status: "finalizada",
-      desconto_real:
-        desconto.tipo === "real"
-          ? desconto.valor
-          : (valorTotal * desconto.valor) / 100,
-      desconto_porcentagem:
-        desconto.tipo === "porcentagem" ? desconto.valor : 0,
-      acrescimo_real:
-        acrescimo.tipo === "real"
-          ? acrescimo.valor
-          : (valorTotal * acrescimo.valor) / 100,
-      acrescimo_porcentagem:
-        acrescimo.tipo === "porcentagem" ? acrescimo.valor : 0,
-      id_usuario: 1, // Simulado
-      id_funcionario: 1, // Simulado
-      pagamento: [
-        {
-          forma: formaPagamento,
-          valor: valorPagamento || valorLiquido,
-          data_pagamento: new Date().toISOString(),
-        },
-      ],
-      produtos: arrayVenda.map((item) => ({
+      desconto_real: descontoReais,
+      desconto_porcentagem: descontoPorcentagem,
+      acrescimo_real: acrescimoReais,
+      acrescimo_porcentagem: acrescimoPorcentagem,
+      id_cliente: id_cliente,
+      id_usuario: null,
+      id_funcionario: id_vendedor,
+      pagamento: formaPagemento.map((dados) => ({
+        forma: dados.tipo_pagamento,
+        valor: dados.valor,
+        data_pagamento: new Date().toISOString(),
+      })),
+      produtos: venda.map((item) => ({
         id_produto: item.id_produto,
         id_variacao: item.id_variacao,
         quantidade: item.quantidade,
         preco_unitario: item.preco_unitario,
         subtotal: item.subtotal,
       })),
-    };*/
+    };
 
-    console.log("Venda Finalizada");
+    const res = await vendaFetch.cadastro(vendaData)
 
     // Resetar tudo
     reset();
@@ -532,6 +499,11 @@ function FaturarVenda({ onClose, reset }) {
   const optionsClientes = clientes.map((resultClientes) => ({
     value: resultClientes.id_cliente,
     label: resultClientes.nome,
+  }));
+
+  const optionsVendedores = vendedores.map((resultVendedores) => ({
+    value: resultVendedores.id_funcionario,
+    label: resultVendedores.nome,
   }));
 
   return (
@@ -655,12 +627,18 @@ function FaturarVenda({ onClose, reset }) {
                   styles={customStyles}
                   placeholder="Cliente"
                   options={optionsClientes}
+                  onChange={(e) => setId_cliente(e.value)}
                 />
               </div>
 
               <div style={styles.row}>
                 <span style={styles.label}>Vendedor:</span>
-                <Select styles={customStyles} placeholder="Vendedor" />
+                <Select
+                  styles={customStyles}
+                  options={optionsVendedores}
+                  placeholder="Vendedor"
+                  onChange={(e) => setId_vendedor(e.value)}
+                />
               </div>
 
               <div style={{ marginTop: "20px" }}>

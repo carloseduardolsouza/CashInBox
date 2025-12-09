@@ -1,4 +1,7 @@
 import { Link , useNavigate } from "react-router-dom";
+import { useEffect , useState } from "react";
+import vendaFetch from "../../services/api/vendaFetch"
+import format from "../../utils/formatters"
 
 //icones
 import { FaComputer } from "react-icons/fa6";
@@ -6,31 +9,54 @@ import { FaComputer } from "react-icons/fa6";
 //components
 import Table from "../../components/ui/tabelas/Table";
 
+const styles = {
+  Vendas: {
+    marginLeft: "40px",
+    padding: "0 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    backgroundColor: "var(--background-color)",
+    minHeight: "100vh",
+  },
+  titleHeader: {
+    color: "var(--text-primary)",
+  },
+  buttonNovaVenda: {
+    backgroundColor: "var(--primary-color)",
+    color: "var(--text-inverse)",
+    padding: "10px 35px",
+    borderRadius: "20px",
+    textDecoration: "none",
+    fontWeight: "bold",
+    fontSize: "15px",
+    width: "130px",
+  },
+};
+
 function HistoricoVendas() {
-  const styles = {
-    Vendas: {
-      marginLeft: "40px",
-      padding: "0 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: "16px",
-      backgroundColor: "var(--background-color)",
-      minHeight: "100vh",
-    },
-    titleHeader: {
-      color: "var(--text-primary)",
-    },
-    buttonNovaVenda: {
-      backgroundColor: "var(--primary-color)",
-      color: "var(--text-inverse)",
-      padding: "10px 35px",
-      borderRadius: "20px",
-      textDecoration: "none",
-      fontWeight: "bold",
-      fontSize: "15px",
-      width: "130px",
-    },
-  };
+  const [dataVendas , setDataVendas] = useState([])
+
+  const buscarVendas = async () => {
+    const res = await vendaFetch.lista()
+
+    const resFormated = res.map((dados) => {
+      return {
+      id_venda: dados.id_venda,
+      cliente: dados.cliente.nome,
+      desconto: `${format.formatarCurrency(dados.desconto_real)} / ${dados.desconto_porcentagem} %`,
+      acrescimos: `${format.formatarCurrency(dados.acrescimo_real)} / ${dados.acrescimo_porcentagem} %`,
+      total: format.formatarCurrency(dados.valor_liquido),
+      status: dados.status,
+      data: format.formatDate(dados.data),
+    }
+    })
+    setDataVendas(resFormated)
+  }
+
+  useEffect(() => {
+    buscarVendas()
+  }, [])
 
   // Exemplo de uso
   const columns = [
@@ -42,36 +68,6 @@ function HistoricoVendas() {
     { header: "Data", key: "data" },
   ];
 
-  const data = [
-    {
-      id: 2,
-      cliente: "João Silva",
-      desconto: 10,
-      acrescimos: 5,
-      total: 150,
-      status: "Pago",
-      data: "2025-12-01",
-    },
-    {
-      id: 2,
-      cliente: "Maria Santos",
-      desconto: 0,
-      acrescimos: 0,
-      total: 230,
-      status: "Pendente",
-      data: "2025-12-02",
-    },
-    {
-      id: 2,
-      cliente: "Pedro Costa",
-      desconto: 15,
-      acrescimos: 0,
-      total: 120,
-      status: "Pago",
-      data: "2025-12-02",
-    },
-  ];
-
   const navigate = useNavigate();
 
   const actions = [
@@ -79,7 +75,7 @@ function HistoricoVendas() {
     label: "Detalhes",
     type: "details",
     onClick: (row, index) => {
-        navigate(`/vendas/detalhes/${row.id}`);
+        navigate(`/vendas/detalhes/${row.id_venda}`);
       },
   }
 ];
@@ -92,7 +88,7 @@ function HistoricoVendas() {
         <FaComputer /> Nova Venda
       </Link>
 
-      <Table columns={columns} data={data} actions={actions}/>
+      <Table columns={columns} data={dataVendas} actions={actions}/>
     </div>
   );
 }
