@@ -47,10 +47,22 @@ exports.up = async function(knex) {
     table.index('ativo');
   });
 
-  // 4. Tabela de variações de produtos
+  // 4. Tabela de imagens de produtos
+  await knex.schema.createTable('produto_imagens', (table) => {
+    table.increments('id_imagem').primary();
+    table.integer('id_produto').unsigned().references('id_produto').inTable('produtos').onDelete('CASCADE');
+    table.string('caminho_arquivo', 500).notNullable();
+    table.boolean('principal').defaultTo(false);
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    
+    table.index('id_produto');
+  });
+
+  // 5. Tabela de variações de produtos (com referência para imagem)
   await knex.schema.createTable('produto_variacao', (table) => {
     table.increments('id_variacao').primary();
     table.integer('id_produto').unsigned().references('id_produto').inTable('produtos').onDelete('CASCADE');
+    table.integer('id_imagem').unsigned().references('id_imagem').inTable('produto_imagens').onDelete('SET NULL');
     table.string('nome', 100).notNullable();
     table.string('tipo', 50); // Ex: cor, tamanho
     table.string('cod_interno', 50);
@@ -60,25 +72,14 @@ exports.up = async function(knex) {
     table.timestamp('created_at').defaultTo(knex.fn.now());
     
     table.index('id_produto');
+    table.index('id_imagem');
     table.index('cod_barras');
-  });
-
-  // 5. Tabela de imagens de produtos
-  await knex.schema.createTable('produto_imagens', (table) => {
-    table.increments('id_imagem').primary();
-    table.integer('id_produto').unsigned().references('id_produto').inTable('produtos').onDelete('CASCADE');
-    table.integer('id_variacao').unsigned().references('id_variacao').inTable('produto_variacao').onDelete('CASCADE');
-    table.string('caminho_arquivo', 500).notNullable();
-    table.boolean('principal').defaultTo(false);
-    
-    table.index('id_produto');
-    table.index('id_variacao');
   });
 };
 
 exports.down = async function(knex) {
-  await knex.schema.dropTableIfExists('produto_imagens');
   await knex.schema.dropTableIfExists('produto_variacao');
+  await knex.schema.dropTableIfExists('produto_imagens');
   await knex.schema.dropTableIfExists('produtos');
   await knex.schema.dropTableIfExists('subcategoria_produtos');
   await knex.schema.dropTableIfExists('categoria_produtos');

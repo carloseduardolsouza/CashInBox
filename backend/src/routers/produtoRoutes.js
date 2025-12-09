@@ -9,9 +9,17 @@ router.get("/lista", produtoControllers.lista);
 
 // Upload de múltiplos arquivos (máximo 20 imagens)
 router.post("/cadastro", upload.array('images', 20), produtoControllers.cadastro);
-router.post("/novaImagem" , upload.array('images', 20) , produtoControllers.novaImagem)
 
-router.put("/editar/:id", upload.array('images', 20), produtoControllers.editar);
+// 🆕 NOVA ROTA: Adicionar imagens a um produto existente
+router.post("/imagem/nova", upload.array('images', 20), produtoControllers.novaImagem);
+
+// 🆕 NOVA ROTA: Deletar uma imagem específica
+router.delete("/imagem/deletar/:id_imagem", produtoControllers.deletarImagem);
+router.delete("/variacao/deletar/:id_variacao", produtoControllers.deletarVariacao);
+
+// Edição do produto
+router.put("/editar/:id", produtoControllers.editar);
+
 router.delete("/deletar/:id", produtoControllers.deletar);
 
 // Rotas de Categorias

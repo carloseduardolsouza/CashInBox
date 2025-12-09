@@ -519,13 +519,11 @@ const ProductDetailScreen = () => {
   const [showVariacaoModal, setShowVariacaoModal] = useState(false);
   const [editingVariacaoIndex, setEditingVariacaoIndex] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [modalDeleteProduto, setModalDeleteProduto] = useState(false);
 
   const [productData, setProductData] = useState({});
   const [originalData, setOriginalData] = useState({});
-  const [newImages, setNewImages] = useState([]);
-  const [newImageFiles, setNewImageFiles] = useState([]);
-  const [deletedImages, setDeletedImages] = useState([]);
 
   const [variacaoForm, setVariacaoForm] = useState({
     nome: "",
@@ -534,7 +532,7 @@ const ProductDetailScreen = () => {
     cod_barras: "",
     estoque: "",
     estoque_minimo: "",
-    imagemIndex: null,
+    images: null, // Agora armazena o ID da imagem
   });
 
   useEffect(() => {
@@ -544,12 +542,32 @@ const ProductDetailScreen = () => {
   const buscarProdutoID = async () => {
     try {
       const res = await estoqueFetch.produtoID(id);
-      console.log(res);
 
-      if (res) {
-        setProductData(res);
-        setOriginalData(JSON.parse(JSON.stringify(res)));
+      if (!res) {
+        console.error("Resposta vazia ao buscar produto");
+        return;
       }
+
+      const variacoes = Array.isArray(res.variacao) ? res.variacao : [];
+
+      const resFormated = {
+        ...res,
+        variacao: variacoes.map((dados) => {
+          return {
+            cod_barras: dados.cod_barras ?? "",
+            cod_interno: dados.cod_interno ?? "",
+            estoque: Number(dados.estoque ?? 0),
+            estoque_minimo: Number(dados.estoque_minimo ?? 0),
+            id_variacao: dados.id_variacao ?? null,
+            nome: dados.nome ?? "",
+            tipo: dados.tipo ?? "",
+            images: dados.images[0]?.id_imagem || null,
+          };
+        }),
+      };
+
+      setProductData(resFormated);
+      setOriginalData(JSON.parse(JSON.stringify(resFormated)));
     } catch (error) {
       console.error("Erro ao buscar produto:", error);
     }
@@ -558,32 +576,74 @@ const ProductDetailScreen = () => {
   const deletarProduto = async () => {
     try {
       await estoqueFetch.deletar(productData.id_produto);
+      adicionarAviso("sucesso", "Produto deletado com sucesso");
       navigate("/estoque/inventario");
     } catch (error) {
       console.error("Erro ao deletar produto:", error);
+      adicionarAviso("erro", "Erro ao deletar produto");
     }
   };
 
-  const handleImageChange = (e) => {
+  const deletarVariacao = async (id_variacao) => {
+    const res = await estoqueFetch.deletarVariacao(id_variacao);
+    buscarProdutoID();
+  };
+
+  // 🆕 Função para adicionar imagens ao produto
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    const newImageURLs = files.map((file) => URL.createObjectURL(file));
-    setNewImages([...newImages, ...newImageURLs]);
-    setNewImageFiles([...newImageFiles, ...files]);
+    try {
+      setUploadingImages(true);
+
+      // Envia as imagens para a API
+      const imagensSalvas = await estoqueFetch.adicionarImagens(
+        productData.id_produto,
+        files
+      );
+
+      // Atualiza o estado com as novas imagens
+      setProductData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...imagensSalvas],
+      }));
+
+      adicionarAviso(
+        "sucesso",
+        `${imagensSalvas.length} imagem(ns) adicionada(s)`
+      );
+    } catch (error) {
+      console.error("Erro ao adicionar imagens:", error);
+      adicionarAviso("erro", "Erro ao adicionar imagens");
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
-  const removeNewImage = (index) => {
-    setNewImages(newImages.filter((_, i) => i !== index));
-    setNewImageFiles(newImageFiles.filter((_, i) => i !== index));
-  };
+  // Função para remover imagem
+  const removeExistingImage = async (imageId) => {
+    if (window.confirm("Deseja realmente excluir esta imagem?")) {
+      try {
+        await estoqueFetch.deletarImagem(imageId);
 
-  const removeExistingImage = (imageId) => {
-    setDeletedImages([...deletedImages, imageId]);
-    setProductData((prev) => ({
-      ...prev,
-      images: prev.images.filter((img) => img.id_imagem !== imageId),
-    }));
+        // Remove do estado
+        setProductData((prev) => ({
+          ...prev,
+          images: prev.images.filter((img) => img.id_imagem !== imageId),
+        }));
+
+        // Ajusta o índice selecionado se necessário
+        if (selectedImageIndex >= productData.images.length - 1) {
+          setSelectedImageIndex(Math.max(0, productData.images.length - 2));
+        }
+
+        adicionarAviso("sucesso", "Imagem removida com sucesso");
+      } catch (error) {
+        console.error("Erro ao remover imagem:", error);
+        adicionarAviso("erro", "Erro ao remover imagem");
+      }
+    }
   };
 
   const calculatePrices = (field, value) => {
@@ -622,73 +682,42 @@ const ProductDetailScreen = () => {
     try {
       setLoading(true);
 
-      const formData = new FormData();
+      // Prepara os dados do produto
+      const dadosProduto = {
+        nome: productData.nome,
+        descricao: productData.descricao || "",
+        cod_barras: productData.cod_barras || "",
+        preco_custo: parseFloat(productData.preco_custo) || 0,
+        preco_venda: parseFloat(productData.preco_venda) || 0,
+        margem: parseFloat(productData.margem) || 0,
+        id_categoria: productData.id_categoria || null,
+        id_subcategoria: productData.id_subcategoria || null,
+        estoque: parseFloat(productData.estoque) || 0,
+        estoque_minimo: parseFloat(productData.estoque_minimo) || 0,
+        ativo: productData.ativo ? true : false,
+        variacao:
+          productData.variacao.map((v) => ({
+            id_variacao: v.id_variacao || null,
+            nome: v.nome || "",
+            tipo: v.tipo || "",
+            cod_interno: v.cod_interno || "",
+            cod_barras: v.cod_barras || "",
+            estoque: parseFloat(v.estoque) || 0,
+            estoque_minimo: parseFloat(v.estoque_minimo) || 0,
+            images: v.images || null, // ID da imagem associada
+          })) || [],
+      };
 
-      formData.append("nome", productData.nome);
-      formData.append("descricao", productData.descricao || "");
-      formData.append("cod_barras", productData.cod_barras || "");
-      formData.append("preco_custo", parseFloat(productData.preco_custo) || 0);
-      formData.append("preco_venda", parseFloat(productData.preco_venda) || 0);
-      formData.append("margem", parseFloat(productData.margem) || 0);
-      formData.append("id_categoria", productData.id_categoria || "");
-      formData.append("id_subcategoria", productData.id_subcategoria || "");
-      formData.append("estoque", productData.estoque || 0);
-      formData.append("estoque_minimo", productData.estoque_minimo || 0);
-      formData.append("ativo", productData.ativo ? true : false);
+      console.log("📤 Enviando atualização:", dadosProduto);
 
-      const imagensExistentes = (productData.images || [])
-        .filter((img) => img.id_imagem)
-        .map((img) => img.id_imagem);
+      await estoqueFetch.editar(productData.id_produto, dadosProduto);
 
-      formData.append("imagensExistentes", JSON.stringify(imagensExistentes));
-      formData.append("imagensDeletar", JSON.stringify(deletedImages));
-
-      newImageFiles.forEach((file) => {
-        formData.append("images", file);
-      });
-
-      const variacoesFormatadas = (productData.variacao || []).map((v) => ({
-        id_variacao: v.id_variacao || null,
-        nome: v.nome || "",
-        tipo: v.tipo || "",
-        cod_interno: v.cod_interno || "",
-        cod_barras: v.cod_barras || "",
-        estoque: v.estoque || 0,
-        estoque_minimo: v.estoque_minimo || 0,
-        imagemIndex:
-          v.imagemIndex !== null && v.imagemIndex !== undefined
-            ? v.imagemIndex
-            : null,
-      }));
-
-      formData.append("variacoes", JSON.stringify(variacoesFormatadas));
-
-      console.log("📤 Enviando atualização:");
-      console.log("- Imagens existentes:", imagensExistentes.length);
-      console.log("- Imagens a deletar:", deletedImages.length);
-      console.log("- Novas imagens:", newImageFiles.length);
-      console.log("- Variações:", variacoesFormatadas);
-
-      const response = await estoqueFetch.editar(
-        productData.id_produto,
-        formData
-      );
-
-      if (response.success) {
-        adicionarAviso("sucesso", "Produto atualizado com sucesso");
-        setIsEditing(false);
-        setNewImages([]);
-        setNewImageFiles([]);
-        setDeletedImages([]);
-        setSelectedImageIndex(0);
-        await buscarProdutoID();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Erro ao atualizar produto");
-      }
+      adicionarAviso("sucesso", "Produto atualizado com sucesso");
+      setIsEditing(false);
+      await buscarProdutoID();
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
-      adicionarAviso("erro", "Falha ao atualizar produto , tenta novamente");
+      adicionarAviso("erro", "Falha ao atualizar produto");
     } finally {
       setLoading(false);
     }
@@ -696,9 +725,6 @@ const ProductDetailScreen = () => {
 
   const handleCancel = () => {
     setProductData(JSON.parse(JSON.stringify(originalData)));
-    setNewImages([]);
-    setNewImageFiles([]);
-    setDeletedImages([]);
     setSelectedImageIndex(0);
     setIsEditing(false);
   };
@@ -711,7 +737,7 @@ const ProductDetailScreen = () => {
       cod_barras: "",
       estoque: "",
       estoque_minimo: "",
-      imagemIndex: null,
+      images: null,
     });
     setEditingVariacaoIndex(null);
     setShowVariacaoModal(true);
@@ -719,6 +745,7 @@ const ProductDetailScreen = () => {
 
   const handleEditVariacao = (index) => {
     const variacao = productData.variacao[index];
+
     setVariacaoForm({
       nome: variacao.nome,
       tipo: variacao.tipo,
@@ -726,10 +753,7 @@ const ProductDetailScreen = () => {
       cod_barras: variacao.cod_barras,
       estoque: variacao.estoque,
       estoque_minimo: variacao.estoque_minimo,
-      imagemIndex:
-        variacao.imagemIndex !== null && variacao.imagemIndex !== undefined
-          ? variacao.imagemIndex
-          : null,
+      images: variacao.images,
     });
     setEditingVariacaoIndex(index);
     setShowVariacaoModal(true);
@@ -741,76 +765,65 @@ const ProductDetailScreen = () => {
       return;
     }
 
-    if (editingVariacaoIndex !== null) {
-      const newVariacoes = [...productData.variacao];
-      newVariacoes[editingVariacaoIndex] = {
-        ...newVariacoes[editingVariacaoIndex],
-        ...variacaoForm,
-      };
-      setProductData((prev) => ({ ...prev, variacao: newVariacoes }));
-    } else {
-      setProductData((prev) => ({
+    setProductData((prev) => {
+      const novasVariacoes = [...prev.variacao];
+
+      if (editingVariacaoIndex !== null) {
+        // Editar variação existente
+        novasVariacoes[editingVariacaoIndex] = {
+          ...novasVariacoes[editingVariacaoIndex],
+          nome: variacaoForm.nome,
+          tipo: variacaoForm.tipo,
+          cod_interno: variacaoForm.cod_interno,
+          cod_barras: variacaoForm.cod_barras,
+          estoque: parseFloat(variacaoForm.estoque) || 0,
+          estoque_minimo: parseFloat(variacaoForm.estoque_minimo) || 0,
+          images: variacaoForm.images || null,
+        };
+      } else {
+        // Adicionar nova variação
+        novasVariacoes.push({
+          nome: variacaoForm.nome,
+          tipo: variacaoForm.tipo,
+          cod_interno: variacaoForm.cod_interno,
+          cod_barras: variacaoForm.cod_barras,
+          estoque: parseFloat(variacaoForm.estoque) || 0,
+          estoque_minimo: parseFloat(variacaoForm.estoque_minimo) || 0,
+          images: variacaoForm.images || null,
+        });
+      }
+
+      return {
         ...prev,
-        variacao: [
-          ...(prev.variacao || []),
-          { id_variacao: Date.now(), ...variacaoForm, images: [] },
-        ],
-      }));
-    }
+        variacao: novasVariacoes,
+      };
+    });
 
     setShowVariacaoModal(false);
   };
 
-  const handleDeleteVariacao = (index) => {
-    if (window.confirm("Deseja realmente excluir esta variação?")) {
-      setProductData((prev) => ({
-        ...prev,
-        variacao: prev.variacao.filter((_, i) => i !== index),
-      }));
-    }
-  };
-
   const hasVariations = productData.variacao && productData.variacao.length > 0;
-
-  const existingImages = (productData.images || []).filter(
-    (img) => !deletedImages.includes(img.id_imagem)
-  );
-  const newImagesWithFlag = newImages.map((url, i) => ({
-    caminho_arquivo: url,
-    isNew: true,
-    tempId: `new-${i}`,
-  }));
-  const currentImages = [...existingImages, ...newImagesWithFlag];
+  const currentImages = productData.images || [];
   const currentImage = currentImages[selectedImageIndex];
 
   const getCurrentEstoque = () => {
-    let estoqueVariacao = 0;
     if (hasVariations) {
-      productData.variacao.map((dados) => {
-        estoqueVariacao += dados.estoque;
-      });
-      return estoqueVariacao;
+      return productData.variacao.reduce(
+        (sum, v) => sum + (parseFloat(v.estoque) || 0),
+        0
+      );
     }
-    return productData.estoque;
+    return productData.estoque || 0;
   };
 
   const getCurrentEstoqueMinimo = () => {
-    let estoqueMinimoVariacao = 0;
     if (hasVariations) {
-      productData.variacao.map((dados) => {
-        estoqueMinimoVariacao += dados.estoque_minimo;
-      });
-      return estoqueMinimoVariacao;
+      return productData.variacao.reduce(
+        (sum, v) => sum + (parseFloat(v.estoque_minimo) || 0),
+        0
+      );
     }
-    return productData.estoque_minimo;
-  };
-
-  const getImageForIndex = (index) => {
-    if (index === null || index === undefined || index < 0) return null;
-    console.log(currentImages);
-
-    const allImages = [...currentImages];
-    return allImages[index] || null;
+    return productData.estoque_minimo || 0;
   };
 
   const customStyles = {
@@ -1110,7 +1123,7 @@ const ProductDetailScreen = () => {
               {isEditing ? (
                 <div style={styles.infoItem}>
                   <span style={styles.label}>Categoria</span>
-                  <Select styles={customStyles}/>
+                  <Select styles={customStyles} />
                 </div>
               ) : (
                 <div style={styles.infoItem}>
@@ -1124,7 +1137,7 @@ const ProductDetailScreen = () => {
               {isEditing ? (
                 <div style={styles.infoItem}>
                   <span style={styles.label}>Subcategoria</span>
-                  <Select styles={customStyles}/>
+                  <Select styles={customStyles} />
                 </div>
               ) : (
                 <div style={styles.infoItem}>
@@ -1223,8 +1236,9 @@ const ProductDetailScreen = () => {
               </div>
 
               {productData.variacao.map((variacao, index) => {
-                const variacaoImage = getImageForIndex(variacao.imagemIndex);
-
+                const variacaoImage = currentImages.find(
+                  (img) => img.id_imagem === variacao.images
+                );
                 return (
                   <div key={variacao.id_variacao} style={styles.variacaoCard}>
                     {variacaoImage && (
@@ -1276,7 +1290,7 @@ const ProductDetailScreen = () => {
                         </button>
                         <button
                           style={styles.deleteVariacaoButton}
-                          onClick={() => handleDeleteVariacao(index)}
+                          onClick={() => deletarVariacao(variacao.id_variacao)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -1285,17 +1299,16 @@ const ProductDetailScreen = () => {
                   </div>
                 );
               })}
-
-              {isEditing && (
-                <button
-                  style={styles.addVariacaoButton}
-                  onClick={openVariacaoModal}
-                >
-                  <Plus size={18} />
-                  Adicionar Variação
-                </button>
-              )}
             </div>
+          )}
+          {isEditing && (
+            <button
+              style={styles.addVariacaoButton}
+              onClick={openVariacaoModal}
+            >
+              <Plus size={18} />
+              Adicionar Variação
+            </button>
           )}
         </div>
       </div>
@@ -1481,14 +1494,14 @@ const ProductDetailScreen = () => {
                   <div
                     style={{
                       ...styles.imagePreviewItem,
-                      ...(variacaoForm.imagemIndex === null
+                      ...(variacaoForm.images === null
                         ? styles.imagePreviewItemSelected
                         : {}),
                     }}
                     onClick={() =>
                       setVariacaoForm((prev) => ({
                         ...prev,
-                        imagemIndex: null,
+                        images: null,
                       }))
                     }
                   >
@@ -1511,27 +1524,28 @@ const ProductDetailScreen = () => {
                     >
                       Sem imagem
                     </div>
-                    {variacaoForm.imagemIndex === null && (
+                    {variacaoForm.images === null && (
                       <div style={styles.selectedBadge}>✓</div>
                     )}
                   </div>
 
                   {currentImages.map((img, index) => (
                     <div
-                      key={img.id_imagem || img.tempId || index}
+                      key={img.id_imagem || index}
                       style={{
                         ...styles.imagePreviewItem,
-                        ...(variacaoForm.imagemIndex === index
+                        ...(variacaoForm.images === img.id_imagem
                           ? styles.imagePreviewItemSelected
                           : {}),
                       }}
                       onClick={() =>
                         setVariacaoForm((prev) => ({
                           ...prev,
-                          imagemIndex: index,
+                          images: img.id_imagem,
                         }))
                       }
                     >
+                      {console.log(variacaoForm)}
                       <img
                         src={
                           img.isNew
@@ -1541,7 +1555,7 @@ const ProductDetailScreen = () => {
                         alt={`Opção ${index + 1}`}
                         style={styles.imagePreviewImg}
                       />
-                      {variacaoForm.imagemIndex === index && (
+                      {variacaoForm.images === img.id_imagem && (
                         <div style={styles.selectedBadge}>✓</div>
                       )}
                     </div>

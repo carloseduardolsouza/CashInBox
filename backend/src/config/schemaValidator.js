@@ -34,10 +34,22 @@ const EXPECTED_SCHEMA = {
     indexes: ["nome", "cod_barras", "cod_interno", "ativo"],
   },
 
+  produto_imagens: {
+    columns: [
+      "id_imagem",
+      "id_produto",
+      "caminho_arquivo",
+      "principal",
+      "created_at",
+    ],
+    indexes: ["id_produto"],
+  },
+
   produto_variacao: {
     columns: [
       "id_variacao",
       "id_produto",
+      "id_imagem",
       "nome",
       "tipo",
       "cod_interno",
@@ -46,18 +58,7 @@ const EXPECTED_SCHEMA = {
       "estoque_minimo",
       "created_at",
     ],
-    indexes: ["id_produto", "cod_barras"],
-  },
-
-  produto_imagens: {
-    columns: [
-      "id_imagem",
-      "id_produto",
-      "id_variacao",
-      "caminho_arquivo",
-      "principal",
-    ],
-    indexes: ["id_produto", "id_variacao"],
+    indexes: ["id_produto", "id_imagem", "cod_barras"],
   },
 
   // ========== CLIENTES ==========
