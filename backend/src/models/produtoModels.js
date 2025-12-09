@@ -43,6 +43,26 @@ const deletarImagem = async (id_imagem) => {
   }
 };
 
+const deleteImage = (filename) => {
+  try {
+    // Remove apenas o nome do arquivo, não o caminho completo
+    const cleanFilename = filename.replace('/uploads/', '').replace(/^\//, '');
+    const fullPath = path.join(uploadPath, cleanFilename);
+
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+      console.log(`✅ Imagem deletada: ${cleanFilename}`);
+      return true;
+    } else {
+      console.log(`⚠️  Imagem não encontrada: ${cleanFilename}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao deletar imagem ${filename}:`, error);
+    return false;
+  }
+};
+
 const deletarVariacao = async (id_variacao) => {
   try {
     // Busca a variacao no banco
