@@ -1,8 +1,12 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useContext } from "react";
 import vendaFetch from "../../services/api/vendaFetch";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import format from "../../utils/formatters";
 import Loading from "../../components/layout/Loading";
+import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
+import { pdf } from "@react-pdf/renderer";
+import NotaGrande from "./components/NotaGrande";
+import AppContext from "../../context/AppContext";
 import {
   FaRegUser,
   FaFilePdf,
@@ -257,57 +261,13 @@ const styles = {
   },
 };
 
-// Dados simulados
-const dadosSimulados = {
-  venda: {
-    id: "001234",
-    status: "concluída",
-    data_venda: "2024-12-02T14:30:00",
-    valor_total: 2850.0,
-    total_bruto: 3000.0,
-    descontos: 150.0,
-    acrescimos: 0,
-    nome_funcionario: "João Silva",
-  },
-  cliente: {
-    nome: "Maria Santos",
-    telefone: "16998887777",
-    cpf_cnpj: "123.456.789-00",
-    endereco: "Rua das Flores, 123 - Centro",
-  },
-  produtos: [
-    {
-      id: 1,
-      produto_nome: "Notebook Dell Inspiron 15",
-      preco_unitario: 2500.0,
-      quantidade: 1,
-      valor_total: 2500.0,
-    },
-    {
-      id: 2,
-      produto_nome: "Mouse Wireless Logitech",
-      preco_unitario: 150.0,
-      quantidade: 2,
-      valor_total: 300.0,
-    },
-    {
-      id: 3,
-      produto_nome: "Teclado Mecânico RGB",
-      preco_unitario: 200.0,
-      quantidade: 1,
-      valor_total: 200.0,
-    },
-  ],
-  pagamentos: [
-    { id: 1, valor: 1000.0, tipo_pagamento: "PIX" },
-    { id: 2, valor: 1850.0, tipo_pagamento: "Cartão de Crédito" },
-  ],
-};
-
 const DetalhesVenda = () => {
   const [escolherNotas, setEscolherNotas] = useState(false);
   const [escolherEditar, setEscolherEditar] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deletarModal, setDeletarModal] = useState(false);
+
+  const { adicionarAviso } = useContext(AppContext);
 
   const [dataVenda, setDataVenda] = useState({});
 
@@ -327,20 +287,65 @@ const DetalhesVenda = () => {
     return;
   }, []);
 
-  const handleDownloadNota = useCallback((tipo) => {
-    setEscolherNotas(false);
-  }, []);
+  const handleDownloadNota = async (tipo) => {
+    let doc = null;
+
+    switch (tipo) {
+      case "notaGrande":
+        doc = <NotaGrande venda={dataVenda} />;
+        break;
+
+      case "carne crediario":
+        doc = <CarneCrediario venda={dataVenda} />;
+        break;
+
+      default:
+        console.error("Tipo de nota inválido:", tipo);
+        return;
+    }
+
+    // Evita erro caso o DOC não exista
+    if (!doc) {
+      console.error("Nenhum documento React-PDF foi gerado.");
+      return;
+    }
+
+    try {
+      const asPdf = pdf();
+      asPdf.updateContainer(doc);
+
+      const blob = await asPdf.toBlob();
+
+      const nomeArquivo = `venda#${id} - ${tipo
+        .replace(" ", "_")
+        .toUpperCase()}.pdf`;
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = nomeArquivo;
+
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      setEscolherNotas(false);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    }
+  };
 
   const handleAmortizar = useCallback(() => {
     setEscolherEditar(false);
   }, []);
 
-  const handleEditarVenda = useCallback(() => {
-    setEscolherEditar(false);
-  }, []);
+  const navigate = useNavigate();
 
   const handleCancelarVenda = useCallback(() => {
-    return;
+    setDeletarModal(false);
+    adicionarAviso("sucesso", "A venda foi deletada com sucesso !");
+    navigate("/vendas/historico");
   }, []);
 
   const TabelaProdutos = () => (
@@ -482,9 +487,7 @@ const DetalhesVenda = () => {
 
             <div style={{ ...styles.detailItem, marginTop: "16px" }}>
               <span style={styles.detailLabel}>Status:</span>
-              <span style={styles.statusBadge}>
-                {dataVenda.status}
-              </span>
+              <span style={styles.statusBadge}>{dataVenda.status}</span>
             </div>
 
             <div style={styles.detailItem}>
@@ -503,7 +506,7 @@ const DetalhesVenda = () => {
               <span style={styles.detailLabel}>Pagamentos:</span>
               {dataVenda.pagamentos.map((pag) => (
                 <div
-                  key={pag.id}
+                  key={pag.id_pagamento}
                   style={{
                     fontSize: "13px",
                     color: "#666",
@@ -523,7 +526,7 @@ const DetalhesVenda = () => {
                 <div style={styles.dropdown}>
                   <div
                     style={styles.dropdownItem}
-                    onClick={() => handleDownloadNota("Nota Fiscal")}
+                    onClick={() => handleDownloadNota("notaGrande")}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = "#f5f5f5")
                     }
@@ -534,19 +537,21 @@ const DetalhesVenda = () => {
                     <FaReceipt size={14} />
                     Nota Grande
                   </div>
-                  <div
-                    style={styles.dropdownItem}
-                    onClick={() => handleDownloadNota("Carnê")}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f5f5f5")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "white")
-                    }
-                  >
-                    <FaMoneyBillWave size={14} />
-                    Carnê Crediário
-                  </div>
+                  {dataVenda.crediario && (
+                    <div
+                      style={styles.dropdownItem}
+                      onClick={() => handleDownloadNota("Carnê")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#f5f5f5")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
+                    >
+                      <FaMoneyBillWave size={14} />
+                      Carnê Crediário
+                    </div>
+                  )}
                 </div>
               )}
               <button
@@ -563,48 +568,45 @@ const DetalhesVenda = () => {
                 Gerar Documentos
               </button>
             </div>
-
-            <div style={{ position: "relative" }}>
-              {escolherEditar && (
-                <div style={styles.dropdown}>
-                  <div
-                    style={styles.dropdownItem}
-                    onClick={handleAmortizar}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f5f5f5")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "white")
-                    }
-                  >
-                    <FaMoneyBillWave size={14} />
-                    Amortizar Crediário
+            {dataVenda.crediario && (
+              <div style={{ position: "relative" }}>
+                {escolherEditar && (
+                  <div style={styles.dropdown}>
+                    <div
+                      style={styles.dropdownItem}
+                      onClick={handleAmortizar}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#f5f5f5")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
+                    >
+                      <FaMoneyBillWave size={14} />
+                      Amortizar Crediário
+                    </div>
                   </div>
+                )}
 
-                  <div style={styles.dropdownItem} onClick={handleEditarVenda}>
-                    <FaEdit size={14} />
-                    Editar Venda
-                  </div>
-                </div>
-              )}
-              <button
-                style={{ ...styles.btnAction, ...styles.btnWarning }}
-                onClick={() => setEscolherEditar(!escolherEditar)}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f57c00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#ff9800")
-                }
-              >
-                <FaEdit size={16} />
-                Editar Venda
-              </button>
-            </div>
+                <button
+                  style={{ ...styles.btnAction, ...styles.btnWarning }}
+                  onClick={() => setEscolherEditar(!escolherEditar)}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f57c00")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#ff9800")
+                  }
+                >
+                  <FaEdit size={16} />
+                  Opções da Venda
+                </button>
+              </div>
+            )}
 
             <button
               style={{ ...styles.btnAction, ...styles.btnDanger }}
-              onClick={handleCancelarVenda}
+              onClick={() => setDeletarModal(true)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "var(--surface-strong)";
               }}
@@ -613,11 +615,19 @@ const DetalhesVenda = () => {
               }}
             >
               <FaTrash size={16} />
-              Cancelar Venda
+              Deletar Venda
             </button>
           </div>
         </div>
       </div>
+      {deletarModal && (
+        <CardConfirmacao
+          action={handleCancelarVenda}
+          onClose={() => setDeletarModal(false)}
+          text={`Deseja confirma a exclusão da venda de id: ${dataVenda.id_venda} ?`}
+          subText={`esses dados não poderam ser recuperados posteriormente`}
+        />
+      )}
     </div>
   );
 };
