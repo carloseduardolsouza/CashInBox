@@ -532,7 +532,7 @@ const ProductDetailScreen = () => {
     cod_barras: "",
     estoque: "",
     estoque_minimo: "",
-    images: null, // Agora armazena o ID da imagem
+    id_imagem: null, // Agora armazena o ID da imagem
   });
 
   useEffect(() => {
@@ -561,12 +561,13 @@ const ProductDetailScreen = () => {
             id_variacao: dados.id_variacao ?? null,
             nome: dados.nome ?? "",
             tipo: dados.tipo ?? "",
-            images: dados.images[0]?.id_imagem || null,
+            id_imagem: dados.imagem?.id_imagem || null,
           };
         }),
       };
 
       setProductData(resFormated);
+      console.log(resFormated)
       setOriginalData(JSON.parse(JSON.stringify(resFormated)));
     } catch (error) {
       console.error("Erro ao buscar produto:", error);
@@ -698,6 +699,7 @@ const ProductDetailScreen = () => {
         variacao:
           productData.variacao.map((v) => ({
             id_variacao: v.id_variacao || null,
+            id_imagem: v.id_imagem || null,
             nome: v.nome || "",
             tipo: v.tipo || "",
             cod_interno: v.cod_interno || "",
@@ -753,7 +755,7 @@ const ProductDetailScreen = () => {
       cod_barras: variacao.cod_barras,
       estoque: variacao.estoque,
       estoque_minimo: variacao.estoque_minimo,
-      images: variacao.images,
+      id_imagem: variacao.id_imagem,
     });
     setEditingVariacaoIndex(index);
     setShowVariacaoModal(true);
@@ -778,7 +780,7 @@ const ProductDetailScreen = () => {
           cod_barras: variacaoForm.cod_barras,
           estoque: parseFloat(variacaoForm.estoque) || 0,
           estoque_minimo: parseFloat(variacaoForm.estoque_minimo) || 0,
-          images: variacaoForm.images || null,
+          id_imagem: variacaoForm.id_imagem || null,
         };
       } else {
         // Adicionar nova variação
@@ -789,7 +791,7 @@ const ProductDetailScreen = () => {
           cod_barras: variacaoForm.cod_barras,
           estoque: parseFloat(variacaoForm.estoque) || 0,
           estoque_minimo: parseFloat(variacaoForm.estoque_minimo) || 0,
-          images: variacaoForm.images || null,
+          id_imagem: variacaoForm.id_imagem || null,
         });
       }
 
@@ -1237,7 +1239,7 @@ const ProductDetailScreen = () => {
 
               {productData.variacao.map((variacao, index) => {
                 const variacaoImage = currentImages.find(
-                  (img) => img.id_imagem === variacao.images
+                  (img) => img.id_imagem === variacao.id_imagem
                 );
                 return (
                   <div key={variacao.id_variacao} style={styles.variacaoCard}>
@@ -1494,14 +1496,14 @@ const ProductDetailScreen = () => {
                   <div
                     style={{
                       ...styles.imagePreviewItem,
-                      ...(variacaoForm.images === null
+                      ...(variacaoForm.id_imagem === null
                         ? styles.imagePreviewItemSelected
                         : {}),
                     }}
                     onClick={() =>
                       setVariacaoForm((prev) => ({
                         ...prev,
-                        images: null,
+                        id_imagem: null,
                       }))
                     }
                   >
@@ -1524,7 +1526,7 @@ const ProductDetailScreen = () => {
                     >
                       Sem imagem
                     </div>
-                    {variacaoForm.images === null && (
+                    {variacaoForm.id_imagem === null && (
                       <div style={styles.selectedBadge}>✓</div>
                     )}
                   </div>
@@ -1534,14 +1536,14 @@ const ProductDetailScreen = () => {
                       key={img.id_imagem || index}
                       style={{
                         ...styles.imagePreviewItem,
-                        ...(variacaoForm.images === img.id_imagem
+                        ...(variacaoForm.id_imagem === img.id_imagem
                           ? styles.imagePreviewItemSelected
                           : {}),
                       }}
                       onClick={() =>
                         setVariacaoForm((prev) => ({
                           ...prev,
-                          images: img.id_imagem,
+                          id_imagem: img.id_imagem,
                         }))
                       }
                     >
@@ -1555,7 +1557,7 @@ const ProductDetailScreen = () => {
                         alt={`Opção ${index + 1}`}
                         style={styles.imagePreviewImg}
                       />
-                      {variacaoForm.images === img.id_imagem && (
+                      {variacaoForm.id_imagem === img.id_imagem && (
                         <div style={styles.selectedBadge}>✓</div>
                       )}
                     </div>

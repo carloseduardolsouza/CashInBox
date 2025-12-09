@@ -334,10 +334,9 @@ function ListaProdutos() {
           if (temVariacoes) {
             // Buscar primeira variação que tenha imagens
             for (const variacao of prod.variacao) {
-              if (variacao.images?.length > 0) {
-                imagemPrincipal = getImagemPrincipal(variacao.images);
+              if (variacao.images) {
+                imagemPrincipal = variacao.images;
                 todasImagens = getAllImages(prod.images);
-                console.log(prod.images)
                 break;
               }
             }
@@ -458,8 +457,7 @@ function ListaProdutos() {
                   {isExpanded &&
                     prod.variacao.map((variacao) => {
                       // Buscar imagens da variação específica
-                      const variacaoImagemPrincipal = getImagemPrincipal(variacao.images || []);
-                      const variacaoImagens = getAllImages(variacao.images || []);
+                      const variacaoImagemPrincipal = variacao.imagem?.caminho_arquivo;
 
                       return (
                         <div
@@ -475,7 +473,7 @@ function ListaProdutos() {
                         >
                           {variacaoImagemPrincipal ? (
                             <div
-                              onClick={() => abrirLightbox(variacaoImagens, 0)}
+                              onClick={() => abrirLightbox([`http://localhost:1122${variacaoImagemPrincipal}`], 0)}
                               style={{
                                 ...styles.variacaoImage,
                                 backgroundImage: `url(http://localhost:1122${variacaoImagemPrincipal})`,

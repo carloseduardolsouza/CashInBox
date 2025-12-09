@@ -75,7 +75,9 @@ const cadastro = async (produtoData) => {
     });
     console.log(`✅ Produto criado com ID: ${produtoId}`);
 
-    // 2. SALVAR TODAS AS IMAGENS DO PRODUTO PRINCIPAL (SEMPRE)
+    // 2. SALVAR TODAS AS IMAGENS DO PRODUTO PRINCIPAL
+    const imagensInseridas = [];
+    
     if (Array.isArray(images) && images.length > 0) {
       console.log(
         `\n🖼️  Salvando ${images.length} imagem(ns) do produto principal...`
@@ -83,12 +85,19 @@ const cadastro = async (produtoData) => {
 
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
-        await trx("produto_imagens").insert({
+        const [idImagem] = await trx("produto_imagens").insert({
           id_produto: produtoId,
           caminho_arquivo: img.caminho_arquivo,
           principal: i === 0, // Primeira imagem é a principal
         });
-        console.log(`  ✓ Imagem ${i + 1}: ${img.caminho_arquivo}`);
+        
+        imagensInseridas.push({
+          id_imagem: idImagem,
+          caminho_arquivo: img.caminho_arquivo,
+          index: i
+        });
+        
+        console.log(`  ✓ Imagem ${i + 1}: ${img.caminho_arquivo} (ID: ${idImagem})`);
       }
 
       console.log("✅ Todas as imagens do produto salvas");
@@ -107,12 +116,35 @@ const cadastro = async (produtoData) => {
 
         console.log(`  📦 Variação ${i + 1}: ${v.nome}`);
 
-        // Insere a variação
+        // Determina qual imagem está associada a esta variação
+        let idImagemVariacao = null;
+        
+        // Se a variação tem imagens específicas
+        if (Array.isArray(v.images) && v.images.length > 0) {
+          // Pega o caminho da primeira imagem da variação
+          const caminhoImagemVariacao = v.images[0].caminho_arquivo;
+          
+          // Busca o ID da imagem correspondente que foi inserida
+          const imagemEncontrada = imagensInseridas.find(
+            img => img.caminho_arquivo === caminhoImagemVariacao
+          );
+          
+          if (imagemEncontrada) {
+            idImagemVariacao = imagemEncontrada.id_imagem;
+            console.log(`    🖼️  Imagem vinculada: ${caminhoImagemVariacao} (ID: ${idImagemVariacao})`);
+          }
+        }
+
+        // Insere a variação com ou sem imagem vinculada
         const [variacaoId] = await trx("produto_variacao").insert({
-          ...v,
-          nome: formate.formatNome(v.nome),
-          id_imagem: ,
           id_produto: produtoId,
+          id_imagem: idImagemVariacao, // Pode ser null se não houver imagem
+          nome: formate.formatNome(v.nome),
+          tipo: v.tipo || '',
+          cod_interno: v.cod_interno || '',
+          cod_barras: v.cod_barras || '',
+          estoque: v.estoque || 0,
+          estoque_minimo: v.estoque_minimo || 0,
           created_at: trx.fn.now(),
         });
 
@@ -209,33 +241,44 @@ const lista = async () => {
     const variacoesProduto = variacoes
       .filter((v) => v.id_produto === produto.id_produto)
       .map((v) => {
-        // Imagens da variação
-        const imagensVariacao = imagens
-          .filter((img) => img.id_variacao === v.id_variacao)
-          .map((img) => ({
-            id_imagem: img.id_imagem,
-            caminho_arquivo: `/uploads/${img.caminho_arquivo}`,
-            principal: img.principal,
-          }));
+        // Busca a imagem vinculada à variação (através de id_imagem)
+        let imagemVariacao = null;
+        
+        if (v.id_imagem) {
+          const imgEncontrada = imagens.find(
+            (img) => img.id_imagem === v.id_imagem
+          );
+          
+          if (imgEncontrada) {
+            imagemVariacao = {
+              id_imagem: imgEncontrada.id_imagem,
+              caminho_arquivo: `/uploads/${imgEncontrada.caminho_arquivo}`,
+              principal: imgEncontrada.principal,
+            };
+          }
+        }
 
         return {
           id_variacao: v.id_variacao,
+          id_imagem: v.id_imagem, // ID da imagem vinculada
           nome: v.nome,
           tipo: v.tipo,
           cod_interno: v.cod_interno,
           cod_barras: v.cod_barras,
           estoque: v.estoque,
           estoque_minimo: v.estoque_minimo,
-          images: imagensVariacao,
+          imagem: imagemVariacao, // Imagem vinculada (ou null)
         };
       });
 
-    // ✅ TODAS as imagens do produto (incluindo as não vinculadas a variações)
+    // ✅ Apenas as imagens do produto que NÃO estão vinculadas a variações
     const imagensProduto = imagens
-      .filter(
-        (img) =>
-          img.id_produto === produto.id_produto
-      )
+      .filter((img) => {
+        // Verifica se a imagem pertence ao produto
+        const pertenceAoProduto = img.id_produto === produto.id_produto;
+        
+        return pertenceAoProduto;
+      })
       .map((img) => ({
         id_imagem: img.id_imagem,
         caminho_arquivo: `/uploads/${img.caminho_arquivo}`,
@@ -259,7 +302,7 @@ const lista = async () => {
       id_subcategoria: produto.id_subcategoria,
       subcategoria_nome: produto.subcategoria_nome,
       variacao: variacoesProduto,
-      images: imagensProduto, // ✅ Todas as imagens do produto
+      images: imagensProduto, // ✅ Apenas imagens não vinculadas a variações
     };
   });
 
@@ -268,7 +311,7 @@ const lista = async () => {
 
 const editar = async (id, produtoData) => {
   return await db.transaction(async (trx) => {
-    console.log("\n🔄 Iniciando transação de edição (PRESERVANDO IDs)...");
+    console.log("\n🔄 Iniciando transação de edição...");
 
     const { variacao, ...dadosProduto } = produtoData;
 
@@ -290,55 +333,81 @@ const editar = async (id, produtoData) => {
         nome: formate.formatNome(dadosProduto.nome),
       });
 
-    for (const v of variacao) {
-      let idImagem = v.images;
+    console.log("✅ Dados do produto atualizados");
 
-      // Criar nova variação
-      if (!v.id_variacao) {
-        const [variacaoId] = await trx("produto_variacao").insert({
-          cod_barras: v.cod_barras,
-          cod_interno: v.cod_interno,
-          estoque: v.estoque,
-          estoque_minimo: v.estoque_minimo,
-          tipo: v.tipo,
-          nome: formate.formatNome(v.nome),
-          id_produto: id,
-          created_at: trx.fn.now(),
-        });
+    // 3. Processar variações (se houver)
+    if (Array.isArray(variacao) && variacao.length > 0) {
+      console.log(`\n🔄 Processando ${variacao.length} variação(ões)...`);
 
-        // Associa imagem
-        if (idImagem) {
-          await trx("produto_imagens")
-            .where("id_imagem", idImagem)
-            .update({
-              id_variacao: variacaoId,
-            });
-        }
+      for (let i = 0; i < variacao.length; i++) {
+        const v = variacao[i];
+        
+        // O id_imagem vem diretamente do objeto variacao
+        const idImagemNova = v.id_imagem || null;
 
-      } else {
-        // Atualizar variação existente
-        await trx("produto_variacao")
-          .where("id_variacao", v.id_variacao)
-          .update({
-            cod_barras: v.cod_barras,
-            cod_interno: v.cod_interno,
-            estoque: v.estoque,
-            estoque_minimo: v.estoque_minimo,
-            tipo: v.tipo,
-            nome: formate.formatNome(v.nome),
+        // Verificar se é criação ou atualização
+        if (!v.id_variacao) {
+          // ========== CRIAR NOVA VARIAÇÃO ==========
+          console.log(`  📦 Criando nova variação: ${v.nome}`);
+          
+          const [variacaoId] = await trx("produto_variacao").insert({
             id_produto: id,
+            id_imagem: idImagemNova,
+            nome: formate.formatNome(v.nome),
+            tipo: v.tipo || '',
+            cod_interno: v.cod_interno || '',
+            cod_barras: v.cod_barras || '',
+            estoque: v.estoque || 0,
+            estoque_minimo: v.estoque_minimo || 0,
             created_at: trx.fn.now(),
           });
 
-        // Associa imagem
-        if (idImagem) {
-          await trx("produto_imagens")
-            .where("id_imagem", idImagem)
+          console.log(`    ✅ Variação criada com ID: ${variacaoId}`);
+          if (idImagemNova) {
+            console.log(`    🖼️  Imagem vinculada: ${idImagemNova}`);
+          }
+
+        } else {
+          // ========== ATUALIZAR VARIAÇÃO EXISTENTE ==========
+          console.log(`  📝 Atualizando variação ID: ${v.id_variacao} (${v.nome})`);
+          
+          // Busca a variação atual para comparar
+          const variacaoAtual = await trx("produto_variacao")
+            .where("id_variacao", v.id_variacao)
+            .first();
+
+          if (!variacaoAtual) {
+            console.log(`    ⚠️  Variação ${v.id_variacao} não encontrada, pulando...`);
+            continue;
+          }
+
+          // Atualiza a variação
+          await trx("produto_variacao")
+            .where("id_variacao", v.id_variacao)
             .update({
-              id_variacao: v.id_variacao,
+              id_imagem: idImagemNova, // Atualiza a referência da imagem
+              nome: formate.formatNome(v.nome),
+              tipo: v.tipo || '',
+              cod_interno: v.cod_interno || '',
+              cod_barras: v.cod_barras || '',
+              estoque: v.estoque || 0,
+              estoque_minimo: v.estoque_minimo || 0,
             });
+
+          console.log(`    ✅ Variação atualizada`);
+          
+          // Log sobre mudança de imagem
+          if (variacaoAtual.id_imagem !== idImagemNova) {
+            if (idImagemNova) {
+              console.log(`    🖼️  Imagem alterada: ${variacaoAtual.id_imagem} → ${idImagemNova}`);
+            } else {
+              console.log(`    🖼️  Imagem removida (era: ${variacaoAtual.id_imagem})`);
+            }
+          }
         }
       }
+
+      console.log(`\n✅ ${variacao.length} variação(ões) processada(s)`);
     }
 
     console.log("\n✅ Produto e variações atualizados com sucesso!\n");
