@@ -17,7 +17,7 @@ const lista = async () => {
   }
 };
 
-const clienteID = async (id) => { 
+const funcionarioID = async (id) => { 
   try {
     const res = await fetch(API_URL + "/funcionario/lista");
 
@@ -110,7 +110,7 @@ const editar = async (id , dados) => {
 
 export default {
   lista,
-  clienteID,
+  funcionarioID,
   cadastro,
   deletar,
   editar

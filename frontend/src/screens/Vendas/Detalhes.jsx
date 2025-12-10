@@ -18,6 +18,7 @@ import {
   FaTimes,
   FaDownload,
 } from "react-icons/fa";
+import { ArrowLeft } from "lucide-react";
 
 // Modal de Visualização de PDF
 const PdfViewerModal = ({ isOpen, onClose, pdfUrl, fileName }) => {
@@ -98,6 +99,19 @@ const styles = {
     padding: "13px 24px",
     borderRadius: "12px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  },
+  backButton: {
+    width: "40px",
+    marginRight: "10px",
+    height: "40px",
+    borderRadius: "8px",
+    border: "1px solid var(--surface-border)",
+    background: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    transition: "all 0.2s",
   },
   headerTitle: {
     fontSize: "24px",
@@ -409,7 +423,7 @@ const DetalhesVenda = () => {
   const [escolherEditar, setEscolherEditar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deletarModal, setDeletarModal] = useState(false);
-  
+
   // Estados para o modal de PDF
   const [modalPdfAberto, setModalPdfAberto] = useState(false);
   const [pdfParaVisualizar, setPdfParaVisualizar] = useState(null);
@@ -489,10 +503,10 @@ const DetalhesVenda = () => {
     setEscolherEditar(false);
   }, []);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const handleCancelarVenda = useCallback(async () => {
-    await vendaFetch.deletar(id)
+    await vendaFetch.deletar(id);
     setDeletarModal(false);
     adicionarAviso("sucesso", "A venda foi deletada com sucesso !");
     navigate("/vendas/historico");
@@ -512,7 +526,9 @@ const DetalhesVenda = () => {
         {dataVenda.itens.map((produto) => {
           return (
             <tr key={produto.id_item}>
-              <td style={styles.td}>{produto.nome_produto} * {produto.nome_variacao}</td>
+              <td style={styles.td}>
+                {produto.nome_produto} * {produto.nome_variacao}
+              </td>
               <td style={styles.td}>
                 {format.formatarCurrency(produto.preco_unitario)}
               </td>
@@ -534,7 +550,12 @@ const DetalhesVenda = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.headerTitle}>Detalhes da Venda</h1>
+        <div style={{display: "flex"}}>
+          <button style={styles.backButton} onClick={() => navigate("/vendas/historico")}>
+            <ArrowLeft size={20} color="var(--text-primary)" />
+          </button>
+          <h1 style={styles.headerTitle}>Detalhes da Venda</h1>
+        </div>
         <button
           style={styles.btnEnviar}
           onClick={handleEnviarWhatsApp}
@@ -564,19 +585,26 @@ const DetalhesVenda = () => {
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Telefone: </span>
-                {format.formatarTelefone(dataVenda?.cliente?.telefone || "Telefone Desconhecido")}
+                {format.formatarTelefone(
+                  dataVenda?.cliente?.telefone || "Telefone Desconhecido"
+                )}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>CPF: </span>
-                {format.formatCPF(dataVenda?.cliente?.cpfCNPJ || "CPF / CNPJ Desconhecido")}
+                {format.formatCPF(
+                  dataVenda?.cliente?.cpfCNPJ || "CPF / CNPJ Desconhecido"
+                )}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Endereço: </span>
-                {dataVenda?.cliente?.endereco[0]?.bairro || "Bairro Desconhecido" +
-                  " - " +
-                  dataVenda?.cliente?.endereco[0]?.rua || "Rua Desconhecida" +
-                  " - " +
-                  dataVenda?.cliente?.endereco[0]?.complemento || "Complemento Desconhecido"}
+                {dataVenda?.cliente?.endereco[0]?.bairro ||
+                  "Bairro Desconhecido" +
+                    " - " +
+                    dataVenda?.cliente?.endereco[0]?.rua ||
+                  "Rua Desconhecida" +
+                    " - " +
+                    dataVenda?.cliente?.endereco[0]?.complemento ||
+                  "Complemento Desconhecido"}
               </p>
             </div>
           </div>
@@ -642,12 +670,22 @@ const DetalhesVenda = () => {
 
             <div style={{ ...styles.detailItem, marginTop: "16px" }}>
               <span style={styles.detailLabel}>Status:</span>
-              <span style={dataVenda.status === "Finalizada" ? styles.statusBadgeFinalizada : styles.statusBadgeOrcamento}>{dataVenda.status}</span>
+              <span
+                style={
+                  dataVenda.status === "Finalizada"
+                    ? styles.statusBadgeFinalizada
+                    : styles.statusBadgeOrcamento
+                }
+              >
+                {dataVenda.status}
+              </span>
             </div>
 
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Vendedor:</span>
-              <span>{dataVenda?.vendedor?.nome || "Vendedor Desconhecido"}</span>
+              <span>
+                {dataVenda?.vendedor?.nome || "Vendedor Desconhecido"}
+              </span>
             </div>
 
             <div

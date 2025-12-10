@@ -1,12 +1,14 @@
 import React, { useState, useContext } from "react";
 import AppContext from "../../context/AppContext";
 import funcionariosFetch from "../../services/api/funcionariosFetch";
+import HeaderBack from "../../components/ui/HeaderBack"
 
 const styles = {
   container: {
     minHeight: "100vh",
+    marginLeft: "44px",
     backgroundColor: "var(--background-color)",
-    padding: "40px 20px",
+    padding: "20px",
   },
   formWrapper: {
     maxWidth: "800px",
@@ -138,9 +140,8 @@ export default function CadastroFuncionario() {
 
   return (
     <div style={styles.container}>
+      <HeaderBack route={"/funcionarios/lista"} title={"Cadastro de Funcionário"}/>
       <div style={styles.formWrapper}>
-        <h1 style={styles.title}>Cadastro de Funcionário</h1>
-
         <div style={styles.grid}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Nome Completo</label>
