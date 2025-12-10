@@ -15,7 +15,71 @@ import {
   FaTrash,
   FaReceipt,
   FaMoneyBillWave,
+  FaTimes,
+  FaDownload,
 } from "react-icons/fa";
+
+// Modal de Visualização de PDF
+const PdfViewerModal = ({ isOpen, onClose, pdfUrl, fileName }) => {
+  if (!isOpen) return null;
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div style={styles.modalOverlay}>
+      <div style={styles.modalPdfContainer}>
+        {/* Header do Modal */}
+        <div style={styles.modalPdfHeader}>
+          <h2 style={styles.modalPdfTitle}>{fileName}</h2>
+          <div style={styles.modalPdfActions}>
+            <button
+              style={styles.modalPdfButton}
+              onClick={handleDownload}
+              title="Baixar PDF"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f5f5f5")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              <FaDownload size={18} />
+            </button>
+            <button
+              style={styles.modalPdfButton}
+              onClick={onClose}
+              title="Fechar"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f5f5f5")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              <FaTimes size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Visualizador de PDF */}
+        <div style={styles.modalPdfContent}>
+          <iframe
+            src={pdfUrl}
+            style={styles.modalPdfIframe}
+            title="Visualizador de PDF"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Estilos
 const styles = {
@@ -259,6 +323,76 @@ const styles = {
     fontSize: "16px",
     color: "#777",
   },
+  // Estilos do Modal PDF
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    padding: "20px",
+  },
+  modalPdfContainer: {
+    backgroundColor: "white",
+    borderRadius: "12px",
+    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
+    width: "100%",
+    maxWidth: "1400px",
+    height: "90vh",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  modalPdfHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 24px",
+    borderBottom: "1px solid #e0e0e0",
+    backgroundColor: "#f8f9fa",
+  },
+  modalPdfTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#333",
+    margin: 0,
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    marginRight: "20px",
+  },
+  modalPdfActions: {
+    display: "flex",
+    gap: "8px",
+  },
+  modalPdfButton: {
+    padding: "8px 12px",
+    backgroundColor: "transparent",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#666",
+    transition: "all 0.2s",
+  },
+  modalPdfContent: {
+    flex: 1,
+    overflow: "hidden",
+    backgroundColor: "#525659",
+  },
+  modalPdfIframe: {
+    width: "100%",
+    height: "100%",
+    border: "none",
+  },
 };
 
 const DetalhesVenda = () => {
@@ -266,6 +400,10 @@ const DetalhesVenda = () => {
   const [escolherEditar, setEscolherEditar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deletarModal, setDeletarModal] = useState(false);
+  
+  // Estados para o modal de PDF
+  const [modalPdfAberto, setModalPdfAberto] = useState(false);
+  const [pdfParaVisualizar, setPdfParaVisualizar] = useState(null);
 
   const { adicionarAviso } = useContext(AppContext);
 
@@ -287,7 +425,7 @@ const DetalhesVenda = () => {
     return;
   }, []);
 
-  const handleDownloadNota = async (tipo) => {
+  const handleVisualizarNota = async (tipo) => {
     let doc = null;
 
     switch (tipo) {
@@ -315,25 +453,27 @@ const DetalhesVenda = () => {
       asPdf.updateContainer(doc);
 
       const blob = await asPdf.toBlob();
+      const url = URL.createObjectURL(blob);
 
       const nomeArquivo = `venda#${id} - ${tipo
         .replace(" ", "_")
         .toUpperCase()}.pdf`;
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = nomeArquivo;
-
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-
+      setPdfParaVisualizar({ url, fileName: nomeArquivo });
+      setModalPdfAberto(true);
       setEscolherNotas(false);
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
+      adicionarAviso("erro", "Erro ao gerar o PDF. Tente novamente.");
     }
+  };
+
+  const fecharModalPdf = () => {
+    if (pdfParaVisualizar?.url) {
+      URL.revokeObjectURL(pdfParaVisualizar.url);
+    }
+    setModalPdfAberto(false);
+    setPdfParaVisualizar(null);
   };
 
   const handleAmortizar = useCallback(() => {
@@ -410,23 +550,23 @@ const DetalhesVenda = () => {
             <div style={styles.clientInfo}>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Nome: </span>
-                {dataVenda.cliente.nome}
+                {dataVenda?.cliente?.nome || "Nome Desconhecido"}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Telefone: </span>
-                {format.formatarTelefone(dataVenda.cliente.telefone)}
+                {format.formatarTelefone(dataVenda?.cliente?.telefone || "Telefone Desconhecido")}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>CPF: </span>
-                {format.formatCPF(dataVenda.cliente.cpfCNPJ)}
+                {format.formatCPF(dataVenda?.cliente?.cpfCNPJ || "CPF / CNPJ Desconhecido")}
               </p>
               <p style={styles.clientInfoItem}>
                 <span style={styles.clientInfoLabel}>Endereço: </span>
-                {dataVenda.cliente.endereco[0].bairro +
+                {dataVenda?.cliente?.endereco[0]?.bairro || "Bairro Desconhecido" +
                   " - " +
-                  dataVenda.cliente.endereco[0].rua +
+                  dataVenda?.cliente?.endereco[0]?.rua || "Rua Desconhecida" +
                   " - " +
-                  dataVenda.cliente.endereco[0].complemento}
+                  dataVenda?.cliente?.endereco[0]?.complemento || "Complemento Desconhecido"}
               </p>
             </div>
           </div>
@@ -492,7 +632,7 @@ const DetalhesVenda = () => {
 
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>Vendedor:</span>
-              <span>{dataVenda.vendedor.nome}</span>
+              <span>{dataVenda?.vendedor?.nome || "Vendedor Desconhecido"}</span>
             </div>
 
             <div
@@ -526,7 +666,7 @@ const DetalhesVenda = () => {
                 <div style={styles.dropdown}>
                   <div
                     style={styles.dropdownItem}
-                    onClick={() => handleDownloadNota("notaGrande")}
+                    onClick={() => handleVisualizarNota("notaGrande")}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = "#f5f5f5")
                     }
@@ -540,7 +680,7 @@ const DetalhesVenda = () => {
                   {dataVenda.crediario && (
                     <div
                       style={styles.dropdownItem}
-                      onClick={() => handleDownloadNota("Carnê")}
+                      onClick={() => handleVisualizarNota("carne crediario")}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = "#f5f5f5")
                       }
@@ -620,12 +760,24 @@ const DetalhesVenda = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Exclusão */}
       {deletarModal && (
         <CardConfirmacao
           action={handleCancelarVenda}
           onClose={() => setDeletarModal(false)}
           text={`Deseja confirma a exclusão da venda de id: ${dataVenda.id_venda} ?`}
           subText={`esses dados não poderam ser recuperados posteriormente`}
+        />
+      )}
+
+      {/* Modal de Visualização de PDF */}
+      {pdfParaVisualizar && (
+        <PdfViewerModal
+          isOpen={modalPdfAberto}
+          onClose={fecharModalPdf}
+          pdfUrl={pdfParaVisualizar.url}
+          fileName={pdfParaVisualizar.fileName}
         />
       )}
     </div>

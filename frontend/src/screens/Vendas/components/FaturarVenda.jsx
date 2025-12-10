@@ -419,7 +419,10 @@ function FaturarVenda({ onClose, reset, produtos }) {
 
     switch (tipo) {
       case "nota":
-        finalizarVenda();
+        finalizarVenda("venda");
+        break;
+      case "orcamento":
+        finalizarVenda("orcamento");
         break;
     }
 
@@ -429,19 +432,19 @@ function FaturarVenda({ onClose, reset, produtos }) {
     );
   };
 
-  const finalizarVenda = async () => {
+  const finalizarVenda = async (tipo) => {
     const vendaData = {
       data: new Date().toISOString(),
       valor_bruto: valorCompra,
       valor_liquido: totalPagar,
-      status: "finalizada",
+      status: tipo === "venda" ? "Finalizada" : "Orçamento",
       desconto_real: descontoReais,
       desconto_porcentagem: descontoPorcentagem,
       acrescimo_real: acrescimoReais,
       acrescimo_porcentagem: acrescimoPorcentagem,
-      id_cliente: id_cliente,
+      id_cliente: id_cliente || null,
       id_usuario: null,
-      id_funcionario: id_vendedor,
+      id_funcionario: id_vendedor || null,
       pagamento: formaPagemento.map((dados) => ({
         forma: dados.tipo_pagamento,
         valor: dados.valor,
@@ -925,7 +928,7 @@ function FaturarVenda({ onClose, reset, produtos }) {
               (e.target.style.backgroundColor = "var(--success-500)")
             }
           >
-            <FaFileInvoice /> Emitir Nota Fiscal
+            <FaFileInvoice /> Lançar venda
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import AppContext from "../../context/AppContext";
 import { FaTrash, FaSearch, FaShoppingCart } from "react-icons/fa";
 import format from "../../utils/formatters";
 import estoqueFetch from "../../services/api/estoqueFetch";
@@ -324,6 +325,8 @@ function Pdv() {
     Data.getMonth() + 1
   ).padStart(2, "0")}/${Data.getFullYear()}`;
 
+  const { adicionarAviso } = useContext(AppContext);
+
   const [resultadoProdutos, setResultadoProdutos] = useState([]);
   const [produto, setProduto] = useState("Selecione um produto");
   const [precovenda, setPreçovenda] = useState(0);
@@ -398,13 +401,13 @@ function Pdv() {
       isNaN(quantidadeProduto) ||
       quantidadeProduto <= 0
     ) {
-      alert("Por favor, selecione um produto e informe uma quantidade válida.");
+      adicionarAviso("atenção" , "Por favor, selecione um produto e informe uma quantidade válida.");
       return;
     }
 
     // Verificar se precisa de variação
     if (mostrarVariacoes && !variacaoSelecionada) {
-      alert("Por favor, selecione uma variação do produto.");
+      adicionarAviso("atenção" , "Por favor, selecione uma variação do produto.");
       return;
     }
 

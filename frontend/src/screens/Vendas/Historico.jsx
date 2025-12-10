@@ -43,7 +43,7 @@ function HistoricoVendas() {
     const resFormated = res.map((dados) => {
       return {
       id_venda: dados.id_venda,
-      cliente: dados.cliente.nome,
+      cliente: dados?.cliente?.nome || "Cliente desconhecido",
       desconto: `${format.formatarCurrency(dados.desconto_real)} / ${dados.desconto_porcentagem} %`,
       acrescimos: `${format.formatarCurrency(dados.acrescimo_real)} / ${dados.acrescimo_porcentagem} %`,
       total: format.formatarCurrency(dados.valor_liquido),
