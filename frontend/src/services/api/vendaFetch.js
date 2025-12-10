@@ -48,6 +48,26 @@ const listaOrcamento = async () => {
   }
 };
 
+const listaCrediarios = async () => {
+  try {
+    const res = await fetch(API_URL + "/venda/lista/crediarios");
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    const data = await res.json();
+
+    const lista = data.data || data;
+
+    return lista;
+  } catch (err) {
+    console.error("Erro ao buscar crediarios:", err);
+    throw err;
+  }
+}
+
 const vendaID = async (id) => {
   try {
     const res = await fetch(API_URL + "/venda/lista");
@@ -94,6 +114,24 @@ const cadastro = async (dados) => {
   }
 };
 
+const darBaixaParcela = async (id) => {
+  try {
+    const res = await fetch(API_URL + `/venda/darbaixaparcela/${id}`, {
+      method: "PUT"
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao dar baixa na parcela:", err);
+    throw err;
+  }
+}
+
 const deletar = async (id) => {
   try {
     const res = await fetch(API_URL + `/venda/deletar/${id}`, {
@@ -119,6 +157,8 @@ const deletar = async (id) => {
 export default {
   lista,
   listaOrcamento,
+  listaCrediarios,
+  darBaixaParcela,
   vendaID,
   cadastro,
   deletar,

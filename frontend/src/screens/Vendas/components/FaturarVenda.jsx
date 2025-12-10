@@ -260,6 +260,7 @@ function FaturarVenda({ onClose, reset, produtos }) {
   const [totalPagar, setTotalPagar] = useState(0);
 
   const [formaPagementoAtual, setFormaPagementoAtual] = useState("Dinheiro");
+  const [valorEntrada, setValorEntrada] = useState(0);
   const [valorSendoPago, setValorSendoPago] = useState(0);
   const [formaPagemento, setFormaPagamento] = useState([]);
   const [faltaPagar, setFaltaPagar] = useState(0);
@@ -349,7 +350,9 @@ function FaturarVenda({ onClose, reset, produtos }) {
   const gerarParcelas = () => {
     if (!totalPagar || !numParcelas || !dataPrimeiraParcela) return;
 
-    const valorParcela = +(totalPagar / numParcelas).toFixed(2);
+    const valorParcela = +((totalPagar - valorEntrada) / numParcelas).toFixed(
+      2
+    );
     const base = new Date(dataPrimeiraParcela + "T00:00:00");
 
     const parcelas = Array.from({ length: Number(numParcelas) }, (_, i) => {
@@ -437,7 +440,12 @@ function FaturarVenda({ onClose, reset, produtos }) {
       data: new Date().toISOString(),
       valor_bruto: valorCompra,
       valor_liquido: totalPagar,
-      status: tipo === "venda" ? "Finalizada" : "Orçamento",
+      status:
+        tipo === "venda" && formaPagementoAtual != "Crediário Próprio"
+          ? "Finalizada"
+          : formaPagementoAtual === "Crediário Próprio"
+          ? `Pagamento pendente: 0/${numParcelas}`
+          : "Orçamento",
       desconto_real: descontoReais,
       desconto_porcentagem: descontoPorcentagem.toFixed(3),
       acrescimo_real: acrescimoReais,
@@ -445,11 +453,28 @@ function FaturarVenda({ onClose, reset, produtos }) {
       id_cliente: id_cliente || null,
       id_usuario: null,
       id_funcionario: id_vendedor || null,
-      pagamento: formaPagemento.map((dados) => ({
-        forma: dados.tipo_pagamento,
-        valor: dados.valor,
-        data_pagamento: new Date().toISOString(),
-      })),
+      crediario:
+        formaPagementoAtual === "Crediário Próprio"
+          ? {
+              entrada: valorEntrada,
+              numero_parcelas: numParcelas,
+              parcelas: parcelasGeradas.map((dados) => {
+                return {
+                  numero_parcela: dados.numero_parcela,
+                  valor: dados.valor_parcela,
+                  data_vencimento: dados.data_vencimento,
+                };
+              }),
+            }
+          : null,
+      pagamento:
+        formaPagementoAtual === "Crediário Próprio"
+          ? "Crediário Próprio"
+          : formaPagemento.map((dados) => ({
+              forma: dados.tipo_pagamento,
+              valor: dados.valor,
+              data_pagamento: new Date().toISOString(),
+            })),
       produtos: venda.map((item) => ({
         id_produto: item.id_produto,
         id_variacao: item.id_variacao,
@@ -459,7 +484,7 @@ function FaturarVenda({ onClose, reset, produtos }) {
       })),
     };
 
-    const res = await vendaFetch.cadastro(vendaData)
+    const res = await vendaFetch.cadastro(vendaData);
 
     // Resetar tudo
     reset();
@@ -682,11 +707,30 @@ function FaturarVenda({ onClose, reset, produtos }) {
                           Nº Parcelas
                         </label>
                         <input
-                          style={{ ...styles.input, width: "80%" }}
+                          style={{ ...styles.input, width: "50%" }}
                           type="number"
                           min={1}
                           value={numParcelas}
                           onChange={(e) => setNumParcelas(e.target.value)}
+                        />
+                      </div>
+                      <div style={{ flex: 2 }}>
+                        <label
+                          style={{
+                            ...styles.label,
+                            display: "block",
+                            marginBottom: "6px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          Entrada
+                        </label>
+                        <input
+                          style={{ ...styles.input, width: "80%" }}
+                          type="number"
+                          min={0}
+                          value={valorEntrada}
+                          onChange={(e) => setValorEntrada(e.target.value)}
                         />
                       </div>
                       <div style={{ flex: 2 }}>
@@ -779,7 +823,7 @@ function FaturarVenda({ onClose, reset, produtos }) {
                           {p.numero_parcela}ª
                         </td>
                         <td style={styles.td}>
-                          {formatarData(p.data_vencimento)}
+                          {format.formatDate(p.data_vencimento)}
                         </td>
                         <td
                           style={{

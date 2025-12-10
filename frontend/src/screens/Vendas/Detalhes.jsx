@@ -6,6 +6,7 @@ import Loading from "../../components/layout/Loading";
 import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
 import { pdf } from "@react-pdf/renderer";
 import NotaGrande from "./components/NotaGrande";
+import CarnePagamento from "./components/CarneCrediario";
 import AppContext from "../../context/AppContext";
 import {
   FaRegUser,
@@ -456,8 +457,8 @@ const DetalhesVenda = () => {
         doc = <NotaGrande venda={dataVenda} />;
         break;
 
-      case "carne crediario":
-        doc = <CarneCrediario venda={dataVenda} />;
+      case "carneCrediario":
+        doc = <CarnePagamento dados={dataVenda} />;
         break;
 
       default:
@@ -733,7 +734,7 @@ const DetalhesVenda = () => {
                   {dataVenda.crediario && (
                     <div
                       style={styles.dropdownItem}
-                      onClick={() => handleVisualizarNota("carne crediario")}
+                      onClick={() => handleVisualizarNota("carneCrediario")}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = "#f5f5f5")
                       }
