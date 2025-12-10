@@ -4,7 +4,7 @@ import clientesFetch from "../../services/api/clientesFetch";
 import format from "../../utils/formatters";
 
 //Icones
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaWhatsapp } from "react-icons/fa";
 
 //components
 import Table from "../../components/ui/tabelas/Table";
@@ -121,10 +121,19 @@ function ListaClientes() {
 
   const actions = [
     {
-      label: "Informações",
+      label: "Info",
       type: "details",
       onClick: (row, index) => {
         navigate(`/clientes/detalhes/${row.id_cliente}`);
+      },
+    },
+    {
+      label: <FaWhatsapp size={18} />,
+      type: "faturar",
+      onClick: (row, index) => {
+        // Usa o telefone original sem formatação
+        const telefone = row.telefoneOriginal || row.telefone.replace(/\D/g, '');
+        window.open(`https://wa.me/${telefone}`, "_blank");
       },
     },
   ];
