@@ -7,6 +7,7 @@ import {
   FaTag,
   FaChevronLeft,
   FaChevronRight,
+  FaTimes,
 } from "react-icons/fa";
 import Lightbox from "react-awesome-lightbox";
 import "react-awesome-lightbox/build/style.css";
@@ -20,6 +21,8 @@ function ListaProdutos() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [expandedProducts, setExpandedProducts] = useState({});
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [modalAberta, setModalAberta] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const PRODUTOS_POR_PAGINA = 10;
 
   const abrirLightbox = useCallback((imagens, indexInicial = 0) => {
@@ -30,6 +33,18 @@ function ListaProdutos() {
 
   const fecharLightbox = useCallback(() => {
     setLightboxOpen(false);
+  }, []);
+
+  const abrirModal = useCallback((produto) => {
+    setProdutoSelecionado(produto);
+    setModalAberta(true);
+    document.body.style.overflow = "hidden";
+  }, []);
+
+  const fecharModal = useCallback(() => {
+    setModalAberta(false);
+    setProdutoSelecionado(null);
+    document.body.style.overflow = "auto";
   }, []);
 
   const toggleExpandProduct = useCallback((produtoId) => {
@@ -66,18 +81,22 @@ function ListaProdutos() {
     listarProdutos();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
+
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) =>
       p.nome.toLowerCase().includes(busca.toLowerCase())
     );
   }, [produtos, busca]);
 
-  // Resetar para primeira página quando a busca mudar
   useEffect(() => {
     setPaginaAtual(1);
   }, [busca]);
 
-  // Calcular produtos da página atual
   const { produtosPaginados, totalPaginas } = useMemo(() => {
     const inicio = (paginaAtual - 1) * PRODUTOS_POR_PAGINA;
     const fim = inicio + PRODUTOS_POR_PAGINA;
@@ -358,6 +377,82 @@ function ListaProdutos() {
       fontSize: "14px",
       fontWeight: "500",
     },
+    modalOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: "20px",
+      backdropFilter: "blur(4px)",
+    },
+    modalContent: {
+      backgroundColor: "var(--surface)",
+      borderRadius: "16px",
+      maxWidth: "700px",
+      width: "100%",
+      maxHeight: "90vh",
+      overflow: "auto",
+      position: "relative",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+    },
+    modalHeader: {
+      padding: "24px",
+      borderBottom: "2px solid var(--neutral-600)",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: "16px",
+      position: "sticky",
+      top: 0,
+      backgroundColor: "var(--surface)",
+      zIndex: 1,
+    },
+    modalTitle: {
+      fontSize: "24px",
+      fontWeight: "700",
+      color: "var(--text-primary)",
+      margin: 0,
+    },
+    modalCloseBtn: {
+      backgroundColor: "transparent",
+      border: "none",
+      fontSize: "24px",
+      cursor: "pointer",
+      color: "var(--text-secondary)",
+      transition: "all 0.2s",
+      padding: "4px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: "8px",
+      width: "36px",
+      height: "36px",
+      flexShrink: 0,
+    },
+    modalBody: {
+      padding: "24px",
+    },
+    modalSection: {
+      marginBottom: "24px",
+    },
+    modalSectionTitle: {
+      fontSize: "16px",
+      fontWeight: "600",
+      color: "var(--text-primary)",
+      marginBottom: "12px",
+    },
+    modalDescricao: {
+      fontSize: "15px",
+      lineHeight: "1.6",
+      color: "var(--text-primary)",
+      whiteSpace: "pre-wrap",
+    },
   };
 
   return (
@@ -396,6 +491,85 @@ function ListaProdutos() {
           startIndex={currentImageIndex}
           onClose={fecharLightbox}
         />
+      )}
+
+      {/* Modal de Detalhes */}
+      {modalAberta && produtoSelecionado && (
+        <div
+          style={styles.modalOverlay}
+          onClick={fecharModal}
+        >
+          <div
+            style={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>{produtoSelecionado.nome}</h2>
+              <button
+                style={styles.modalCloseBtn}
+                onClick={fecharModal}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--surface-strong)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div style={styles.modalBody}>
+              <div style={styles.modalSection}>
+                <div style={styles.modalSectionTitle}>Informações do Produto</div>
+                <div style={styles.infoRow}>
+                  <span style={styles.label}>Código:</span>
+                  <span style={styles.value}>
+                    {produtoSelecionado.cod_interno || produtoSelecionado.id_produto}
+                  </span>
+                </div>
+                <div style={styles.infoRow}>
+                  <span style={styles.label}>Preço:</span>
+                  <span style={{ ...styles.value, color: "var(--primary-color)", fontSize: "20px" }}>
+                    R$ {parseFloat(produtoSelecionado.preco_venda).toFixed(2)}
+                  </span>
+                </div>
+                <div style={styles.infoRow}>
+                  <FaBox style={{ color: "#666" }} />
+                  <span style={styles.label}>Estoque:</span>
+                  <span style={styles.value}>
+                    {produtoSelecionado.variacao?.length > 0
+                      ? produtoSelecionado.variacao.reduce(
+                          (acc, v) => acc + parseInt(v.estoque || 0),
+                          0
+                        )
+                      : parseInt(produtoSelecionado.estoque || 0)}{" "}
+                    un.
+                  </span>
+                </div>
+              </div>
+
+              {produtoSelecionado.descricao && (
+                <div style={styles.modalSection}>
+                  <div style={styles.modalSectionTitle}>Descrição</div>
+                  <div style={styles.modalDescricao}>
+                    {produtoSelecionado.descricao}
+                  </div>
+                </div>
+              )}
+
+              {!produtoSelecionado.descricao && (
+                <div style={styles.modalSection}>
+                  <div style={{ ...styles.modalDescricao, opacity: 0.6, fontStyle: "italic" }}>
+                    Este produto não possui descrição.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       <div style={styles.grid}>
@@ -499,6 +673,7 @@ function ListaProdutos() {
 
                   <button
                     style={styles.detalhesBtn}
+                    onClick={() => abrirModal(prod)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "scale(1.05)";
                       e.currentTarget.style.boxShadow =
@@ -630,7 +805,6 @@ function ListaProdutos() {
           </button>
 
           {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((numPagina) => {
-            // Mostrar apenas algumas páginas ao redor da página atual
             if (
               numPagina === 1 ||
               numPagina === totalPaginas ||
