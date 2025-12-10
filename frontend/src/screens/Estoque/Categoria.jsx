@@ -374,7 +374,7 @@ const CategoriesScreen = () => {
     };
 
     try {
-      const response = await estoqueFetch.cadastroSubCategoria(
+      const response = await estoqueFetch.cadastroSubcategoria(
         subcategoriaData
       );
       if (response.success) {

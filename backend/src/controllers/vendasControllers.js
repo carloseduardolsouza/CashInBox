@@ -40,55 +40,28 @@ const cadastro = async (req, res) => {
   }
 };
 
-const editar = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Verifica se o cliente existe
-    const cliente = await ClienteModel.editar(id , req.body);
-    if (!cliente) {
-      return res.status(404).json({
-        success: false,
-        message: "Cliente não encontrado",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Cliente atualizado com sucesso",
-    });
-  } catch (error) {
-    console.error("❌ Erro ao editar cliente:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao editar cliente",
-      error: error.message,
-    });
-  }
-};
-
 const deletar = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verifica se o cliente existe
-    const cliente = await ClienteModel.deletar(id);
-    if (!cliente) {
+    // Verifica se a venda existe
+    const venda = await VendaModel.deletar(id);
+    if (!venda) {
       return res.status(404).json({
         success: false,
-        message: "Cliente não encontrado",
+        message: "Venda não encontrado",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Cliente deletado com sucesso",
+      message: "Venda deletado com sucesso",
     });
   } catch (error) {
-    console.error("❌ Erro ao deletar cliente:", error);
+    console.error("❌ Erro ao deletar venda:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro ao deletar cliente",
+      message: "Erro ao deletar venda",
       error: error.message,
     });
   }
@@ -97,6 +70,5 @@ const deletar = async (req, res) => {
 module.exports = {
   lista,
   cadastro,
-  editar,
   deletar,
 };

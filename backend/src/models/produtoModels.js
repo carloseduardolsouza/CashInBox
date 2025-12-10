@@ -46,7 +46,7 @@ const deletarImagem = async (id_imagem) => {
 const deleteImage = (filename) => {
   try {
     // Remove apenas o nome do arquivo, não o caminho completo
-    const cleanFilename = filename.replace('/uploads/', '').replace(/^\//, '');
+    const cleanFilename = filename.replace("/uploads/", "").replace(/^\//, "");
     const fullPath = path.join(uploadPath, cleanFilename);
 
     if (fs.existsSync(fullPath)) {
@@ -78,7 +78,7 @@ const deletarVariacao = async (id_variacao) => {
     console.error("❌ Erro ao deletar imagem:", err);
     return false;
   }
-}
+};
 
 const cadastro = async (produtoData) => {
   return await db.transaction(async (trx) => {
@@ -97,7 +97,7 @@ const cadastro = async (produtoData) => {
 
     // 2. SALVAR TODAS AS IMAGENS DO PRODUTO PRINCIPAL
     const imagensInseridas = [];
-    
+
     if (Array.isArray(images) && images.length > 0) {
       console.log(
         `\n🖼️  Salvando ${images.length} imagem(ns) do produto principal...`
@@ -110,14 +110,16 @@ const cadastro = async (produtoData) => {
           caminho_arquivo: img.caminho_arquivo,
           principal: i === 0, // Primeira imagem é a principal
         });
-        
+
         imagensInseridas.push({
           id_imagem: idImagem,
           caminho_arquivo: img.caminho_arquivo,
-          index: i
+          index: i,
         });
-        
-        console.log(`  ✓ Imagem ${i + 1}: ${img.caminho_arquivo} (ID: ${idImagem})`);
+
+        console.log(
+          `  ✓ Imagem ${i + 1}: ${img.caminho_arquivo} (ID: ${idImagem})`
+        );
       }
 
       console.log("✅ Todas as imagens do produto salvas");
@@ -138,20 +140,22 @@ const cadastro = async (produtoData) => {
 
         // Determina qual imagem está associada a esta variação
         let idImagemVariacao = null;
-        
+
         // Se a variação tem imagens específicas
         if (Array.isArray(v.images) && v.images.length > 0) {
           // Pega o caminho da primeira imagem da variação
           const caminhoImagemVariacao = v.images[0].caminho_arquivo;
-          
+
           // Busca o ID da imagem correspondente que foi inserida
           const imagemEncontrada = imagensInseridas.find(
-            img => img.caminho_arquivo === caminhoImagemVariacao
+            (img) => img.caminho_arquivo === caminhoImagemVariacao
           );
-          
+
           if (imagemEncontrada) {
             idImagemVariacao = imagemEncontrada.id_imagem;
-            console.log(`    🖼️  Imagem vinculada: ${caminhoImagemVariacao} (ID: ${idImagemVariacao})`);
+            console.log(
+              `    🖼️  Imagem vinculada: ${caminhoImagemVariacao} (ID: ${idImagemVariacao})`
+            );
           }
         }
 
@@ -160,9 +164,9 @@ const cadastro = async (produtoData) => {
           id_produto: produtoId,
           id_imagem: idImagemVariacao, // Pode ser null se não houver imagem
           nome: formate.formatNome(v.nome),
-          tipo: v.tipo || '',
-          cod_interno: v.cod_interno || '',
-          cod_barras: v.cod_barras || '',
+          tipo: v.tipo || "",
+          cod_interno: v.cod_interno || "",
+          cod_barras: v.cod_barras || "",
           estoque: v.estoque || 0,
           estoque_minimo: v.estoque_minimo || 0,
           created_at: trx.fn.now(),
@@ -247,7 +251,8 @@ const lista = async () => {
       "produtos.*",
       "categoria_produtos.nome as categoria_nome",
       "subcategoria_produtos.nome as subcategoria_nome"
-    );
+    )
+    .where("produtos.ativo", true);
 
   // Busca variações
   const variacoes = await db("produto_variacao").select("*");
@@ -263,12 +268,12 @@ const lista = async () => {
       .map((v) => {
         // Busca a imagem vinculada à variação (através de id_imagem)
         let imagemVariacao = null;
-        
+
         if (v.id_imagem) {
           const imgEncontrada = imagens.find(
             (img) => img.id_imagem === v.id_imagem
           );
-          
+
           if (imgEncontrada) {
             imagemVariacao = {
               id_imagem: imgEncontrada.id_imagem,
@@ -296,7 +301,106 @@ const lista = async () => {
       .filter((img) => {
         // Verifica se a imagem pertence ao produto
         const pertenceAoProduto = img.id_produto === produto.id_produto;
-        
+
+        return pertenceAoProduto;
+      })
+      .map((img) => ({
+        id_imagem: img.id_imagem,
+        caminho_arquivo: `/uploads/${img.caminho_arquivo}`,
+        principal: img.principal,
+      }));
+
+    return {
+      id_produto: produto.id_produto,
+      nome: produto.nome,
+      descricao: produto.descricao,
+      cod_barras: produto.cod_barras,
+      cod_interno: produto.cod_interno,
+      preco_custo: produto.preco_custo,
+      preco_venda: produto.preco_venda,
+      margem: produto.margem,
+      ativo: produto.ativo,
+      estoque: produto.estoque,
+      estoque_minimo: produto.estoque_minimo,
+      id_categoria: produto.id_categoria,
+      categoria_nome: produto.categoria_nome,
+      id_subcategoria: produto.id_subcategoria,
+      subcategoria_nome: produto.subcategoria_nome,
+      variacao: variacoesProduto,
+      images: imagensProduto, // ✅ Apenas imagens não vinculadas a variações
+    };
+  });
+
+  return resultado;
+};
+
+const listaAll = async () => {
+  // Busca produtos
+  const produtos = await db("produtos")
+    .leftJoin(
+      "categoria_produtos",
+      "produtos.id_categoria",
+      "categoria_produtos.id_categoria"
+    )
+    .leftJoin(
+      "subcategoria_produtos",
+      "produtos.id_subcategoria",
+      "subcategoria_produtos.id_subcategoria"
+    )
+    .select(
+      "produtos.*",
+      "categoria_produtos.nome as categoria_nome",
+      "subcategoria_produtos.nome as subcategoria_nome"
+    )
+
+  // Busca variações
+  const variacoes = await db("produto_variacao").select("*");
+
+  // Busca TODAS as imagens
+  const imagens = await db("produto_imagens").select("*");
+
+  // Monta estrutura final
+  const resultado = produtos.map((produto) => {
+    // Filtra variações do produto
+    const variacoesProduto = variacoes
+      .filter((v) => v.id_produto === produto.id_produto)
+      .map((v) => {
+        // Busca a imagem vinculada à variação (através de id_imagem)
+        let imagemVariacao = null;
+
+        if (v.id_imagem) {
+          const imgEncontrada = imagens.find(
+            (img) => img.id_imagem === v.id_imagem
+          );
+
+          if (imgEncontrada) {
+            imagemVariacao = {
+              id_imagem: imgEncontrada.id_imagem,
+              caminho_arquivo: `/uploads/${imgEncontrada.caminho_arquivo}`,
+              principal: imgEncontrada.principal,
+            };
+          }
+        }
+
+        return {
+          id_variacao: v.id_variacao,
+          id_imagem: v.id_imagem, // ID da imagem vinculada
+          nome: v.nome,
+          tipo: v.tipo,
+          cod_interno: v.cod_interno,
+          cod_barras: v.cod_barras,
+          estoque: v.estoque,
+          estoque_minimo: v.estoque_minimo,
+          imagem: imagemVariacao, // Imagem vinculada (ou null)
+        };
+      });
+
+    // ✅ Apenas as imagens do produto que NÃO estão vinculadas a variações
+    const imagensProduto = imagens
+      .filter((img) => {
+        // Verifica se a imagem pertence ao produto
+        const pertenceAoProduto = img.id_produto === produto.id_produto;
+
         return pertenceAoProduto;
       })
       .map((img) => ({
@@ -336,9 +440,7 @@ const editar = async (id, produtoData) => {
     const { variacao, ...dadosProduto } = produtoData;
 
     // 1. Verifica se o produto existe
-    const produtoExiste = await trx("produtos")
-      .where("id_produto", id)
-      .first();
+    const produtoExiste = await trx("produtos").where("id_produto", id).first();
 
     if (!produtoExiste) {
       throw new Error("Produto não encontrado");
@@ -361,7 +463,7 @@ const editar = async (id, produtoData) => {
 
       for (let i = 0; i < variacao.length; i++) {
         const v = variacao[i];
-        
+
         // O id_imagem vem diretamente do objeto variacao
         const idImagemNova = v.id_imagem || null;
 
@@ -369,14 +471,14 @@ const editar = async (id, produtoData) => {
         if (!v.id_variacao) {
           // ========== CRIAR NOVA VARIAÇÃO ==========
           console.log(`  📦 Criando nova variação: ${v.nome}`);
-          
+
           const [variacaoId] = await trx("produto_variacao").insert({
             id_produto: id,
             id_imagem: idImagemNova,
             nome: formate.formatNome(v.nome),
-            tipo: v.tipo || '',
-            cod_interno: v.cod_interno || '',
-            cod_barras: v.cod_barras || '',
+            tipo: v.tipo || "",
+            cod_interno: v.cod_interno || "",
+            cod_barras: v.cod_barras || "",
             estoque: v.estoque || 0,
             estoque_minimo: v.estoque_minimo || 0,
             created_at: trx.fn.now(),
@@ -386,18 +488,21 @@ const editar = async (id, produtoData) => {
           if (idImagemNova) {
             console.log(`    🖼️  Imagem vinculada: ${idImagemNova}`);
           }
-
         } else {
           // ========== ATUALIZAR VARIAÇÃO EXISTENTE ==========
-          console.log(`  📝 Atualizando variação ID: ${v.id_variacao} (${v.nome})`);
-          
+          console.log(
+            `  📝 Atualizando variação ID: ${v.id_variacao} (${v.nome})`
+          );
+
           // Busca a variação atual para comparar
           const variacaoAtual = await trx("produto_variacao")
             .where("id_variacao", v.id_variacao)
             .first();
 
           if (!variacaoAtual) {
-            console.log(`    ⚠️  Variação ${v.id_variacao} não encontrada, pulando...`);
+            console.log(
+              `    ⚠️  Variação ${v.id_variacao} não encontrada, pulando...`
+            );
             continue;
           }
 
@@ -407,21 +512,25 @@ const editar = async (id, produtoData) => {
             .update({
               id_imagem: idImagemNova, // Atualiza a referência da imagem
               nome: formate.formatNome(v.nome),
-              tipo: v.tipo || '',
-              cod_interno: v.cod_interno || '',
-              cod_barras: v.cod_barras || '',
+              tipo: v.tipo || "",
+              cod_interno: v.cod_interno || "",
+              cod_barras: v.cod_barras || "",
               estoque: v.estoque || 0,
               estoque_minimo: v.estoque_minimo || 0,
             });
 
           console.log(`    ✅ Variação atualizada`);
-          
+
           // Log sobre mudança de imagem
           if (variacaoAtual.id_imagem !== idImagemNova) {
             if (idImagemNova) {
-              console.log(`    🖼️  Imagem alterada: ${variacaoAtual.id_imagem} → ${idImagemNova}`);
+              console.log(
+                `    🖼️  Imagem alterada: ${variacaoAtual.id_imagem} → ${idImagemNova}`
+              );
             } else {
-              console.log(`    🖼️  Imagem removida (era: ${variacaoAtual.id_imagem})`);
+              console.log(
+                `    🖼️  Imagem removida (era: ${variacaoAtual.id_imagem})`
+              );
             }
           }
         }
@@ -435,7 +544,6 @@ const editar = async (id, produtoData) => {
     return true;
   });
 };
-
 
 const deletar = async (id) => {
   return await db.transaction(async (trx) => {
@@ -455,8 +563,9 @@ const deletar = async (id) => {
 
     // 2. Remove do banco (CASCADE vai cuidar de variações e imagens)
     await trx("produto_imagens").where("id_produto", id).del();
-    await trx("produto_variacao").where("id_produto", id).del();
-    await trx("produtos").where("id_produto", id).del();
+
+    // Atualiza o produto para inativo
+    await trx("produtos").where("id_produto", id).update({ ativo: false });
 
     return true;
   });
@@ -587,6 +696,7 @@ module.exports = {
   cadastro,
   novaImagem,
   lista,
+  listaAll,
   editar,
   deletar,
   deletarImagem,

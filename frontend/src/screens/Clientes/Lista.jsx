@@ -179,7 +179,7 @@ function ListaClientes() {
         </form>
       </div>
 
-      <Table columns={columns} data={filteredData} actions={actions} />
+      <Table columns={columns} data={filteredData} actions={actions} rowsPerPage={15}/>
     </div>
   );
 }

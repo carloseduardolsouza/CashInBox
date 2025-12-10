@@ -51,7 +51,7 @@ const lista = async () => {
   const funcionarios = await db("funcionarios").select("*");
 
   // Busca todos os produtos
-  const produtos = await produtoModels.lista();
+  const produtos = await produtoModels.listaAll();
 
   console.log(`📊 Processando ${vendas.length} venda(s)...`);
 
@@ -153,57 +153,17 @@ const lista = async () => {
   return resultado;
 };
 
-const editar = async (id, clienteData) => {
-  return await db.transaction(async (trx) => {
-    const { endereco, ...dadosCliente } = clienteData;
-
-    // 1. Atualiza dados do cliente
-    await trx("cliente")
-      .where("id_cliente", id)
-      .update({
-        ...dadosCliente,
-        nome: formate.formatNome(dadosCliente.nome),
-        email: dadosCliente.email ? dadosCliente.email.toLowerCase() : "",
-      });
-
-    // 2. Atualizar endereços
-    if (Array.isArray(endereco)) {
-      // Remove endereços antigos
-      await trx("endereco").where("id_cliente", id).del();
-
-      // Adiciona endereços novamente já formatados
-      for (const end of endereco) {
-        await trx("endereco").insert({
-          pais: formate.normalize(end.pais),
-          estado: formate.normalize(end.estado),
-          cidade: formate.normalize(end.cidade),
-          bairro: formate.normalize(end.bairro),
-          rua: formate.normalize(end.rua),
-          cep: end.cep,
-          complemento: formate.normalize(end.complemento),
-          id_cliente: id,
-        });
-      }
-    }
-
-    return true;
-  });
-};
-
 const deletar = async (id) => {
   return await db.transaction(async (trx) => {
-    // Verifica se o cliente existe
-    const cliente = await trx("cliente").where("id_cliente", id).first();
+    // Verifica se a venda existe
+    const venda = await trx("vendas").where("id_venda", id).first();
 
-    if (!cliente) {
-      throw new Error("Cliente não encontrado");
+    if (!venda) {
+      throw new Error("Venda não encontrado");
     }
 
-    // 1. Deletar os endereços do cliente
-    await trx("endereco").where("id_cliente", id).del();
-
-    // 2. Deletar o cliente
-    await trx("cliente").where("id_cliente", id).del();
+    // 1. Deletar a venda
+    await trx("vendas").where("id_venda", id).del();
 
     return true;
   });
@@ -212,6 +172,5 @@ const deletar = async (id) => {
 module.exports = {
   cadastro,
   lista,
-  editar,
   deletar,
 };

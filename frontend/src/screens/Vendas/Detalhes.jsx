@@ -233,7 +233,7 @@ const styles = {
     fontWeight: "600",
     color: "var(--text-muted)",
   },
-  statusBadge: {
+  statusBadgeFinalizada: {
     display: "inline-block",
     padding: "4px 12px",
     borderRadius: "12px",
@@ -241,6 +241,15 @@ const styles = {
     fontWeight: "600",
     backgroundColor: "var(--background-soft)",
     color: "var(--success-700)",
+  },
+  statusBadgeOrcamento: {
+    display: "inline-block",
+    padding: "4px 12px",
+    borderRadius: "12px",
+    fontSize: "12px",
+    fontWeight: "600",
+    backgroundColor: "var(--background-soft)",
+    color: "var(--warning-700)",
   },
   actionsSection: {
     display: "flex",
@@ -482,7 +491,8 @@ const DetalhesVenda = () => {
 
   const navigate = useNavigate();
 
-  const handleCancelarVenda = useCallback(() => {
+  const handleCancelarVenda = useCallback(async () => {
+    await vendaFetch.deletar(id)
     setDeletarModal(false);
     adicionarAviso("sucesso", "A venda foi deletada com sucesso !");
     navigate("/vendas/historico");
@@ -502,7 +512,7 @@ const DetalhesVenda = () => {
         {dataVenda.itens.map((produto) => {
           return (
             <tr key={produto.id_item}>
-              <td style={styles.td}>{produto.nome_produto}</td>
+              <td style={styles.td}>{produto.nome_produto} * {produto.nome_variacao}</td>
               <td style={styles.td}>
                 {format.formatarCurrency(produto.preco_unitario)}
               </td>
@@ -625,9 +635,14 @@ const DetalhesVenda = () => {
               </span>
             </div>
 
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>Total Liquido:</span>
+              <span>{format.formatarCurrency(dataVenda.valor_liquido)}</span>
+            </div>
+
             <div style={{ ...styles.detailItem, marginTop: "16px" }}>
               <span style={styles.detailLabel}>Status:</span>
-              <span style={styles.statusBadge}>{dataVenda.status}</span>
+              <span style={dataVenda.status === "Finalizada" ? styles.statusBadgeFinalizada : styles.statusBadgeOrcamento}>{dataVenda.status}</span>
             </div>
 
             <div style={styles.detailItem}>
