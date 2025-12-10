@@ -5,6 +5,8 @@ import {
   FaChevronUp,
   FaBox,
   FaTag,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import Lightbox from "react-awesome-lightbox";
 import "react-awesome-lightbox/build/style.css";
@@ -17,6 +19,8 @@ function ListaProdutos() {
   const [lightboxImages, setLightboxImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [expandedProducts, setExpandedProducts] = useState({});
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const PRODUTOS_POR_PAGINA = 10;
 
   const abrirLightbox = useCallback((imagens, indexInicial = 0) => {
     setLightboxImages(imagens);
@@ -67,6 +71,38 @@ function ListaProdutos() {
       p.nome.toLowerCase().includes(busca.toLowerCase())
     );
   }, [produtos, busca]);
+
+  // Resetar para primeira página quando a busca mudar
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [busca]);
+
+  // Calcular produtos da página atual
+  const { produtosPaginados, totalPaginas } = useMemo(() => {
+    const inicio = (paginaAtual - 1) * PRODUTOS_POR_PAGINA;
+    const fim = inicio + PRODUTOS_POR_PAGINA;
+    return {
+      produtosPaginados: produtosFiltrados.slice(inicio, fim),
+      totalPaginas: Math.ceil(produtosFiltrados.length / PRODUTOS_POR_PAGINA),
+    };
+  }, [produtosFiltrados, paginaAtual]);
+
+  const irParaPagina = useCallback((pagina) => {
+    setPaginaAtual(pagina);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const paginaAnterior = useCallback(() => {
+    if (paginaAtual > 1) {
+      irParaPagina(paginaAtual - 1);
+    }
+  }, [paginaAtual, irParaPagina]);
+
+  const proximaPagina = useCallback(() => {
+    if (paginaAtual < totalPaginas) {
+      irParaPagina(paginaAtual + 1);
+    }
+  }, [paginaAtual, totalPaginas, irParaPagina]);
 
   const FallbackImage = ({ text = "Sem imagem" }) => (
     <div style={{ opacity: "0.6", textAlign: "center" }}>{text}</div>
@@ -283,6 +319,45 @@ function ListaProdutos() {
       fontSize: "13px",
       color: "var(--text-secondary)",
     },
+    paginacao: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: "12px",
+      marginTop: "48px",
+      marginBottom: "24px",
+      flexWrap: "wrap",
+    },
+    botaoPaginacao: {
+      padding: "10px 16px",
+      borderRadius: "8px",
+      border: "2px solid var(--neutral-600)",
+      backgroundColor: "var(--surface)",
+      color: "var(--text-primary)",
+      cursor: "pointer",
+      fontSize: "14px",
+      fontWeight: "600",
+      transition: "all 0.2s",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      minWidth: "44px",
+      justifyContent: "center",
+    },
+    botaoPaginacaoAtivo: {
+      backgroundColor: "var(--primary-color)",
+      color: "white",
+      borderColor: "var(--primary-color)",
+    },
+    botaoPaginacaoDesabilitado: {
+      opacity: 0.4,
+      cursor: "not-allowed",
+    },
+    infoPaginacao: {
+      color: "var(--text-secondary)",
+      fontSize: "14px",
+      fontWeight: "500",
+    },
   };
 
   return (
@@ -324,15 +399,13 @@ function ListaProdutos() {
       )}
 
       <div style={styles.grid}>
-        {produtosFiltrados.map((prod) => {
+        {produtosPaginados.map((prod) => {
           const temVariacoes = prod.variacao?.length > 0;
           
-          // Para produtos com variações, buscar primeira imagem das variações
           let imagemPrincipal = null;
           let todasImagens = [];
           
           if (temVariacoes) {
-            // Buscar primeira variação que tenha imagens
             for (const variacao of prod.variacao) {
               if (variacao.images) {
                 imagemPrincipal = variacao.images;
@@ -340,13 +413,11 @@ function ListaProdutos() {
                 break;
               }
             }
-            // Fallback: usar imagens do produto principal
             if (!imagemPrincipal && prod.images?.length > 0) {
               imagemPrincipal = getImagemPrincipal(prod.images);
               todasImagens = getAllImages(prod.images);
             }
           } else {
-            // Produto sem variações: usar imagens do produto
             imagemPrincipal = getImagemPrincipal(prod.images);
             todasImagens = getAllImages(prod.images);
           }
@@ -390,7 +461,6 @@ function ListaProdutos() {
                   >
                     {todasImagens.length > 1 && (
                       <div style={styles.imageCounter}>
-                        {console.log(todasImagens)}
                         +{todasImagens.length}
                       </div>
                     )}
@@ -456,7 +526,6 @@ function ListaProdutos() {
 
                   {isExpanded &&
                     prod.variacao.map((variacao) => {
-                      // Buscar imagens da variação específica
                       const variacaoImagemPrincipal = variacao.imagem?.caminho_arquivo;
 
                       return (
@@ -537,6 +606,91 @@ function ListaProdutos() {
           );
         })}
       </div>
+
+      {/* Paginação */}
+      {totalPaginas > 1 && (
+        <div style={styles.paginacao}>
+          <button
+            style={{
+              ...styles.botaoPaginacao,
+              ...(paginaAtual === 1 && styles.botaoPaginacaoDesabilitado),
+            }}
+            onClick={paginaAnterior}
+            disabled={paginaAtual === 1}
+            onMouseEnter={(e) => {
+              if (paginaAtual !== 1) {
+                e.currentTarget.style.backgroundColor = "var(--surface-strong)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--surface)";
+            }}
+          >
+            <FaChevronLeft />
+          </button>
+
+          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((numPagina) => {
+            // Mostrar apenas algumas páginas ao redor da página atual
+            if (
+              numPagina === 1 ||
+              numPagina === totalPaginas ||
+              (numPagina >= paginaAtual - 1 && numPagina <= paginaAtual + 1)
+            ) {
+              return (
+                <button
+                  key={numPagina}
+                  style={{
+                    ...styles.botaoPaginacao,
+                    ...(numPagina === paginaAtual && styles.botaoPaginacaoAtivo),
+                  }}
+                  onClick={() => irParaPagina(numPagina)}
+                  onMouseEnter={(e) => {
+                    if (numPagina !== paginaAtual) {
+                      e.currentTarget.style.backgroundColor = "var(--surface-strong)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (numPagina !== paginaAtual) {
+                      e.currentTarget.style.backgroundColor = "var(--surface)";
+                    }
+                  }}
+                >
+                  {numPagina}
+                </button>
+              );
+            } else if (
+              numPagina === paginaAtual - 2 ||
+              numPagina === paginaAtual + 2
+            ) {
+              return <span key={numPagina} style={styles.infoPaginacao}>...</span>;
+            }
+            return null;
+          })}
+
+          <button
+            style={{
+              ...styles.botaoPaginacao,
+              ...(paginaAtual === totalPaginas && styles.botaoPaginacaoDesabilitado),
+            }}
+            onClick={proximaPagina}
+            disabled={paginaAtual === totalPaginas}
+            onMouseEnter={(e) => {
+              if (paginaAtual !== totalPaginas) {
+                e.currentTarget.style.backgroundColor = "var(--surface-strong)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--surface)";
+            }}
+          >
+            <FaChevronRight />
+          </button>
+
+          <span style={styles.infoPaginacao}>
+            Página {paginaAtual} de {totalPaginas}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

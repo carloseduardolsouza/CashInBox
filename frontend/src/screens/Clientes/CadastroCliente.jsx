@@ -1,5 +1,6 @@
 import { useReducer, useState, useContext } from "react";
 import AppContext from "../../context/AppContext";
+import HeaderBack from '../../components/ui/HeaderBack'
 import {
   FaUserAlt,
   FaPhone,
@@ -19,6 +20,8 @@ import clientesFetch from "../../services/api/clientesFetch";
 const styles = {
   container: {
     minHeight: "100vh",
+    marginLeft: "44px",
+    padding: "10px",
     background: "var(--background-color)",
   },
   centralizar: {
@@ -249,6 +252,7 @@ function CadastrarCliente() {
   return (
     <>
       <div style={styles.container}>
+        <HeaderBack route={"/clientes/lista"} title={"Cadastrar Cliente"}/>
         <div style={styles.centralizar}>
           <div style={styles.main}>
             <div style={styles.fotoContainer}>

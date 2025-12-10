@@ -1,6 +1,7 @@
 import { GoGear } from "react-icons/go";
 import { useState } from "react";
 import { FiDownload, FiCreditCard, FiCalendar, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import HeaderBack from "../../components/ui/HeaderBack"
 
 function Boletos() {
   // Dados simulados da API
@@ -235,8 +236,8 @@ function Boletos() {
 
   return (
     <div style={styles.container}>
+      <HeaderBack route={"/"} title={"Planos e Boletos"}/>
       <div style={styles.header}>
-        <h2 style={styles.title}>Planos e Boletos</h2>
         <p style={styles.subtitle}>
           Gerencie pagamentos, assinaturas e vencimentos dos serviços da CashInBox
         </p>

@@ -522,6 +522,9 @@ const ProductDetailScreen = () => {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [modalDeleteProduto, setModalDeleteProduto] = useState(false);
 
+  const [categoriasData, setCategoriasData] = useState([]);
+  const [subcategoriasData, setSubcategoriasData] = useState([]);
+
   const [productData, setProductData] = useState({});
   const [originalData, setOriginalData] = useState({});
 
@@ -537,7 +540,24 @@ const ProductDetailScreen = () => {
 
   useEffect(() => {
     buscarProdutoID();
+    buscarCatgorias();
   }, [id]);
+
+  useEffect(() => {
+    if (productData.id_categoria && categoriasData.length > 0) {
+      const categoriaAtual = categoriasData.find(
+        (cat) => cat.id_categoria === productData.id_categoria
+      );
+      if (categoriaAtual && categoriaAtual.subcategorias) {
+        setSubcategoriasData(categoriaAtual.subcategorias);
+      }
+    }
+  }, [productData.id_categoria, categoriasData]);
+
+  const buscarCatgorias = async () => {
+    const res = await estoqueFetch.listaCategoria();
+    setCategoriasData(res);
+  };
 
   const buscarProdutoID = async () => {
     try {
@@ -567,7 +587,7 @@ const ProductDetailScreen = () => {
       };
 
       setProductData(resFormated);
-      console.log(resFormated)
+      console.log(resFormated);
       setOriginalData(JSON.parse(JSON.stringify(resFormated)));
     } catch (error) {
       console.error("Erro ao buscar produto:", error);
@@ -860,6 +880,20 @@ const ProductDetailScreen = () => {
     }),
   };
 
+  const optionsCategorias = categoriasData.map((dados) => {
+    return {
+      label: dados.nome,
+      value: dados.id_categoria,
+    };
+  });
+
+  const optionsSubcategorias = subcategoriasData.map((dados) => {
+    return {
+      label: dados.nome,
+      value: dados.id_subcategoria,
+    };
+  });
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -1125,7 +1159,26 @@ const ProductDetailScreen = () => {
               {isEditing ? (
                 <div style={styles.infoItem}>
                   <span style={styles.label}>Categoria</span>
-                  <Select styles={customStyles} />
+                  <Select
+                    styles={customStyles}
+                    options={optionsCategorias}
+                    value={
+                      optionsCategorias.find(
+                        (o) => o.value === productData.id_categoria
+                      ) || null
+                    }
+                    onChange={(e) => {
+                      setProductData((prev) => ({
+                        ...prev,
+                        id_categoria: e.value,
+                      }));
+                      const subcategoriasFilter = categoriasData.find(
+                        (cat) => cat.id_categoria === e.value
+                      );
+                      console.log(subcategoriasFilter);
+                      setSubcategoriasData(subcategoriasFilter.subcategorias);
+                    }}
+                  />
                 </div>
               ) : (
                 <div style={styles.infoItem}>
@@ -1139,7 +1192,21 @@ const ProductDetailScreen = () => {
               {isEditing ? (
                 <div style={styles.infoItem}>
                   <span style={styles.label}>Subcategoria</span>
-                  <Select styles={customStyles} />
+                  <Select
+                    styles={customStyles}
+                    options={optionsSubcategorias}
+                    value={
+                      optionsSubcategorias.find(
+                        (o) => o.value === productData.id_subcategoria
+                      ) || null
+                    }
+                    onChange={(e) => {
+                      setProductData((prev) => ({
+                        ...prev,
+                        id_subcategoria: e.value,
+                      }));
+                    }}
+                  />
                 </div>
               ) : (
                 <div style={styles.infoItem}>

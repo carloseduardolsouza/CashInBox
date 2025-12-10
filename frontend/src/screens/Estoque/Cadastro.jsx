@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect , useContext } from "react";
+import HeaderBack from "../../components/ui/HeaderBack"
 import AppContext from "../../context/AppContext"
 import {
   FaCamera,
@@ -875,6 +876,7 @@ const CadastrarProduto = () => {
 
   return (
     <div style={styles.container}>
+      <HeaderBack route={"/estoque/inventario"} title={"Cadastrar Produto"}/>
       <style>
         {`
           @keyframes slideIn {

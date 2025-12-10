@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import clientesFetch from "../../services/api/clientesFetch";
 import { useParams } from "react-router-dom";
 
+import HeaderBack from "../../components/ui/HeaderBack"
+
 //biblioteca de paginas
 import { Tabs, Tab, Box } from "@mui/material";
 
@@ -13,6 +15,7 @@ import Loading from "../../components/layout/Loading";
 const styles = {
   DetalhesCliente: {
     marginLeft: "40px",
+    padding: "10px",
     background: "var(--background-color)",
   },
   TablePages: {
@@ -160,6 +163,7 @@ function DetalhesCliente() {
   return (
     <Box>
       <div style={styles.DetalhesCliente}>
+        <HeaderBack route={"/clientes/lista"} title={"Detalhes do Cliente"}/>
         <Tabs value={value} onChange={(e, newVal) => setValue(newVal)}>
           <Tab label="Informações gerais" sx={styles.TablePages} />
           <Tab label="Histórico de compras" sx={styles.TablePages} />
