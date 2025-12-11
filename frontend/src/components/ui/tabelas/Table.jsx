@@ -17,7 +17,7 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
       overflowX: "auto",
       borderRadius: "8px",
       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-      border: "1px solid var(--surface-border)"
+      border: "1px solid var(--surface-border)",
     },
     table: {
       width: "100%",
@@ -69,7 +69,7 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
       fontSize: "13px",
       transition: "all 0.2s",
       outline: "none",
-      fontWeight: "bold"
+      fontWeight: "bold",
     },
     detailsButton: {
       backgroundColor: "var(--primary-color)",
@@ -205,10 +205,10 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
   const renderPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
+
     if (endPage - startPage < maxVisiblePages - 1) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
@@ -279,7 +279,9 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
                               action.type,
                               hoveredButton === `${rowIndex}-${actionIndex}`
                             )}
-                            onClick={() => action.onClick(row, startIndex + rowIndex)}
+                            onClick={() =>
+                              action.onClick(row, startIndex + rowIndex)
+                            }
                             onMouseEnter={() =>
                               setHoveredButton(`${rowIndex}-${actionIndex}`)
                             }
@@ -312,9 +314,10 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
       {totalPages > 1 && (
         <div style={styles.paginationContainer}>
           <div style={styles.paginationInfo}>
-            Mostrando {startIndex + 1} a {Math.min(endIndex, data.length)} de {data.length} registros
+            Mostrando {startIndex + 1} a {Math.min(endIndex, data.length)} de{" "}
+            {data.length} registros
           </div>
-          
+
           <div style={styles.paginationButtons}>
             <button
               style={{
@@ -340,7 +343,8 @@ function Table({ columns, data, actions, rowsPerPage = 25 }) {
                 ...(currentPage === totalPages
                   ? styles.paginationButtonDisabled
                   : {}),
-                ...(hoveredPaginationBtn === "next" && currentPage !== totalPages
+                ...(hoveredPaginationBtn === "next" &&
+                currentPage !== totalPages
                   ? styles.paginationButtonHover
                   : {}),
               }}

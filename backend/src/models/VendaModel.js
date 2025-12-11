@@ -101,14 +101,65 @@ const listaCrediarios = async () => {
 
 const darBaixaParcela = async (id) => {
   return await db.transaction(async (trx) => {
-    // 1. Muda o status da parcela para pago
-    await trx("crediario_parcelas").where("id_parcela", id).update({
-      status: "Pago",
-    });
 
-    return true;
+    // 1. Verifica se a parcela existe
+    const parcela = await trx("crediario_parcelas")
+      .where("id_parcela", id)
+      .first();
+
+    if (!parcela) {
+      throw new Error("Parcela não encontrada");
+    }
+
+    // 2. Busca o crediário relacionado
+    const crediario = await trx("crediario_venda")
+      .where("id_crediario", parcela.id_crediario)
+      .first();
+
+    if (!crediario) {
+      throw new Error("Crediário não encontrado");
+    }
+
+    // 3. Atualiza a parcela para "Pago"
+    await trx("crediario_parcelas")
+      .where("id_parcela", id)
+      .update({
+        data_pagamento: new Date().toISOString(),
+        status: "Pago",
+      });
+
+    // 4. Busca todas as parcelas do crediario
+    const parcelasAll = await trx("crediario_parcelas")
+      .select("*")
+      .where("id_crediario", parcela.id_crediario);
+
+    const parcelasPagas = parcelasAll.filter((e) => e.status === "Pago");
+
+    if (parcelasAll.length === parcelasPagas.length) {
+      await trx("crediario_venda")
+      .where("id_crediario", crediario.id_crediario)
+      .update({ status: "Pago" });
+    }
+
+    // 5. Atualiza status do crediário (na tabela de vendas)
+    const statusVenda =
+      parcelasPagas.length === parcelasAll.length
+        ? "Crediário pago"
+        : `Pagamento pendente: ${parcelasPagas.length}/${parcelasAll.length}`;
+
+    await trx("vendas")
+      .where("id_venda", crediario.id_venda)
+      .update({ status: statusVenda });
+
+    return {
+      ok: true,
+      status: statusVenda,
+      parcelasPagas: parcelasPagas.length,
+      totalParcelas: parcelasAll.length,
+    };
   });
 };
+
 
 const lista = async () => {
   // Busca todas as vendas

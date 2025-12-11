@@ -157,6 +157,12 @@ const styles = {
     fontSize: "13px",
     fontWeight: "bold",
   },
+  buttonDarBaixaDisabled: {
+    backgroundColor: "#ccc",
+    color: "#666",
+    cursor: "not-allowed",
+    opacity: 0.6,
+  },
 };
 
 function CrediariosVendas() {
@@ -182,7 +188,7 @@ function CrediariosVendas() {
       };
     });
 
-    setCrediariosData(resFormated);
+    setCrediariosData(resFormated.reverse());
   };
 
   useEffect(() => {
@@ -200,10 +206,21 @@ function CrediariosVendas() {
   };
 
   const pagarParcela = async (id) => {
-    const res = await vendaFetch.darBaixaParcela(id)
-    buscarCrediarios()
-    fecharModal()
-  }
+    await vendaFetch.darBaixaParcela(id);
+
+    // Atualiza apenas a parcela no modal imediatamente
+    setCrediarioSelecionado((prev) => ({
+      ...prev,
+      parcelas: prev.parcelas.map((p) =>
+        p.id_parcela === id
+          ? { ...p, status: "Pago", data_pagamento: new Date().toISOString() }
+          : p
+      ),
+    }));
+
+    // Recarrega a lista principal, mas sem travar a UI
+    buscarCrediarios();
+  };
 
   const formatarData = (data) => {
     if (!data) return "-";
@@ -352,8 +369,13 @@ function CrediariosVendas() {
                       </td>
                       <td>
                         <button
-                          style={styles.buttonDarBaixa}
+                          style={{
+                            ...styles.buttonDarBaixa,
+                            ...(parcela.status === "Pago" &&
+                              styles.buttonDarBaixaDisabled),
+                          }}
                           onClick={() => pagarParcela(parcela.id_parcela)}
+                          disabled={parcela.status === "Pago"}
                         >
                           Dar Baixa
                         </button>
