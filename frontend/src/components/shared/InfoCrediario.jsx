@@ -3,6 +3,7 @@ import { FaUndo } from "react-icons/fa";
 import { TbCircleArrowDownRightFilled } from "react-icons/tb";
 import Modal from "../ui/modal/Modal";
 import format from "../../utils/formatters";
+import vendaFetch from "../../services/api/vendaFetch";
 
 const styles = {
   modalContent: {
@@ -466,9 +467,13 @@ function ModalCrediario({
     setValorAmortizar("");
   };
 
-  const handleAmortizarParcelas = () => {
-    // Implementar lógica de amortização aqui
-    console.log("Amortizar parcelas:", resultado);
+  const handleAmortizarParcelas = async () => {
+    const dadosFormatedAmortizar = {
+      valor_amortizado: valorAmortizar,
+      novo_valor: resultado.novoValorParcela
+    }
+    const res = await vendaFetch.amortizarParcela(crediario.id_crediario , dadosFormatedAmortizar)
+    // Reseta valores
     setShowAmortizar(false);
     setValorAmortizar("");
   };

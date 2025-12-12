@@ -135,6 +135,28 @@ const darBaixaParcela = async (id , dados) => {
   }
 }
 
+const amortizarParcela = async (id , dados) => {
+  try {
+    const res = await fetch(API_URL + `/venda/amortizar/parcela/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao amortizar parcelas:", err);
+    throw err;
+  }
+}
+
 const cancelarParela = async (id) => {
   try {
     const res = await fetch(API_URL + `/venda/cancelar/parcela/${id}`, {
@@ -180,6 +202,7 @@ export default {
   listaOrcamento,
   listaCrediarios,
   darBaixaParcela,
+  amortizarParcela,
   cancelarParela,
   vendaID,
   cadastro,

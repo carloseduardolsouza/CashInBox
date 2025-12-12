@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import funcionariosFetch from "../../services/api/funcionariosFetch";
-import { useParams } from "react-router-dom";
+import vendaFetch from "../../services/api/vendaFetch";
+import { useParams , useNavigate } from "react-router-dom";
+import format from "../../utils/formatters"
 
 import HeaderBack from "../../components/ui/HeaderBack";
 
@@ -40,8 +42,26 @@ const styles = {
   },
 };
 
-const HistoricoDeVendas = () => {
+const HistoricoDeVendas = ({dados}) => {
+  const [dadosFormated , setDadosFormated] = useState([])
+
+  useEffect(() => {
+    const response = dados.map((dados) => {
+      return {
+        id_venda: dados.id_venda,
+        cliente: dados.cliente?.nome || "Cliente desconhecido",
+        desconto: `${format.formatarCurrency(dados.desconto_real)} / ${dados.desconto_porcentagem}%`,
+        acrescimos: `${format.formatarCurrency(dados.acrescimo_real)} / ${dados.acrescimo_porcentagem}%`,
+        total: format.formatarCurrency(dados.valor_liquido),
+        status: dados.status,
+        data: format.formatDate(dados.data),
+      }
+    })
+
+    setDadosFormated(response)
+  } , [dados])
   const columns = [
+    { header: "Cliente", key: "cliente" },
     { header: "Desconto", key: "desconto" },
     { header: "Acréscimos", key: "acrescimos" },
     { header: "Total", key: "total" },
@@ -49,81 +69,21 @@ const HistoricoDeVendas = () => {
     { header: "Data", key: "data" },
   ];
 
-  const data = [
-    {
-      desconto: 10,
-      acrescimos: 5,
-      total: 150,
-      status: "Pago",
-      data: "2025-12-01",
-    },
-    {
-      desconto: 0,
-      acrescimos: 0,
-      total: 230,
-      status: "Pendente",
-      data: "2025-12-02",
-    },
-    {
-      desconto: 15,
-      acrescimos: 0,
-      total: 120,
-      status: "Pago",
-      data: "2025-12-02",
-    },
-  ];
+  const navigate = useNavigate()
 
   const actions = [
     {
       label: "Detalhes",
       type: "details",
       onClick: (row, index) => {
-        console.log(`Exibir detalhes:`, row);
+        navigate(`/vendas/detalhes/${row.id_venda}`)
       },
     },
   ];
 
   return (
     <div style={styles.ContainerGeral}>
-      <Table columns={columns} data={data} actions={actions} />
-    </div>
-  );
-};
-
-const Pendencias = () => {
-  const columns = [
-    { header: "Valor", key: "valor" },
-    { header: "Vencimento", key: "vencimento" },
-    { header: "Status", key: "status" },
-  ];
-
-  const data = [
-    {
-      valor: 10,
-      vencimento: "2025-12-01",
-      status: "Pendente",
-    },
-  ];
-
-  const actions = [
-    {
-      label: "Faturar",
-      type: "faturar",
-      onClick: (row, index) => {
-        console.log(`Exibir detalhes:`, row);
-      },
-    },
-    {
-      label: "Detalhes",
-      type: "details",
-      onClick: (row, index) => {
-        console.log(`Exibir detalhes:`, row);
-      },
-    },
-  ];
-  return (
-    <div style={styles.ContainerGeral}>
-      <Table columns={columns} data={data} actions={actions} />
+      <Table columns={columns} data={dadosFormated} actions={actions} />
     </div>
   );
 };
@@ -132,24 +92,40 @@ function DetalhesFuncionario() {
   const { id } = useParams();
   const [value, setValue] = useState(0);
   const [funcionarioData, setFuncionarioData] = useState({});
+  const [dataVendas , setDataVendas] = useState([])
   const [loading, setLoading] = useState(true);
 
+  const procurarFuncionario = async () => {
+    try {
+      setLoading(true);
+      const data = await funcionariosFetch.funcionarioID(id);
+
+      setFuncionarioData(data);
+    } catch (error) {
+      console.error("Erro ao buscar funcionario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const procurarVendasFuncionario = async () => {
+    try {
+      setLoading(true);
+      const data = await vendaFetch.lista();
+
+      const response = data.filter((e) => e.vendedor?.id_funcionario == id)
+
+      setDataVendas(response);
+    } catch (error) {
+      console.error("Erro ao buscar vendas do funcionario:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const procurarFuncionario = async () => {
-      try {
-        setLoading(true);
-        const data = await funcionariosFetch.funcionarioID(id);
-        console.log(data)
-
-        setFuncionarioData(data);
-      } catch (error) {
-        console.error("Erro ao buscar funcionario:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     procurarFuncionario();
+    procurarVendasFuncionario()
   }, [id]);
 
   if (loading) {
@@ -163,15 +139,11 @@ function DetalhesFuncionario() {
         <Tabs value={value} onChange={(e, newVal) => setValue(newVal)}>
           <Tab label="Informações gerais" sx={styles.TablePages} />
           <Tab label="Histórico de vendas" sx={styles.TablePages} />
-          <Tab label="Pendencias" sx={styles.TablePages} />
         </Tabs>
 
         <Box sx={{ padding: 2 }}>
           {value === 0 && <InformacoesGerais dados={funcionarioData} />}
-          {
-            // {value === 1 && }
-            // {value === 2 && }
-          }
+          {value === 1 && <HistoricoDeVendas dados={dataVendas}/>}
         </Box>
       </div>
     </Box>

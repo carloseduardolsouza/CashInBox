@@ -99,7 +99,7 @@ const listaCrediarios = async () => {
   return resultado;
 };
 
-const darBaixaParcela = async (id , dadosPagamento) => {
+const darBaixaParcela = async (id, dadosPagamento) => {
   return await db.transaction(async (trx) => {
     // 1. Verifica se a parcela existe
     const parcela = await trx("crediario_parcelas")
@@ -167,6 +167,50 @@ const darBaixaParcela = async (id , dadosPagamento) => {
   });
 };
 
+const amortizarParcela = async (id, dadosAmortizacao) => {
+  return await db.transaction(async (trx) => {
+    // 1. Verifica se o crediario existe
+    const crediario = await trx("crediario_venda")
+      .where("id_crediario", id)
+      .first();
+
+    if (!crediario) {
+      throw new Error("Crediario não encontrado");
+    }
+
+    // 2. Busca todas as parcelas do crediario
+    const parcelasAll = await trx("crediario_parcelas")
+      .select("*")
+      .where("id_crediario", id);
+
+    if (!parcelasAll) {
+      throw new Error("Parcelas não encontradas");
+    }
+
+    // 3. Filtra somente as parcelas pendentes
+    const parcelasPendentes = parcelasAll.filter((e) => e.status != "Pago");
+
+    // 4. Atualiza os valores da parcela para o novo valor
+    for (const end of parcelasPendentes) {
+      await trx("crediario_parcelas")
+        .where("id_parcela", end.id_parcela)
+        .update({
+          valor: dadosAmortizacao.novo_valor
+        });
+    }
+
+    // 5. Adiciona o forma de pagamento na venda
+    await trx("vendas_pagamento").insert({
+      id_venda: crediario.id_venda,
+      forma: `Amortização`,
+      valor: dadosAmortizacao.valor_amortizado,
+      data_pagamento: new Date().toISOString(),
+    });
+
+    return true;
+  });
+};
+
 const cancelarParcela = async (id) => {
   return await db.transaction(async (trx) => {
     // 1. Verifica se a parcela existe
@@ -188,9 +232,11 @@ const cancelarParcela = async (id) => {
     }
 
     //2.1 Atualiza o status do crediario para pendente
-    await trx("crediario_venda").where("id_crediario", parcela.id_crediario).update({
-      status: "Pendente",
-    });
+    await trx("crediario_venda")
+      .where("id_crediario", parcela.id_crediario)
+      .update({
+        status: "Pendente",
+      });
 
     // 3. Atualiza a parcela para "Pendente"
     await trx("crediario_parcelas").where("id_parcela", id).update({
@@ -200,7 +246,7 @@ const cancelarParcela = async (id) => {
     });
 
     // 3.1 Remove a forma de pagamento na venda
-    await trx("vendas_pagamento").where("id_parcela" , id).del();
+    await trx("vendas_pagamento").where("id_parcela", id).del();
 
     // 4. Busca todas as parcelas do crediario
     const parcelasAll = await trx("crediario_parcelas")
@@ -226,7 +272,7 @@ const cancelarParcela = async (id) => {
       totalParcelas: parcelasAll.length,
     };
   });
-}
+};
 
 const lista = async () => {
   // Busca todas as vendas
@@ -384,6 +430,7 @@ module.exports = {
   lista,
   listaCrediarios,
   darBaixaParcela,
+  amortizarParcela,
   cancelarParcela,
   deletar,
 };
