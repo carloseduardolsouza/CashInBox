@@ -19,7 +19,7 @@ const lista = async (req, res) => {
   }
 };
 
-const listaCrediarios = async (req ,res) => {
+const listaCrediarios = async (req, res) => {
   try {
     const crediarios = await VendaModel.listaCrediarios();
 
@@ -36,38 +36,10 @@ const listaCrediarios = async (req ,res) => {
       error: error.message,
     });
   }
-}
-
-const darBaixaParcela = async (req , res) => {
-  try {
-      const { id } = req.params;
-  
-      // Verifica se o parcela existe
-      const parcela = await VendaModel.darBaixaParcela(id);
-      if (!parcela) {
-        return res.status(404).json({
-          success: false,
-          message: "Parcela não encontrado",
-        });
-      }
-  
-      return res.status(200).json({
-        success: true,
-        message: "Parcela atualizado com sucesso",
-      });
-    } catch (error) {
-      console.error("❌ Erro ao editar parcela:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao editar parcela",
-        error: error.message,
-      });
-    }
-}
+};
 
 const cadastro = async (req, res) => {
   try {
-
     // Criar venda
     const vendaId = await VendaModel.cadastro(req.body);
 
@@ -113,10 +85,94 @@ const deletar = async (req, res) => {
   }
 };
 
+const darBaixaParcela = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verifica se o parcela existe
+    const parcela = await VendaModel.darBaixaParcela(id, req.body);
+    if (!parcela) {
+      return res.status(404).json({
+        success: false,
+        message: "Parcela não encontrado",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Parcela atualizado com sucesso",
+    });
+  } catch (error) {
+    console.error("❌ Erro ao editar parcela:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao editar parcela",
+      error: error.message,
+    });
+  }
+};
+
+const cancelarParcela = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verifica se o parcela existe
+    const parcela = await VendaModel.cancelarParcela(id);
+    if (!parcela) {
+      return res.status(404).json({
+        success: false,
+        message: "Parcela não encontrado",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Parcela atualizado com sucesso",
+    });
+  } catch (error) {
+    console.error("❌ Erro ao editar parcela:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao editar parcela",
+      error: error.message,
+    });
+  }
+};
+
+const amortizarParcela = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verifica se o parcela existe
+    const parcela = await VendaModel.amortizarParcela(id, req.body);
+    if (!parcela) {
+      return res.status(404).json({
+        success: false,
+        message: "Parcela não encontrado",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Parcela atualizado com sucesso",
+    });
+  } catch (error) {
+    console.error("❌ Erro ao editar parcela:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao editar parcela",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   lista,
   listaCrediarios,
-  darBaixaParcela,
   cadastro,
   deletar,
+
+  amortizarParcela,
+  darBaixaParcela,
+  cancelarParcela,
 };

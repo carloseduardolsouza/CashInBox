@@ -40,6 +40,7 @@ exports.up = async function(knex) {
   await knex.schema.createTable('vendas_pagamento', (table) => {
     table.increments('id_pagamento').primary();
     table.integer('id_venda').unsigned().references('id_venda').inTable('vendas').onDelete('CASCADE');
+    table.integer('id_parcela').unsigned().references('id_parcela').inTable('crediario_parcelas').onDelete('CASCADE');
     table.string('forma', 50).notNullable(); // dinheiro, credito, debito, pix
     table.decimal('valor', 10, 2).notNullable();
     table.timestamp('data_pagamento').defaultTo(knex.fn.now());
@@ -70,6 +71,7 @@ exports.up = async function(knex) {
     table.integer('id_crediario').unsigned().references('id_crediario').inTable('crediario_venda').onDelete('CASCADE');
     table.integer('numero_parcela').notNullable();
     table.decimal('valor', 10, 2).notNullable();
+    table.decimal('valor_pago', 10, 2);
     table.date('data_vencimento').notNullable();
     table.date('data_pagamento');
     table.string('status', 50).defaultTo('pendente'); // pendente, pago, atrasado

@@ -23,7 +23,6 @@ const lista = async () => {
   }
 };
 
-
 const listaOrcamento = async () => {
   try {
     const res = await fetch(API_URL + "/venda/lista");
@@ -61,7 +60,7 @@ const listaCrediarios = async () => {
 
     const lista = data.data || data;
 
-    return lista;
+    return lista.reverse();
   } catch (err) {
     console.error("Erro ao buscar crediarios:", err);
     throw err;
@@ -114,10 +113,14 @@ const cadastro = async (dados) => {
   }
 };
 
-const darBaixaParcela = async (id) => {
+const darBaixaParcela = async (id , dados) => {
   try {
-    const res = await fetch(API_URL + `/venda/darbaixaparcela/${id}`, {
-      method: "PUT"
+    const res = await fetch(API_URL + `/venda/faturar/parcela/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
     });
 
     if (!res.ok) {
@@ -128,6 +131,24 @@ const darBaixaParcela = async (id) => {
     return await res.json(); // retorna o JSON da API
   } catch (err) {
     console.error("Erro ao dar baixa na parcela:", err);
+    throw err;
+  }
+}
+
+const cancelarParela = async (id) => {
+  try {
+    const res = await fetch(API_URL + `/venda/cancelar/parcela/${id}`, {
+      method: "PUT",
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+    }
+
+    return await res.json(); // retorna o JSON da API
+  } catch (err) {
+    console.error("Erro ao cancelar parcela:", err);
     throw err;
   }
 }
@@ -159,6 +180,7 @@ export default {
   listaOrcamento,
   listaCrediarios,
   darBaixaParcela,
+  cancelarParela,
   vendaID,
   cadastro,
   deletar,

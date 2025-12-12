@@ -34,12 +34,12 @@ const styles = {
   },
 };
 
-function HeaderBack({ route, title }) {
+function HeaderBack({ title }) {
   const navigate = useNavigate();
   return (
     <div style={styles.header}>
       <div style={styles.headerLeft}>
-        <button style={styles.backButton} onClick={() => navigate(route)}>
+        <button style={styles.backButton} onClick={() => navigate(-1)}>
           <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
         <h1 style={styles.title}>{title}</h1>

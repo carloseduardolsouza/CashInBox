@@ -1,13 +1,15 @@
-import { useState, useCallback, useMemo, useEffect, useContext } from "react";
+import { useState, useCallback, useMemo, useEffect, useContext, useRef } from "react";
 import vendaFetch from "../../services/api/vendaFetch";
 import { useParams, useNavigate } from "react-router-dom";
 import format from "../../utils/formatters";
 import Loading from "../../components/layout/Loading";
 import CardConfirmacao from "../../components/ui/modal/CardConfirmacao";
+import ModalCrediario from "../../components/shared/InfoCrediario";
 import { pdf } from "@react-pdf/renderer";
 import NotaGrande from "./components/NotaGrande";
 import CarnePagamento from "./components/CarneCrediario";
 import AppContext from "../../context/AppContext";
+import { useClickOutside } from "../../hooks/useClickOutside";
 import {
   FaRegUser,
   FaFilePdf,
@@ -19,6 +21,7 @@ import {
   FaTimes,
   FaDownload,
 } from "react-icons/fa";
+import { FaCircleInfo } from "react-icons/fa6";
 import { ArrowLeft } from "lucide-react";
 
 // Modal de Visualização de PDF
@@ -136,7 +139,7 @@ const styles = {
   },
   mainContent: {
     display: "grid",
-    gridTemplateColumns: "1fr 400px",
+    gridTemplateColumns: "1fr 0.5fr",
     gap: "20px",
   },
   leftPanel: {
@@ -268,11 +271,10 @@ const styles = {
   },
   actionsSection: {
     display: "flex",
-    flexDirection: "column",
-    gap: "10px",
+    justifyContent: "space-around",
   },
   btnAction: {
-    padding: "12px 16px",
+    padding: "12px",
     borderRadius: "8px",
     border: "none",
     cursor: "pointer",
@@ -281,7 +283,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "8px",
     transition: "all 0.2s",
     position: "relative",
   },
@@ -311,9 +312,9 @@ const styles = {
     zIndex: 10,
   },
   dropdownItem: {
-    padding: "12px 16px",
+    padding: "10px",
     cursor: "pointer",
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#333",
     transition: "background-color 0.2s",
     display: "flex",
@@ -425,6 +426,12 @@ const DetalhesVenda = () => {
   const [loading, setLoading] = useState(true);
   const [deletarModal, setDeletarModal] = useState(false);
 
+  const [modalAberta, setModalAberta] = useState(false);
+
+  // Hooks fechar DropDown
+  const ref = useRef(null)
+  useClickOutside(ref , () => {setEscolherNotas(false); setEscolherEditar(false)})
+
   // Estados para o modal de PDF
   const [modalPdfAberto, setModalPdfAberto] = useState(false);
   const [pdfParaVisualizar, setPdfParaVisualizar] = useState(null);
@@ -444,6 +451,27 @@ const DetalhesVenda = () => {
   useEffect(() => {
     buscarVenda();
   }, [id]);
+
+  const handlePagarParcela = async (id, valor_pago, data_pagamento) => {
+    const dados = {
+      valor_pago: valor_pago,
+      data_pagamento: data_pagamento,
+    };
+    await vendaFetch.darBaixaParcela(id, dados);
+
+    buscarVenda();
+  };
+
+  const handleCancelarParcela = async (id) => {
+      await vendaFetch.cancelarParela(id);
+  
+      // Recarrega a lista principal
+      buscarVenda();
+    }
+
+  const fecharModal = () => {
+    setModalAberta(false);
+  };
 
   const handleEnviarWhatsApp = useCallback(() => {
     return;
@@ -504,7 +532,7 @@ const DetalhesVenda = () => {
     setEscolherEditar(false);
   }, []);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleCancelarVenda = useCallback(async () => {
     await vendaFetch.deletar(id);
@@ -528,7 +556,8 @@ const DetalhesVenda = () => {
           return (
             <tr key={produto.id_item}>
               <td style={styles.td}>
-                {produto.nome_produto} * {produto.nome_variacao}
+                {produto.nome_produto}{" "}
+                {produto.nome_variacao ? `* ${produto.nome_variacao}` : ""}
               </td>
               <td style={styles.td}>
                 {format.formatarCurrency(produto.preco_unitario)}
@@ -551,8 +580,11 @@ const DetalhesVenda = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <div style={{display: "flex"}}>
-          <button style={styles.backButton} onClick={() => navigate("/vendas/historico")}>
+        <div style={{ display: "flex" }}>
+          <button
+            style={styles.backButton}
+            onClick={() => navigate(-1)}
+          >
             <ArrowLeft size={20} color="var(--text-primary)" />
           </button>
           <h1 style={styles.headerTitle}>Detalhes da Venda</h1>
@@ -673,7 +705,8 @@ const DetalhesVenda = () => {
               <span style={styles.detailLabel}>Status:</span>
               <span
                 style={
-                  dataVenda.status === "Finalizada"
+                  dataVenda.status === "Finalizada" ||
+                  dataVenda.status === "Crediário pago"
                     ? styles.statusBadgeFinalizada
                     : styles.statusBadgeOrcamento
                 }
@@ -707,14 +740,15 @@ const DetalhesVenda = () => {
                     paddingLeft: "8px",
                   }}
                 >
-                  • {format.formatarCurrency(pag.valor)} - {pag.forma}
+                  • {format.formatarCurrency(pag.valor)} - {pag.forma} -{" "}
+                  {format.formatDate(pag.data_pagamento)}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Ações */}
-          <div style={styles.actionsSection}>
+          <div style={styles.actionsSection} ref={ref}>
             <div style={{ position: "relative" }}>
               {escolherNotas && (
                 <div style={styles.dropdown}>
@@ -750,7 +784,10 @@ const DetalhesVenda = () => {
               )}
               <button
                 style={{ ...styles.btnAction, ...styles.btnPrimary }}
-                onClick={() => setEscolherNotas(!escolherNotas)}
+                onClick={() => {
+                  setEscolherNotas(!escolherNotas);
+                  setEscolherEditar(false);
+                }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = "#1565c0")
                 }
@@ -766,9 +803,10 @@ const DetalhesVenda = () => {
               <div style={{ position: "relative" }}>
                 {escolherEditar && (
                   <div style={styles.dropdown}>
+
                     <div
                       style={styles.dropdownItem}
-                      onClick={handleAmortizar}
+                      onClick={() => setModalAberta(true)}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = "#f5f5f5")
                       }
@@ -776,15 +814,17 @@ const DetalhesVenda = () => {
                         (e.currentTarget.style.backgroundColor = "white")
                       }
                     >
-                      <FaMoneyBillWave size={14} />
-                      Amortizar Crediário
+                      <FaCircleInfo size={14} />
+                      Detalhes Crediário
                     </div>
                   </div>
                 )}
 
                 <button
                   style={{ ...styles.btnAction, ...styles.btnWarning }}
-                  onClick={() => setEscolherEditar(!escolherEditar)}
+                  onClick={() => {
+                    setEscolherEditar(!escolherEditar), setEscolherNotas(false);
+                  }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor = "#f57c00")
                   }
@@ -797,21 +837,24 @@ const DetalhesVenda = () => {
                 </button>
               </div>
             )}
-
-            <button
-              style={{ ...styles.btnAction, ...styles.btnDanger }}
-              onClick={() => setDeletarModal(true)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--surface-strong)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <FaTrash size={16} />
-              Deletar Venda
-            </button>
           </div>
+          <button
+            style={{
+              ...styles.btnAction,
+              ...styles.btnDanger,
+              marginTop: "10px",
+            }}
+            onClick={() => setDeletarModal(true)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--surface-strong)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <FaTrash size={16} />
+            Deletar Venda
+          </button>
         </div>
       </div>
 
@@ -834,6 +877,14 @@ const DetalhesVenda = () => {
           fileName={pdfParaVisualizar.fileName}
         />
       )}
+
+      <ModalCrediario
+        onPagarParcela={handlePagarParcela}
+        onClose={fecharModal}
+        isOpen={modalAberta}
+        crediario={dataVenda.crediario}
+        onCancelarParcela={handleCancelarParcela}
+      />
     </div>
   );
 };

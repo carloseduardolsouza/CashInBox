@@ -85,9 +85,14 @@ function ListaClientes() {
         let endereco = enderecoLimpo.join(" - ");
 
         // Limite de caracteres
-        const LIMIT = 40;
+        const LIMIT = 35;
         if (endereco.length > LIMIT) {
           endereco = endereco.substring(0, LIMIT) + "...";
+        }
+
+        const LIMITNAME = 25;
+        if (dados.nome.length > LIMITNAME) {
+          dados.nome = dados.nome.substring(0, LIMITNAME) + "...";
         }
 
         return {
@@ -132,7 +137,8 @@ function ListaClientes() {
       type: "faturar",
       onClick: (row, index) => {
         // Usa o telefone original sem formatação
-        const telefone = row.telefoneOriginal || row.telefone.replace(/\D/g, '');
+        const telefone =
+          row.telefoneOriginal || row.telefone.replace(/\D/g, "");
         window.open(`https://wa.me/${telefone}`, "_blank");
       },
     },
@@ -179,7 +185,12 @@ function ListaClientes() {
         </form>
       </div>
 
-      <Table columns={columns} data={filteredData} actions={actions} rowsPerPage={15}/>
+      <Table
+        columns={columns}
+        data={filteredData}
+        actions={actions}
+        rowsPerPage={15}
+      />
     </div>
   );
 }

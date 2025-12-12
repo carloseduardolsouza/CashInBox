@@ -99,9 +99,8 @@ const listaCrediarios = async () => {
   return resultado;
 };
 
-const darBaixaParcela = async (id) => {
+const darBaixaParcela = async (id , dadosPagamento) => {
   return await db.transaction(async (trx) => {
-
     // 1. Verifica se a parcela existe
     const parcela = await trx("crediario_parcelas")
       .where("id_parcela", id)
@@ -121,12 +120,20 @@ const darBaixaParcela = async (id) => {
     }
 
     // 3. Atualiza a parcela para "Pago"
-    await trx("crediario_parcelas")
-      .where("id_parcela", id)
-      .update({
-        data_pagamento: new Date().toISOString(),
-        status: "Pago",
-      });
+    await trx("crediario_parcelas").where("id_parcela", id).update({
+      data_pagamento: dadosPagamento.data_pagamento,
+      valor_pago: dadosPagamento.valor_pago,
+      status: "Pago",
+    });
+
+    // 3.1 Adiciona o forma de pagamento na venda
+    await trx("vendas_pagamento").insert({
+      id_venda: crediario.id_venda,
+      id_parcela: id,
+      forma: `Parcela de n° ${parcela.numero_parcela}`,
+      valor: dadosPagamento.valor_pago,
+      data_pagamento: dadosPagamento.data_pagamento,
+    });
 
     // 4. Busca todas as parcelas do crediario
     const parcelasAll = await trx("crediario_parcelas")
@@ -137,8 +144,8 @@ const darBaixaParcela = async (id) => {
 
     if (parcelasAll.length === parcelasPagas.length) {
       await trx("crediario_venda")
-      .where("id_crediario", crediario.id_crediario)
-      .update({ status: "Pago" });
+        .where("id_crediario", crediario.id_crediario)
+        .update({ status: "Pago" });
     }
 
     // 5. Atualiza status do crediário (na tabela de vendas)
@@ -160,6 +167,66 @@ const darBaixaParcela = async (id) => {
   });
 };
 
+const cancelarParcela = async (id) => {
+  return await db.transaction(async (trx) => {
+    // 1. Verifica se a parcela existe
+    const parcela = await trx("crediario_parcelas")
+      .where("id_parcela", id)
+      .first();
+
+    if (!parcela) {
+      throw new Error("Parcela não encontrada");
+    }
+
+    // 2. Busca o crediário relacionado
+    const crediario = await trx("crediario_venda")
+      .where("id_crediario", parcela.id_crediario)
+      .first();
+
+    if (!crediario) {
+      throw new Error("Crediário não encontrado");
+    }
+
+    //2.1 Atualiza o status do crediario para pendente
+    await trx("crediario_venda").where("id_crediario", parcela.id_crediario).update({
+      status: "Pendente",
+    });
+
+    // 3. Atualiza a parcela para "Pendente"
+    await trx("crediario_parcelas").where("id_parcela", id).update({
+      data_pagamento: null,
+      valor_pago: null,
+      status: "Pendente",
+    });
+
+    // 3.1 Remove a forma de pagamento na venda
+    await trx("vendas_pagamento").where("id_parcela" , id).del();
+
+    // 4. Busca todas as parcelas do crediario
+    const parcelasAll = await trx("crediario_parcelas")
+      .select("*")
+      .where("id_crediario", parcela.id_crediario);
+
+    const parcelasPagas = parcelasAll.filter((e) => e.status === "Pago");
+
+    // 5. Atualiza status do crediário (na tabela de vendas)
+    const statusVenda =
+      parcelasPagas.length === parcelasAll.length
+        ? "Crediário pago"
+        : `Pagamento pendente: ${parcelasPagas.length}/${parcelasAll.length}`;
+
+    await trx("vendas")
+      .where("id_venda", crediario.id_venda)
+      .update({ status: statusVenda });
+
+    return {
+      ok: true,
+      status: statusVenda,
+      parcelasPagas: parcelasPagas.length,
+      totalParcelas: parcelasAll.length,
+    };
+  });
+}
 
 const lista = async () => {
   // Busca todas as vendas
@@ -317,5 +384,6 @@ module.exports = {
   lista,
   listaCrediarios,
   darBaixaParcela,
+  cancelarParcela,
   deletar,
 };

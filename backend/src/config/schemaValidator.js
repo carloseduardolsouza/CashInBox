@@ -125,7 +125,7 @@ const EXPECTED_SCHEMA = {
   },
 
   vendas_pagamento: {
-    columns: ["id_pagamento", "id_venda", "forma", "valor", "data_pagamento"],
+    columns: ["id_pagamento", "id_venda", "id_parcela" , "forma", "valor", "data_pagamento"],
     indexes: ["id_venda", "forma"],
   },
 
@@ -149,6 +149,7 @@ const EXPECTED_SCHEMA = {
       "id_crediario",
       "numero_parcela",
       "valor",
+      "valor_pago",
       "data_vencimento",
       "data_pagamento",
       "status",
