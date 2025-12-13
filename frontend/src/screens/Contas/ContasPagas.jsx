@@ -1,107 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaSearch, FaChevronDown, FaChevronRight, FaUndo } from "react-icons/fa";
 import { MdAttachMoney } from "react-icons/md";
-
-// Dados simulados
-const categoriasCadastradas = [
-  {
-    id: 1,
-    nome: "Fornecedores",
-    subcategorias: ["Matéria Prima", "Equipamentos", "Insumos"],
-    total: 8450.00,
-    quantidade: 12
-  },
-  {
-    id: 2,
-    nome: "Aluguel",
-    subcategorias: ["Imóveis", "Equipamentos", "Veículos"],
-    total: 5200.00,
-    quantidade: 5
-  },
-  {
-    id: 3,
-    nome: "Serviços",
-    subcategorias: ["Consultoria", "Manutenção", "TI"],
-    total: 12300.00,
-    quantidade: 18
-  },
-  {
-    id: 4,
-    nome: "Utilities",
-    subcategorias: ["Energia", "Água", "Internet", "Telefone"],
-    total: 3100.00,
-    quantidade: 8
-  },
-  {
-    id: 5,
-    nome: "Folha de Pagamento",
-    subcategorias: ["Salários", "Encargos", "Benefícios"],
-    total: 45600.00,
-    quantidade: 32
-  }
-];
-
-const contasPorCategoria = {
-  "Fornecedores": {
-    "Matéria Prima": [
-      { id: 1, fornecedor: "Tech Supplies LTDA", valor: 1500.00, data_pagamento: "2025-11-15", forma_pagamento: "PIX" },
-      { id: 2, fornecedor: "Distribuidora ABC", valor: 3200.00, data_pagamento: "2025-11-20", forma_pagamento: "Boleto" }
-    ],
-    "Equipamentos": [
-      { id: 3, fornecedor: "Tech Solutions", valor: 2100.00, data_pagamento: "2025-11-10", forma_pagamento: "Cartão" }
-    ],
-    "Insumos": [
-      { id: 4, fornecedor: "Papelaria Express", valor: 650.00, data_pagamento: "2025-11-25", forma_pagamento: "PIX" }
-    ]
-  },
-  "Aluguel": {
-    "Imóveis": [
-      { id: 5, fornecedor: "Imobiliária Central", valor: 4000.00, data_pagamento: "2025-11-05", forma_pagamento: "TED" }
-    ],
-    "Equipamentos": [
-      { id: 6, fornecedor: "Rental Tech", valor: 800.00, data_pagamento: "2025-11-12", forma_pagamento: "Boleto" }
-    ],
-    "Veículos": [
-      { id: 7, fornecedor: "Locadora Premium", valor: 400.00, data_pagamento: "2025-11-18", forma_pagamento: "PIX" }
-    ]
-  },
-  "Serviços": {
-    "Consultoria": [
-      { id: 8, fornecedor: "Consultoria XYZ", valor: 8000.00, data_pagamento: "2025-11-08", forma_pagamento: "TED" }
-    ],
-    "Manutenção": [
-      { id: 9, fornecedor: "Manutenção Geral", valor: 1200.00, data_pagamento: "2025-11-22", forma_pagamento: "PIX" }
-    ],
-    "TI": [
-      { id: 10, fornecedor: "Cloud Services", valor: 3100.00, data_pagamento: "2025-11-30", forma_pagamento: "Cartão" }
-    ]
-  },
-  "Utilities": {
-    "Energia": [
-      { id: 11, fornecedor: "Energia S.A.", valor: 1200.00, data_pagamento: "2025-11-10", forma_pagamento: "Débito Automático" }
-    ],
-    "Água": [
-      { id: 12, fornecedor: "SABESP", valor: 450.00, data_pagamento: "2025-11-15", forma_pagamento: "Débito Automático" }
-    ],
-    "Internet": [
-      { id: 13, fornecedor: "Telecom Plus", valor: 350.00, data_pagamento: "2025-11-20", forma_pagamento: "Boleto" }
-    ],
-    "Telefone": [
-      { id: 14, fornecedor: "Telecom Plus", valor: 1100.00, data_pagamento: "2025-11-20", forma_pagamento: "Boleto" }
-    ]
-  },
-  "Folha de Pagamento": {
-    "Salários": [
-      { id: 15, fornecedor: "Funcionários", valor: 35000.00, data_pagamento: "2025-11-05", forma_pagamento: "TED" }
-    ],
-    "Encargos": [
-      { id: 16, fornecedor: "INSS", valor: 7000.00, data_pagamento: "2025-11-15", forma_pagamento: "DARF" }
-    ],
-    "Benefícios": [
-      { id: 17, fornecedor: "Vale Alimentação", valor: 3600.00, data_pagamento: "2025-11-01", forma_pagamento: "TED" }
-    ]
-  }
-};
+import contaFetch from "../../services/api/contaFetch"
 
 const styles = {
   container: {
@@ -382,6 +282,25 @@ const styles = {
   modalButtonConfirm: {
     backgroundColor: "var(--warning-500)",
     color: "var(--text-inverse)"
+  },
+  loading: {
+    textAlign: "center",
+    padding: "40px",
+    fontSize: "16px",
+    color: "var(--text-secondary)"
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "60px 20px",
+    color: "var(--text-muted)"
+  },
+  emptyStateIcon: {
+    fontSize: "48px",
+    marginBottom: "16px"
+  },
+  emptyStateText: {
+    fontSize: "16px",
+    fontWeight: "500"
   }
 };
 
@@ -392,16 +311,61 @@ function ContasPagas() {
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [subcategoriasExpandidas, setSubcategoriasExpandidas] = useState({});
   const [modalDesmarcar, setModalDesmarcar] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const formatarCurrency = (valor) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(valor);
+    }).format(valor || 0);
   };
 
   const formatarData = (data) => {
+    if (!data) return '-';
     return new Date(data).toLocaleDateString('pt-BR');
+  };
+
+  const processarDadosAPI = (contas) => {
+    // Filtrar apenas contas pagas
+    const pagas = contas.filter(c => c.status === 'Pago');
+    
+    // Agrupar por categoria
+    const categoriaMap = {};
+    
+    pagas.forEach(conta => {
+      const nomeCategoria = conta.categoria?.nome || 'Sem Categoria';
+      const nomeSubcategoria = conta.subcategoria?.nome || 'Geral';
+      
+      if (!categoriaMap[nomeCategoria]) {
+        categoriaMap[nomeCategoria] = {
+          nome: nomeCategoria,
+          id_categoria: conta.id_categoria_movimentacao,
+          total: 0,
+          quantidade: 0,
+          subcategorias: {},
+          contas: []
+        };
+      }
+      
+      if (!categoriaMap[nomeCategoria].subcategorias[nomeSubcategoria]) {
+        categoriaMap[nomeCategoria].subcategorias[nomeSubcategoria] = [];
+      }
+      
+      categoriaMap[nomeCategoria].total += conta.valor_pago || conta.valor;
+      categoriaMap[nomeCategoria].quantidade += 1;
+      categoriaMap[nomeCategoria].subcategorias[nomeSubcategoria].push(conta);
+      categoriaMap[nomeCategoria].contas.push(conta);
+    });
+    
+    // Converter para array
+    return Object.values(categoriaMap).map((cat, idx) => ({
+      id: cat.id_categoria || idx + 1,
+      nome: cat.nome,
+      subcategorias: Object.keys(cat.subcategorias),
+      total: cat.total,
+      quantidade: cat.quantidade,
+      subcategoriasData: cat.subcategorias
+    }));
   };
 
   const calcularEstatisticas = () => {
@@ -432,23 +396,47 @@ function ContasPagas() {
     setModalDesmarcar({ conta, categoria, subcategoria });
   };
 
-  const confirmarDesmarcar = () => {
+  const confirmarDesmarcar = async () => {
     if (!modalDesmarcar) return;
     
-    // Aqui você faria a chamada para a API para desmarcar a conta como paga
-    console.log("Desmarcando conta:", modalDesmarcar.conta.id);
-    
-    // Simulação de sucesso
-    alert(`Conta "${modalDesmarcar.conta.fornecedor}" foi desmarcada como paga e retornará para "Contas a Pagar"`);
-    
-    setModalDesmarcar(null);
-    
-    // Aqui você recarregaria os dados após desmarcar
-    // buscarContas();
+    try {
+      // Aqui você faria a chamada para a API para desmarcar a conta como paga
+      // Exemplo:
+      // await fetch(`/api/contas/${modalDesmarcar.conta.id_conta}/desmarcar`, {
+      //   method: 'PUT'
+      // });
+      
+      console.log("Desmarcando conta:", modalDesmarcar.conta.id_conta);
+      
+      alert(`Conta "${modalDesmarcar.conta.fornecedor}" foi desmarcada como paga e retornará para "Contas a Pagar"`);
+      
+      setModalDesmarcar(null);
+      
+      // Recarregar dados
+      buscarContas();
+    } catch (error) {
+      console.error("Erro ao desmarcar conta:", error);
+      alert("Erro ao desmarcar conta. Tente novamente.");
+    }
+  };
+
+  const buscarContas = async () => {
+    setLoading(true);
+    try {
+      const data = await contaFetch.lista()
+      
+      const categoriasProcessadas = processarDadosAPI(data);
+      setCategorias(categoriasProcessadas);
+    } catch (error) {
+      console.error("Erro ao buscar contas:", error);
+      alert("Erro ao carregar contas pagas");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    setCategorias(categoriasCadastradas);
+    buscarContas();
   }, []);
 
   const stats = calcularEstatisticas();
@@ -493,8 +481,8 @@ function ContasPagas() {
             {categoria.nome} - {formatarCurrency(categoria.total)}
           </h3>
           {categoria.subcategorias.map(subcategoria => {
-            const contas = contasPorCategoria[categoria.nome]?.[subcategoria] || [];
-            const totalSubcategoria = contas.reduce((acc, c) => acc + c.valor, 0);
+            const contas = categoria.subcategoriasData[subcategoria] || [];
+            const totalSubcategoria = contas.reduce((acc, c) => acc + (c.valor_pago || c.valor), 0);
             const isExpanded = subcategoriasExpandidas[`${categoria.nome}-${subcategoria}`];
             
             return (
@@ -519,18 +507,16 @@ function ContasPagas() {
                       <tr>
                         <th style={styles.tableHeader}>Fornecedor</th>
                         <th style={styles.tableHeader}>Data Pagamento</th>
-                        <th style={styles.tableHeader}>Forma Pagamento</th>
-                        <th style={styles.tableHeader}>Valor</th>
+                        <th style={styles.tableHeader}>Valor Pago</th>
                         <th style={styles.tableHeader}>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {contas.map(conta => (
-                        <tr key={conta.id} style={styles.tableRow}>
+                        <tr key={conta.id_conta} style={styles.tableRow}>
                           <td style={styles.tableCell}>{conta.fornecedor}</td>
                           <td style={styles.tableCell}>{formatarData(conta.data_pagamento)}</td>
-                          <td style={styles.tableCell}>{conta.forma_pagamento}</td>
-                          <td style={styles.tableCell}>{formatarCurrency(conta.valor)}</td>
+                          <td style={styles.tableCell}>{formatarCurrency(conta.valor_pago || conta.valor)}</td>
                           <td style={styles.tableCell}>
                             <button 
                               style={styles.actionButton}
@@ -578,8 +564,8 @@ function ContasPagas() {
         </h3>
 
         {categoriaSelecionada.subcategorias.map(subcategoria => {
-          const contas = contasPorCategoria[categoriaSelecionada.nome]?.[subcategoria] || [];
-          const totalSubcategoria = contas.reduce((acc, c) => acc + c.valor, 0);
+          const contas = categoriaSelecionada.subcategoriasData[subcategoria] || [];
+          const totalSubcategoria = contas.reduce((acc, c) => acc + (c.valor_pago || c.valor), 0);
           const isExpanded = subcategoriasExpandidas[subcategoria];
           
           return (
@@ -604,18 +590,16 @@ function ContasPagas() {
                     <tr>
                       <th style={styles.tableHeader}>Fornecedor</th>
                       <th style={styles.tableHeader}>Data Pagamento</th>
-                      <th style={styles.tableHeader}>Forma Pagamento</th>
-                      <th style={styles.tableHeader}>Valor</th>
+                      <th style={styles.tableHeader}>Valor Pago</th>
                       <th style={styles.tableHeader}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {contas.map(conta => (
-                      <tr key={conta.id} style={styles.tableRow}>
+                      <tr key={conta.id_conta} style={styles.tableRow}>
                         <td style={styles.tableCell}>{conta.fornecedor}</td>
                         <td style={styles.tableCell}>{formatarData(conta.data_pagamento)}</td>
-                        <td style={styles.tableCell}>{conta.forma_pagamento}</td>
-                        <td style={styles.tableCell}>{formatarCurrency(conta.valor)}</td>
+                        <td style={styles.tableCell}>{formatarCurrency(conta.valor_pago || conta.valor)}</td>
                         <td style={styles.tableCell}>
                           <button 
                             style={styles.actionButton}
@@ -639,6 +623,28 @@ function ContasPagas() {
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.loading}>Carregando contas pagas...</div>
+      </div>
+    );
+  }
+
+  if (categorias.length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h2 style={styles.title}>Contas Pagas</h2>
+        </div>
+        <div style={styles.emptyState}>
+          <div style={styles.emptyStateIcon}>📋</div>
+          <div style={styles.emptyStateText}>Nenhuma conta paga encontrada</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -718,7 +724,7 @@ function ContasPagas() {
             <div style={styles.modalTitle}>Desmarcar como paga?</div>
             <div style={styles.modalText}>
               Tem certeza que deseja desmarcar a conta de <strong>{modalDesmarcar.conta.fornecedor}</strong> 
-              no valor de <strong>{formatarCurrency(modalDesmarcar.conta.valor)}</strong> como paga?
+              no valor de <strong>{formatarCurrency(modalDesmarcar.conta.valor_pago || modalDesmarcar.conta.valor)}</strong> como paga?
               <br /><br />
               Esta conta retornará para a lista de "Contas a Pagar".
             </div>

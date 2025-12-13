@@ -92,7 +92,7 @@ function DetalhesCliente() {
         return;
       }
 
-      const vendasCliente = res.filter((e) => e.cliente.id_cliente == id);
+      const vendasCliente = res.filter((e) => e?.cliente?.id_cliente == id);
 
       // Formata os dados
       const resFormated = vendasCliente.map((dados) => ({

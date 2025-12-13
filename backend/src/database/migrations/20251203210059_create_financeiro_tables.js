@@ -54,11 +54,12 @@ exports.up = async function(knex) {
     table.string('fornecedor', 200);
     table.text('descricao');
     table.decimal('valor', 10, 2).notNullable();
+    table.decimal('valor_pago', 10, 2);
     table.date('data_vencimento').notNullable();
     table.date('data_pagamento');
     table.boolean('recorrente').defaultTo(false);
     table.string('intervalo_recorrencia', 50); // mensal, anual
-    table.string('status', 50).defaultTo('pendente'); // pendente, pago, atrasado
+    table.string('status', 50).defaultTo('Pendente'); // pendente, pago, atrasado
     table.text('observacoes');
     
     table.index('data_vencimento');

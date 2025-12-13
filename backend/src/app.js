@@ -7,6 +7,7 @@ const clientesRoutes = require("./routers/clientesRoutes");
 const funcionariosRoutes = require("./routers/funcionariosRoutes");
 const produtoRoutes = require("./routers/produtoRoutes");
 const vendaRoutes = require("./routers/vendaRoutes");
+const contaRoutes = require("./routers/contaRoutes")
 
 // Inicializa o app Express
 const app = express();
@@ -45,5 +46,6 @@ app.use("/cliente", clientesRoutes);
 app.use("/funcionario", funcionariosRoutes);
 app.use("/produto", produtoRoutes);
 app.use("/venda" , vendaRoutes)
+app.use("/conta" , contaRoutes)
 
 module.exports = app;

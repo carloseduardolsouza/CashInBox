@@ -206,6 +206,7 @@ const EXPECTED_SCHEMA = {
       "fornecedor",
       "descricao",
       "valor",
+      "valor_pago",
       "data_vencimento",
       "data_pagamento",
       "recorrente",
